@@ -3,9 +3,13 @@ import TreasuryLayout from '@/Layouts/TreasuryLayout.vue';
 import CreateCollateralModal from './Create.vue';
 import EditCollateralModal from './Edit.vue';
 import { Plus, Trash2, Edit2, Search } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { router } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
+
+onMounted(() => {
+    document.title = 'Collateral Management - Daily Deposit';
+});
 
 const props = defineProps({
     collaterals: {
@@ -18,6 +22,7 @@ const searchQuery = ref('');
 const showModal = ref(false);
 const showEditModal = ref(false);
 const selectedCollateral = ref(null);
+const draggedIndex = ref(null);
 
 const hasCollaterals = computed(() => filteredCollaterals.value && filteredCollaterals.value.length > 0);
 
@@ -58,6 +63,33 @@ const totalBeginningBalance = computed(() => {
         return sum + parseFloat(collateral.beginning_balance || 0);
     }, 0);
 });
+
+const handleDragStart = (index, event) => {
+    draggedIndex.value = index;
+    event.dataTransfer.effectAllowed = 'move';
+    // Create a custom drag image
+    const dragImage = new Image();
+    dragImage.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect fill="%23FBBF24" width="40" height="40" rx="8"/><text x="20" y="24" fill="%23fff" font-size="20" text-anchor="middle" font-weight="bold" font-family="Arial">⇕</text></svg>';
+    event.dataTransfer.setDragImage(dragImage, 20, 20);
+};
+
+const handleDragOver = (event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+};
+
+const handleDrop = (targetIndex) => {
+    if (draggedIndex.value !== null && draggedIndex.value !== targetIndex) {
+        const temp = props.collaterals[draggedIndex.value];
+        props.collaterals[draggedIndex.value] = props.collaterals[targetIndex];
+        props.collaterals[targetIndex] = temp;
+    }
+    draggedIndex.value = null;
+};
+
+const handleDragEnd = () => {
+    draggedIndex.value = null;
+};
 
 const deleteCollateral = async (collateral) => {
     const result = await Swal.fire({
@@ -176,7 +208,7 @@ const deleteCollateral = async (collateral) => {
                     <table class="w-full border-collapse">
                         <thead class="bg-gradient-to-r from-yellow-400 to-yellow-500">
                             <tr class="border-b-2 border-gray-300">
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Collateral Name</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300 cursor-move">⋮⋮ Collateral Name</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Account Number</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Created</th>
@@ -186,11 +218,17 @@ const deleteCollateral = async (collateral) => {
                         <tbody>
                             <tr 
                                 v-for="(collateral, index) in filteredCollaterals" 
-                                :key="collateral.id" 
+                                :key="collateral.id"
+                                draggable="true"
+                                @dragstart="handleDragStart(index, $event)"
+                                @dragover="handleDragOver"
+                                @drop="handleDrop(index)"
+                                @dragend="handleDragEnd"
                                 :class="[
-                                    'border-b border-gray-300 transition-all duration-200',
-                                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50',
-                                    'hover:bg-yellow-100'
+                                    'relative transition-all duration-300 ease-out cursor-move select-none',
+                                    'border-b border-gray-300',
+                                    draggedIndex === index ? 'dragging-row opacity-40 scale-95 bg-yellow-200' : index % 2 === 0 ? 'bg-white' : 'bg-gray-50',
+                                    draggedIndex !== null && draggedIndex !== index ? 'hover:ring-2 hover:ring-yellow-400 ring-inset' : 'hover:bg-yellow-100'
                                 ]"
                             >
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-300">
@@ -252,3 +290,40 @@ const deleteCollateral = async (collateral) => {
         </div>
     </TreasuryLayout>
 </template>
+
+<style scoped>
+@keyframes dragPulse {
+    0%, 100% {
+        box-shadow: inset 0 0 0 rgba(251, 191, 36, 0);
+    }
+    50% {
+        box-shadow: inset 0 0 8px rgba(251, 191, 36, 0.3);
+    }
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-8px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+tr {
+    animation: slideDown 0.3s ease-out;
+}
+
+.dragging-row {
+    animation: dragPulse 0.6s ease-in-out infinite;
+    box-shadow: 0 8px 16px rgba(251, 191, 36, 0.3);
+    border-radius: 4px;
+}
+
+tbody tr:hover td:first-child {
+    font-weight: 600;
+    color: #1f2937;
+}
+</style>

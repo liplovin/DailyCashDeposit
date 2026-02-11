@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CollateralController;
+use App\Http\Controllers\TimeDepositController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -34,9 +35,11 @@ Route::middleware('auth')->group(function () {
         Route::put('/collateral/{id}', [CollateralController::class, 'update'])->name('collateral.update');
         Route::delete('/collateral/{id}', [CollateralController::class, 'destroy'])->name('collateral.destroy');
 
-        Route::get('/time-deposit', function () {
-            return Inertia::render('Treasury/Time Deposit/Index');
-        })->name('time-deposit');
+        // Time Deposit Routes
+        Route::get('/time-deposit', [TimeDepositController::class, 'index'])->name('timedeposit');
+        Route::post('/time-deposit', [TimeDepositController::class, 'store'])->name('timedeposit.store');
+        Route::put('/time-deposit/{id}', [TimeDepositController::class, 'update'])->name('timedeposit.update');
+        Route::delete('/time-deposit/{id}', [TimeDepositController::class, 'destroy'])->name('timedeposit.destroy');
 
         Route::get('/government-securities', function () {
             return Inertia::render('Treasury/Goverment Securities/Index');
