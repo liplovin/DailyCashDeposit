@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CollateralController;
 use App\Http\Controllers\TimeDepositController;
 use App\Http\Controllers\GovernmentSecurityController;
+use App\Http\Controllers\OtherInvestmentController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -48,9 +49,11 @@ Route::middleware('auth')->group(function () {
         Route::put('/government-securities/{id}', [GovernmentSecurityController::class, 'update'])->name('government-securities.update');
         Route::delete('/government-securities/{id}', [GovernmentSecurityController::class, 'destroy'])->name('government-securities.destroy');
 
-        Route::get('/other-investment', function () {
-            return Inertia::render('Treasury/Other Investment/Index');
-        })->name('other-investment');
+        // Other Investment Routes
+        Route::get('/other-investment', [OtherInvestmentController::class, 'index'])->name('other-investment');
+        Route::post('/other-investment', [OtherInvestmentController::class, 'store'])->name('other-investment.store');
+        Route::put('/other-investment/{id}', [OtherInvestmentController::class, 'update'])->name('other-investment.update');
+        Route::delete('/other-investment/{id}', [OtherInvestmentController::class, 'destroy'])->name('other-investment.destroy');
 
         Route::get('/operating-accounts', function () {
             return Inertia::render('Treasury/Operating Accounts/Index');
