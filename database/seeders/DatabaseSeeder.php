@@ -18,21 +18,21 @@ class DatabaseSeeder extends Seeder
         // Create admin user
         User::factory()->create([
             'name' => 'Admin User',
-            'email' => 'admin@example.com',
+            'email' => 'admin@intra.com',
             'role' => 'admin',
         ]);
 
         // Create treasury user
         User::factory()->create([
             'name' => 'Treasury User',
-            'email' => 'treasury@example.com',
+            'email' => 'treasury@intra.com',
             'role' => 'treasury',
         ]);
 
         // Create accounting user
         User::factory()->create([
             'name' => 'Accounting User',
-            'email' => 'accounting@example.com',
+            'email' => 'accounting@intra.com',
             'role' => 'accounting',
         ]);
     }
