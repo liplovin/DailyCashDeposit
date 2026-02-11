@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
-import { Home, Wallet, BarChart3, LogOut, Shield, Clock, FileText, TrendingUp, Banknote, Menu } from 'lucide-vue-next';
+import { Home, Wallet, BarChart3, LogOut, Shield, Clock, FileText, TrendingUp, Banknote, DollarSign, Coins, ArrowUpRight, PiggyBank, Menu } from 'lucide-vue-next';
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
@@ -18,7 +18,11 @@ const isRouteActive = (routeName) => {
         'treasury.time-deposit': '/treasury/time-deposit',
         'treasury.government-securities': '/treasury/government-securities',
         'treasury.other-investment': '/treasury/other-investment',
-        'treasury.operating-accounts': '/treasury/operating-accounts'
+        'treasury.operating-accounts': '/treasury/operating-accounts',
+        'treasury.dollar': '/treasury/dollar',
+        'treasury.corporate-bonds': '/treasury/corporate-bonds',
+        'treasury.cash-infusion': '/treasury/cash-infusion',
+        'treasury.investment': '/treasury/investment'
     };
     
     const routePath = routeList[routeName];
@@ -50,7 +54,11 @@ const handleMenuClick = (item) => {
             'treasury.time-deposit': '/treasury/time-deposit',
             'treasury.government-securities': '/treasury/government-securities',
             'treasury.other-investment': '/treasury/other-investment',
-            'treasury.operating-accounts': '/treasury/operating-accounts'
+            'treasury.operating-accounts': '/treasury/operating-accounts',
+            'treasury.dollar': '/treasury/dollar',
+            'treasury.corporate-bonds': '/treasury/corporate-bonds',
+            'treasury.cash-infusion': '/treasury/cash-infusion',
+            'treasury.investment': '/treasury/investment'
         };
         router.get(routeUrls[item.route]);
     }
@@ -86,6 +94,26 @@ const menuItems = [
         name: 'Operating Accounts',
         component: Banknote,
         route: 'treasury.operating-accounts'
+    },
+    {
+        name: 'Dollar',
+        component: DollarSign,
+        route: 'treasury.dollar'
+    },
+    {
+        name: 'Corporate Bonds',
+        component: Coins,
+        route: 'treasury.corporate-bonds'
+    },
+    {
+        name: 'Cash Infusion',
+        component: ArrowUpRight,
+        route: 'treasury.cash-infusion'
+    },
+    {
+        name: 'Investment',
+        component: PiggyBank,
+        route: 'treasury.investment'
     }
 ];
 </script>
