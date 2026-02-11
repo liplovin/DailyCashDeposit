@@ -4,6 +4,7 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
 
 defineProps({
     canResetPassword: {
@@ -20,6 +21,8 @@ const form = useForm({
     remember: false,
 });
 
+const showPassword = ref(false);
+
 const submit = () => {
     form.post(route('login'), {
         onFinish: () => form.reset('password'),
@@ -30,6 +33,41 @@ const submit = () => {
 <template>
     <div class="h-screen w-screen bg-gradient-to-br from-gray-900 via-slate-800 to-gray-900 overflow-hidden flex">
         <Head title="Login - Daily Bank Deposit Management System" />
+
+        <!-- Loading Screen Overlay -->
+        <div v-if="form.processing" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex flex-col justify-center items-center z-50">
+            <div class="text-center space-y-8">
+                <!-- Animated Logo Container with Yellow Glow -->
+                <div class="flex justify-center mb-8">
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-yellow-500/30 blur-2xl rounded-full animate-pulse"></div>
+                        <img src="/logoonly.png" alt="Bank Deposit Logo" class="w-32 h-32 drop-shadow-2xl relative">
+                    </div>
+                </div>
+
+                <!-- Loading Text -->
+                <div class="space-y-3">
+                    <h2 class="text-4xl font-bold text-white">Authenticating</h2>
+                    <p class="text-gray-300 text-lg">Please wait while we verify your credentials...</p>
+                </div>
+
+                <!-- Animated Yellow Loading Spinner -->
+                <div class="flex justify-center pt-6">
+                    <svg class="animate-spin h-16 w-16 text-yellow-500 drop-shadow-lg" style="filter: drop-shadow(0 0 12px rgba(234, 179, 8, 0.6));" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                        <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+
+                <!-- Centered Progress Bar with Yellow -->
+                <div class="mt-8 w-80 h-2 bg-gray-700 rounded-full overflow-hidden shadow-lg">
+                    <div class="h-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 animate-pulse rounded-full w-full shadow-lg" style="box-shadow: 0 0 20px rgba(234, 179, 8, 0.8);"></div>
+                </div>
+
+                <!-- Footer Text -->
+                <p class="text-gray-400 text-sm mt-8 font-medium">This may take a few seconds</p>
+            </div>
+        </div>
 
         <!-- Left Column - Branding & Info -->
         <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-yellow-500 via-yellow-600 to-amber-700 flex-col justify-between items-center p-12">
@@ -115,7 +153,7 @@ const submit = () => {
                 <form @submit.prevent="submit" class="space-y-5">
                     <!-- Email Field -->
                     <div>
-                        <InputLabel for="email" value="Email Address" class="text-gray-300 font-semibold mb-2 block text-sm" />
+                        <InputLabel for="email" value="Email Address" class="text-white font-semibold mb-2 block text-sm" />
                         <TextInput
                             id="email"
                             type="email"
@@ -131,16 +169,35 @@ const submit = () => {
 
                     <!-- Password Field -->
                     <div>
-                        <InputLabel for="password" value="Password" class="text-gray-300 font-semibold mb-2 block text-sm" />
-                        <TextInput
-                            id="password"
-                            type="password"
-                            class="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:border-yellow-500 focus:ring-2 focus:ring-yellow-400/50 focus:outline-none transition text-white placeholder-gray-500 backdrop-blur-sm"
-                            v-model="form.password"
-                            required
-                            autocomplete="current-password"
-                            placeholder="••••••••"
-                        />
+                        <InputLabel for="password" value="Password" class="text-white font-semibold mb-2 block text-sm" />
+                        <div class="relative group">
+                            <input
+                                id="password"
+                                :type="showPassword ? 'text' : 'password'"
+                                class="w-full px-4 py-3 pr-12 bg-gray-700/50 border border-gray-600 rounded-lg focus:border-yellow-500 focus:ring-2 focus:ring-yellow-400/50 focus:outline-none transition text-white placeholder-gray-500 backdrop-blur-sm"
+                                v-model="form.password"
+                                required
+                                autocomplete="current-password"
+                                placeholder="••••••••"
+                            />
+                            <button
+                                type="button"
+                                @click="showPassword = !showPassword"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-yellow-400 transition-colors duration-200 p-1 rounded-md hover:bg-gray-600/50"
+                                :title="showPassword ? 'Hide password' : 'Show password'"
+                            >
+                                <!-- Eye Open Icon (password hidden) -->
+                                <svg v-if="!showPassword" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                                <!-- Eye Closed Icon (password visible) -->
+                                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                                </svg>
+                            </button>
+                        </div>
                         <InputError class="mt-2 text-red-400 text-sm" :message="form.errors.password" />
                     </div>
 
@@ -150,13 +207,6 @@ const submit = () => {
                             <Checkbox name="remember" v-model:checked="form.remember" />
                             <span class="ms-2 text-sm text-gray-400 select-none">Remember me</span>
                         </label>
-                        <Link
-                            v-if="canResetPassword"
-                            :href="route('password.request')"
-                            class="text-sm text-yellow-400 hover:text-yellow-300 font-medium transition"
-                        >
-                            Forgot password?
-                        </Link>
                     </div>
 
                     <!-- Login Button -->
