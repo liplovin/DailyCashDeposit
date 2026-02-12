@@ -69,6 +69,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/operating-accounts', [OperatingAccountController::class, 'store'])->name('operating-accounts.store');
         Route::put('/operating-accounts/{id}', [OperatingAccountController::class, 'update'])->name('operating-accounts.update');
         Route::delete('/operating-accounts/{id}', [OperatingAccountController::class, 'destroy'])->name('operating-accounts.destroy');
+        Route::post('/operating-accounts/{id}/collection', [OperatingAccountController::class, 'storeCollections'])->name('operating-accounts.store-collections');
 
         // Dollar Routes
         Route::get('/dollar', [DollarController::class, 'index'])->name('dollar');

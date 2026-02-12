@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\OperatingAccount;
+use App\Models\Collection;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -14,7 +15,7 @@ class OperatingAccountController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $operatingAccounts = OperatingAccount::all();
+        $operatingAccounts = OperatingAccount::with('collections')->get();
         
         // Render based on user role
         $component = match($user->role) {
@@ -92,5 +93,98 @@ class OperatingAccountController extends Controller
         $operatingAccount->delete();
 
         return redirect('/treasury/operating-accounts')->with('success', 'Operating Account deleted successfully.');
+    }
+
+    /**
+     * Store multiple collections for an operating account.
+     */
+    public function storeCollections(Request $request)
+    {
+        try {
+            // Get raw input first to debug
+            $operatingAccountId = $request->input('operating_account_id');
+            
+            // Validate the operating account exists
+            if (!$operatingAccountId || !OperatingAccount::where('id', $operatingAccountId)->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Operating account not found.',
+                ], 422);
+            }
+
+            $operatingAccount = OperatingAccount::findOrFail($operatingAccountId);
+            $uploadedCollections = [];
+            
+            // Get all collections from FormData
+            $collectionsData = [];
+            $index = 0;
+            while ($request->has("collections.$index.collection_amount")) {
+                $collectionsData[] = [
+                    'collection_amount' => $request->input("collections.$index.collection_amount"),
+                    'deposit_slip' => $request->file("collections.$index.deposit_slip"),
+                ];
+                $index++;
+            }
+
+            if (empty($collectionsData)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No collections provided.',
+                ], 422);
+            }
+
+            // Process each collection
+            foreach ($collectionsData as $collectionData) {
+                $amount = (float)$collectionData['collection_amount'];
+                
+                // Validate amount
+                if ($amount <= 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Each collection amount must be greater than 0.',
+                    ], 422);
+                }
+
+                $filePath = null;
+
+                // Store the deposit slip file if present
+                if ($collectionData['deposit_slip']) {
+                    $file = $collectionData['deposit_slip'];
+                    
+                    // Validate file
+                    if (!$file->isValid()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'One of the uploaded files is invalid.',
+                        ], 422);
+                    }
+
+                    // Store file
+                    $filePath = $file->store('deposit-slips/' . $operatingAccount->id, 'public');
+                }
+
+                // Create collection record with status = pending
+                $collection = Collection::create([
+                    'operating_account_id' => $operatingAccount->id,
+                    'collection_amount' => $amount,
+                    'deposit_slip' => $filePath,
+                    'status' => 'pending',
+                ]);
+
+                $uploadedCollections[] = $collection;
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Collections saved successfully.',
+                'collections' => $uploadedCollections,
+            ], 201);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error saving collections: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

@@ -15,4 +15,12 @@ class OperatingAccount extends Model
         'beginning_balance',
         'maturity_date',
     ];
+
+    /**
+     * Get the collections for this operating account.
+     */
+    public function collections()
+    {
+        return $this->hasMany(Collection::class);
+    }
 }

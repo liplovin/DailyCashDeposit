@@ -1,7 +1,7 @@
 <script setup>
 import { X } from 'lucide-vue-next';
-import { router } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { router, usePage } from '@inertiajs/vue3';
+import { ref, computed, watch, nextTick } from 'vue';
 import Swal from 'sweetalert2';
 import { Upload, Plus } from 'lucide-vue-next';
 
@@ -123,60 +123,121 @@ const getTotalAmount = () => {
 
 const handleSubmit = () => {
     errors.value = {};
+    let hasErrors = false;
     
     // Validation for all collections
     form.value.collections.forEach((collection, index) => {
-        if (!errors.value[index]) errors.value[index] = {};
+        if (!errors.value[index]) {
+            errors.value[index] = {};
+        }
         
         const cleanAmount = collection.collection_amount.toString().replace(/,/g, '');
         
-        if (!cleanAmount) {
+        if (!cleanAmount || cleanAmount === '') {
             errors.value[index].collection_amount = 'Collection amount is required';
+            hasErrors = true;
         } else if (isNaN(cleanAmount) || parseFloat(cleanAmount) <= 0) {
             errors.value[index].collection_amount = 'Collection amount must be a valid positive number';
+            hasErrors = true;
         }
         
         if (!collection.deposit_slip) {
             errors.value[index].deposit_slip = 'Deposit slip is required';
+            hasErrors = true;
         }
     });
     
-    if (Object.keys(errors.value).length === 0) {
-        isSubmitting.value = true;
-        
-        // Create FormData to handle multiple file uploads
-        const formData = new FormData();
-        
-        form.value.collections.forEach((collection, index) => {
-            const cleanAmount = collection.collection_amount.toString().replace(/,/g, '');
-            formData.append(`collections[${index}][collection_amount]`, cleanAmount);
-            formData.append(`collections[${index}][deposit_slip]`, collection.deposit_slip);
-        });
-        
-        router.post(`/treasury/operating-accounts/${selectedAccount.value.id}/collection`, formData, {
-            onSuccess: () => {
-                Swal.fire({
-                    title: 'Success!',
-                    text: 'Collection has been added successfully.',
-                    icon: 'success',
-                    confirmButtonColor: '#F59E0B',
-                    timer: 2000,
-                    timerProgressBar: true
+    if (hasErrors) {
+        // Build detailed error message
+        let errorMessages = [];
+        Object.entries(errors.value).forEach(([index, indexErrors]) => {
+            if (Object.keys(indexErrors).length > 0) {
+                let collectionErrors = [];
+                Object.entries(indexErrors).forEach(([field, message]) => {
+                    if (message) {
+                        collectionErrors.push(`• ${message}`);
+                    }
                 });
-                closeModal();
-                isSubmitting.value = false;
-            },
-            onError: (errors) => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Failed to add collection. Please try again.',
-                    icon: 'error',
-                    confirmButtonColor: '#F59E0B'
-                });
-                isSubmitting.value = false;
+                if (collectionErrors.length > 0) {
+                    errorMessages.push(`\n🔴 Collection ${parseInt(index) + 1}:\n${collectionErrors.join('\n')}`);
+                }
             }
         });
+        
+        Swal.fire({
+            title: 'Validation Error!',
+            html: `<div style="text-align: left; font-size: 14px;">Please fix the following errors:${errorMessages.join('')}</div>`,
+            icon: 'warning',
+            confirmButtonColor: '#F59E0B'
+        });
+        return;
     }
+    
+    isSubmitting.value = true;
+    
+    // Create FormData to handle multiple file uploads
+    const formData = new FormData();
+    formData.append('operating_account_id', selectedAccount.value.id);
+    
+    form.value.collections.forEach((collection, index) => {
+        const cleanAmount = collection.collection_amount.toString().replace(/,/g, '');
+        formData.append(`collections[${index}][collection_amount]`, cleanAmount);
+        formData.append(`collections[${index}][deposit_slip]`, collection.deposit_slip);
+    });
+    
+    const page = usePage();
+    const csrfToken = page.props.csrf_token || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+    if (!csrfToken) {
+        Swal.fire({
+            title: 'Error!',
+            text: 'CSRF token not found. Please refresh the page and try again.',
+            icon: 'error',
+            confirmButtonColor: '#F59E0B'
+        });
+        isSubmitting.value = false;
+        return;
+    }
+    
+    fetch(`/treasury/operating-accounts/${selectedAccount.value.id}/collection`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+        },
+        body: formData,
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                title: 'Success!',
+                text: 'Collections saved successfully.',
+                icon: 'success',
+                confirmButtonColor: '#F59E0B',
+                timer: 2000,
+                timerProgressBar: true
+            });
+            closeModal();
+            window.location.reload();
+        } else {
+            Swal.fire({
+                title: 'Error!',
+                text: data.message || 'Failed to save collections.',
+                icon: 'error',
+                confirmButtonColor: '#F59E0B'
+            });
+        }
+        isSubmitting.value = false;
+    })
+    .catch(error => {
+        Swal.fire({
+            title: 'Error!',
+            text: error.message || 'Failed to save collections. Please try again.',
+            icon: 'error',
+            confirmButtonColor: '#F59E0B'
+        });
+        isSubmitting.value = false;
+    });
 };
 
 const closeModal = () => {
@@ -193,6 +254,18 @@ const closeModal = () => {
     errors.value = {};
     emit('close');
 };
+
+// Scroll to top when account is selected
+watch(() => selectedAccountId.value, (newValue) => {
+    if (newValue) {
+        nextTick(() => {
+            const formContainer = document.querySelector('.form-collections-container');
+            if (formContainer) {
+                formContainer.scrollTop = 0;
+            }
+        });
+    }
+});
 </script>
 
 <template>
@@ -243,15 +316,15 @@ const closeModal = () => {
             <!-- Body -->
             <div v-else class="flex flex-col lg:flex-row gap-0 flex-1 min-h-0 overflow-hidden">
                 <!-- Left Column - Form -->
-                <div class="w-full lg:w-5/12 space-y-4 px-5 py-5 overflow-y-auto border-b lg:border-b-0 lg:border-r border-gray-200 bg-gray-50">
+                <div class="form-collections-container w-full lg:w-5/12 space-y-4 px-5 py-5 overflow-y-auto border-b lg:border-b-0 lg:border-r border-gray-200 bg-gray-50 flex-1 min-h-0">
                     <!-- Account Name Display -->
-                    <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-200 flex-shrink-0">
                         <p class="text-xs text-gray-600 font-semibold mb-0.5">Operating Account</p>
                         <p class="text-sm font-bold text-gray-900">{{ selectedAccount?.operating_account_name }}</p>
                     </div>
 
                     <!-- Collections List -->
-                    <div class="space-y-4">
+                    <div class="space-y-4 min-w-0">
                         <div v-for="(collection, index) in form.collections" :key="index" class="p-4 bg-white rounded-lg border border-gray-200 hover:border-yellow-400 transition-colors shadow-sm">
                             <!-- Collection Header -->
                             <div class="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
