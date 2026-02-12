@@ -29,6 +29,20 @@ class DatabaseSeeder extends Seeder
             'role' => 'treasury',
         ]);
 
+        // Create treasury2 user
+        User::factory()->create([
+            'name' => 'Treasury 2 User',
+            'email' => 'treasury2@intra.com',
+            'role' => 'treasury2',
+        ]);
+
+        // Create treasury3 user
+        User::factory()->create([
+            'name' => 'Treasury 3 User',
+            'email' => 'treasury3@intra.com',
+            'role' => 'treasury3',
+        ]);
+
         // Create accounting user
         User::factory()->create([
             'name' => 'Accounting User',
