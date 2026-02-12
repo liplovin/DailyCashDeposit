@@ -24,6 +24,7 @@ Route::get('/dashboard', function () {
     $component = match($user->role) {
         'admin' => 'Admin/Dashboard',
         'treasury' => 'Treasury/Dashboard',
+        'treasury2' => 'Treasury2/Dashboard',
         'accounting' => 'Accounting/Dashboard',
         default => 'Admin/Dashboard'
     };

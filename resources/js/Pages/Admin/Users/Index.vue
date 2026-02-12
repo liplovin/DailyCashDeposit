@@ -63,6 +63,7 @@ const getRoleBadgeClass = (role) => {
     const classes = {
         'admin': 'bg-red-100 text-red-800',
         'treasury': 'bg-blue-100 text-blue-800',
+        'treasury2': 'bg-cyan-100 text-cyan-800',
         'accounting': 'bg-purple-100 text-purple-800'
     };
     return classes[role] || 'bg-gray-100 text-gray-800';
@@ -72,6 +73,7 @@ const getRoleColor = (role) => {
     const colors = {
         'admin': '#DC2626',
         'treasury': '#2563EB',
+        'treasury2': '#0891B2',
         'accounting': '#A855F7'
     };
     return colors[role] || '#6B7280';

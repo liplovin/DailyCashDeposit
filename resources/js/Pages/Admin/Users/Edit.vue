@@ -31,6 +31,7 @@ const isSubmitting = ref(false);
 const roles = [
     { value: 'admin', label: 'Admin' },
     { value: 'treasury', label: 'Treasury' },
+    { value: 'treasury2', label: 'Treasury 2' },
     { value: 'accounting', label: 'Accounting' }
 ];
 
