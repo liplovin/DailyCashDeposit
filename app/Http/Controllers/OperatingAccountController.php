@@ -13,8 +13,16 @@ class OperatingAccountController extends Controller
      */
     public function index()
     {
+        $user = auth()->user();
         $operatingAccounts = OperatingAccount::all();
-        return Inertia::render('Treasury/Operating Accounts/Index', [
+        
+        // Render based on user role
+        $component = match($user->role) {
+            'treasury3' => 'Treasury3/OperatingAccount/Index',
+            default => 'Treasury/Operating Accounts/Index'
+        };
+        
+        return Inertia::render($component, [
             'operatingAccounts' => $operatingAccounts,
         ]);
     }

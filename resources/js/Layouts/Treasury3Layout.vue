@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
-import { Home, LogOut, Menu } from 'lucide-vue-next';
+import { Home, LogOut, Menu, Wallet } from 'lucide-vue-next';
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
@@ -13,7 +13,8 @@ const currentRoute = computed(() => page.url);
 
 const isRouteActive = (routeName) => {
     const routeList = {
-        'dashboard': '/dashboard'
+        'dashboard': '/dashboard',
+        'operating-accounts': '/treasury/operating-accounts'
     };
     
     const routePath = routeList[routeName];
@@ -39,7 +40,8 @@ const handleMenuClick = (item) => {
         });
     } else if (item.route) {
         const routeUrls = {
-            'dashboard': '/dashboard'
+            'dashboard': '/dashboard',
+            'operating-accounts': '/treasury/operating-accounts'
         };
         router.get(routeUrls[item.route]);
     }
@@ -50,6 +52,11 @@ const menuItems = [
         name: 'Dashboard',
         component: Home,
         route: 'dashboard'
+    },
+    {
+        name: 'Operating Accounts',
+        component: Wallet,
+        route: 'operating-accounts'
     }
 ];
 </script>

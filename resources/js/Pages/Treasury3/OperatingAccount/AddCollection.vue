@@ -1,0 +1,413 @@
+<script setup>
+import { X } from 'lucide-vue-next';
+import { router } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+import Swal from 'sweetalert2';
+import { Upload, Plus } from 'lucide-vue-next';
+
+const props = defineProps({
+    isOpen: {
+        type: Boolean,
+        default: false
+    },
+    account: {
+        type: Object,
+        default: null
+    },
+    operatingAccounts: {
+        type: Array,
+        default: () => []
+    }
+});
+
+const emit = defineEmits(['close']);
+
+const selectedAccountId = ref(null);
+
+const selectedAccount = computed(() => {
+    if (!selectedAccountId.value) return null;
+    return props.operatingAccounts.find(acc => acc.id === parseInt(selectedAccountId.value));
+});
+
+const form = ref({
+    collections: [
+        {
+            collection_amount: '',
+            deposit_slip: null
+        }
+    ]
+});
+
+const errors = ref({});
+const isSubmitting = ref(false);
+const depositSlipFileNames = ref(['']);
+
+const handleAmountInput = (event, index) => {
+    // Remove all non-numeric characters except decimal point
+    let value = event.target.value.replace(/[^\d.]/g, '');
+    
+    // Prevent multiple decimal points
+    const parts = value.split('.');
+    if (parts.length > 2) {
+        value = parts[0] + '.' + parts.slice(1).join('');
+    }
+    
+    if (value === '' || value === '.') {
+        form.value.collections[index].collection_amount = '';
+        return;
+    }
+    
+    // Format with commas in real-time
+    const parts2 = value.split('.');
+    const integerPart = parts2[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    const decimalPart = parts2[1] ? '.' + parts2[1] : '';
+    form.value.collections[index].collection_amount = integerPart + decimalPart;
+};
+
+const handleFileUpload = (event, index) => {
+    const file = event.target.files[0];
+    if (file) {
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
+        if (!validTypes.includes(file.type)) {
+            if (!errors.value[index]) errors.value[index] = {};
+            errors.value[index].deposit_slip = 'Only images (JPG, PNG, GIF) and PDF files are allowed';
+            form.value.collections[index].deposit_slip = null;
+            depositSlipFileNames.value[index] = '';
+            return;
+        }
+        
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            if (!errors.value[index]) errors.value[index] = {};
+            errors.value[index].deposit_slip = 'File size must be less than 5MB';
+            form.value.collections[index].deposit_slip = null;
+            depositSlipFileNames.value[index] = '';
+            return;
+        }
+        
+        form.value.collections[index].deposit_slip = file;
+        depositSlipFileNames.value[index] = file.name;
+        if (!errors.value[index]) errors.value[index] = {};
+        errors.value[index].deposit_slip = '';
+    }
+};
+
+const removeFile = (index) => {
+    form.value.collections[index].deposit_slip = null;
+    depositSlipFileNames.value[index] = '';
+    if (!errors.value[index]) errors.value[index] = {};
+    errors.value[index].deposit_slip = '';
+};
+
+const addCollection = () => {
+    form.value.collections.push({
+        collection_amount: '',
+        deposit_slip: null
+    });
+    depositSlipFileNames.value.push('');
+};
+
+const removeCollection = (index) => {
+    form.value.collections.splice(index, 1);
+    depositSlipFileNames.value.splice(index, 1);
+};
+
+const getTotalAmount = () => {
+    return form.value.collections.reduce((total, collection) => {
+        const cleanAmount = collection.collection_amount.toString().replace(/,/g, '');
+        const amount = parseFloat(cleanAmount) || 0;
+        return total + amount;
+    }, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+const handleSubmit = () => {
+    errors.value = {};
+    
+    // Validation for all collections
+    form.value.collections.forEach((collection, index) => {
+        if (!errors.value[index]) errors.value[index] = {};
+        
+        const cleanAmount = collection.collection_amount.toString().replace(/,/g, '');
+        
+        if (!cleanAmount) {
+            errors.value[index].collection_amount = 'Collection amount is required';
+        } else if (isNaN(cleanAmount) || parseFloat(cleanAmount) <= 0) {
+            errors.value[index].collection_amount = 'Collection amount must be a valid positive number';
+        }
+        
+        if (!collection.deposit_slip) {
+            errors.value[index].deposit_slip = 'Deposit slip is required';
+        }
+    });
+    
+    if (Object.keys(errors.value).length === 0) {
+        isSubmitting.value = true;
+        
+        // Create FormData to handle multiple file uploads
+        const formData = new FormData();
+        
+        form.value.collections.forEach((collection, index) => {
+            const cleanAmount = collection.collection_amount.toString().replace(/,/g, '');
+            formData.append(`collections[${index}][collection_amount]`, cleanAmount);
+            formData.append(`collections[${index}][deposit_slip]`, collection.deposit_slip);
+        });
+        
+        router.post(`/treasury/operating-accounts/${selectedAccount.value.id}/collection`, formData, {
+            onSuccess: () => {
+                Swal.fire({
+                    title: 'Success!',
+                    text: 'Collection has been added successfully.',
+                    icon: 'success',
+                    confirmButtonColor: '#F59E0B',
+                    timer: 2000,
+                    timerProgressBar: true
+                });
+                closeModal();
+                isSubmitting.value = false;
+            },
+            onError: (errors) => {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to add collection. Please try again.',
+                    icon: 'error',
+                    confirmButtonColor: '#F59E0B'
+                });
+                isSubmitting.value = false;
+            }
+        });
+    }
+};
+
+const closeModal = () => {
+    selectedAccountId.value = null;
+    form.value = {
+        collections: [
+            {
+                collection_amount: '',
+                deposit_slip: null
+            }
+        ]
+    };
+    depositSlipFileNames.value = [''];
+    errors.value = {};
+    emit('close');
+};
+</script>
+
+<template>
+    <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center">
+        <!-- Backdrop -->
+        <div
+            class="absolute inset-0 bg-black/50 transition-opacity duration-300"
+            @click="closeModal"
+        ></div>
+
+        <!-- Modal -->
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full mx-3 md:mx-4 transform transition-all duration-300 max-h-[calc(100vh-2rem)] md:max-h-[90vh] flex flex-col max-w-lg md:max-w-3xl lg:max-w-5xl overflow-hidden">
+            <!-- Header with Account Selector -->
+            <div class="flex flex-col gap-4 px-6 py-5 border-b border-gray-200 bg-white flex-shrink-0">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-bold text-gray-900">Add Collections</h2>
+                    <button
+                        @click="closeModal"
+                        class="text-gray-400 hover:text-gray-600 p-1.5 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                    >
+                        <X class="h-6 w-6" />
+                    </button>
+                </div>
+                
+                <!-- Account Selector Dropdown -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Select Operating Account</label>
+                    <select
+                        v-model="selectedAccountId"
+                        class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all bg-white text-gray-900 font-medium"
+                    >
+                        <option value="">-- Choose Account --</option>
+                        <option v-for="account in operatingAccounts" :key="account.id" :value="account.id">
+                            {{ account.operating_account_name }}
+                        </option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div v-if="!selectedAccount" class="flex-1 flex items-center justify-center px-6 py-12">
+                <div class="text-center">
+                    <div class="text-6xl mb-4">📋</div>
+                    <p class="text-lg text-gray-600">Please select an operating account to get started</p>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div v-else class="flex flex-col lg:flex-row gap-0 flex-1 min-h-0 overflow-hidden">
+                <!-- Left Column - Form -->
+                <div class="w-full lg:w-5/12 space-y-4 px-5 py-5 overflow-y-auto border-b lg:border-b-0 lg:border-r border-gray-200 bg-gray-50">
+                    <!-- Account Name Display -->
+                    <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <p class="text-xs text-gray-600 font-semibold mb-0.5">Operating Account</p>
+                        <p class="text-sm font-bold text-gray-900">{{ selectedAccount?.operating_account_name }}</p>
+                    </div>
+
+                    <!-- Collections List -->
+                    <div class="space-y-4">
+                        <div v-for="(collection, index) in form.collections" :key="index" class="p-4 bg-white rounded-lg border border-gray-200 hover:border-yellow-400 transition-colors shadow-sm">
+                            <!-- Collection Header -->
+                            <div class="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
+                                <h4 class="text-sm font-bold text-gray-900">Collection {{ index + 1 }}</h4>
+                                <button
+                                    v-if="form.collections.length > 1"
+                                    @click="removeCollection(index)"
+                                    class="px-2.5 py-1 rounded-md bg-red-100 text-red-700 hover:bg-red-200 text-xs font-semibold transition-colors"
+                                >
+                                    Remove
+                                </button>
+                            </div>
+
+                            <!-- Amount and Slip Stacked -->
+                            <div class="space-y-3">
+                                <!-- Collection Amount -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                        Amount (₱) <span class="text-red-600">*</span>
+                                    </label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm font-medium">₱</span>
+                                        <input
+                                            v-model="collection.collection_amount"
+                                            @input="handleAmountInput($event, index)"
+                                            type="text"
+                                            inputmode="numeric"
+                                            :placeholder="'0.00'"
+                                            class="w-full pl-7 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all bg-white"
+                                        />
+                                    </div>
+                                    <p v-if="errors[index]?.collection_amount" class="mt-1 text-xs text-red-600">
+                                        {{ errors[index].collection_amount }}
+                                    </p>
+                                </div>
+
+                                <!-- Deposit Slip Upload -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                        Deposit Slip <span class="text-red-600">*</span>
+                                    </label>
+                                    
+                                    <div v-if="!depositSlipFileNames[index]" class="relative">
+                                        <input
+                                            @change="handleFileUpload($event, index)"
+                                            type="file"
+                                            accept="image/*,.pdf"
+                                            class="hidden"
+                                            :id="`deposit_slip_${index}`"
+                                        />
+                                        <label
+                                            :for="`deposit_slip_${index}`"
+                                            class="flex items-center justify-center gap-2 px-3 py-3 border-2 border-dashed border-yellow-300 rounded-lg bg-yellow-50 hover:bg-yellow-100 cursor-pointer transition-colors"
+                                        >
+                                            <Upload class="h-4 w-4 text-yellow-600" />
+                                            <span class="text-sm font-medium text-yellow-900">Click to upload</span>
+                                        </label>
+                                    </div>
+
+                                    <div v-else class="flex items-center gap-2 p-3 bg-green-50 rounded-lg border border-green-200">
+                                        <div class="flex-shrink-0 w-5 h-5 rounded-full bg-green-200 flex items-center justify-center">
+                                            <span class="text-xs font-bold text-green-700">✓</span>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-medium text-gray-900 truncate">{{ depositSlipFileNames[index] }}</p>
+                                        </div>
+                                        <button
+                                            @click="removeFile(index)"
+                                            class="flex-shrink-0 text-gray-400 hover:text-gray-600"
+                                        >
+                                            <X class="h-4 w-4" />
+                                        </button>
+                                    </div>
+
+                                    <p v-if="errors[index]?.deposit_slip" class="mt-1 text-xs text-red-600">
+                                        {{ errors[index].deposit_slip }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add Another Collection Button -->
+                    <button
+                        @click="addCollection"
+                        class="w-full px-4 py-2.5 rounded-lg border-2 border-dashed border-yellow-300 text-yellow-700 hover:bg-yellow-50 transition-colors font-semibold text-sm flex items-center justify-center gap-2"
+                    >
+                        <Plus class="h-4 w-4" />
+                        Add Another Collection
+                    </button>
+                </div>
+
+                <!-- Right Column - Receipt/Summary -->
+                <div class="w-full lg:w-7/12 bg-gradient-to-b from-amber-50 to-yellow-50 px-5 py-5 flex flex-col border-t lg:border-t-0 border-gray-200 overflow-y-auto hidden lg:flex">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4 uppercase tracking-wide">Summary</h3>
+                    
+                    <!-- Collections List -->
+                    <div class="flex-1 space-y-3 mb-4 min-h-0 overflow-y-auto">
+                        <div v-if="form.collections.length === 0" class="text-sm text-gray-500 text-center py-16 flex items-center justify-center h-full">
+                            No collections added yet
+                        </div>
+                        <div v-for="(collection, index) in form.collections" :key="index" class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+                            <div class="text-sm font-bold text-gray-900 mb-3 pb-2 border-b border-gray-100">Collection {{ index + 1 }}</div>
+                            <div class="space-y-2.5 text-sm">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700">Amount:</span>
+                                    <span class="font-bold text-lg text-yellow-600">₱{{ collection.collection_amount || '0.00' }}</span>
+                                </div>
+                                <div class="flex justify-between items-center pt-2 border-t border-gray-100">
+                                    <span class="text-gray-700">Slip:</span>
+                                    <span v-if="depositSlipFileNames[index]" class="text-green-600 font-semibold text-xs bg-green-100 px-2 py-0.5 rounded-full">✓ Attached</span>
+                                    <span v-else class="text-red-600 font-semibold text-xs bg-red-100 px-2 py-0.5 rounded-full">Missing</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="border-t-2 border-yellow-300 my-3"></div>
+
+                    <!-- Total -->
+                    <div class="bg-gradient-to-br from-yellow-100 to-amber-100 rounded-lg p-4 border-2 border-yellow-400 shadow-md">
+                        <p class="text-xs text-gray-700 mb-1 font-semibold uppercase tracking-wide">Total Amount</p>
+                        <p class="text-4xl font-black text-yellow-700 mb-2">
+                            ₱{{ getTotalAmount() }}
+                        </p>
+                        <p class="text-sm text-yellow-800 font-semibold">{{ form.collections.length }} collection(s)</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex gap-4 px-6 py-4 border-t border-gray-200 bg-white flex-shrink-0">
+                <button
+                    @click="closeModal"
+                    class="flex-1 px-4 py-3 rounded-lg border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
+                >
+                    Cancel
+                </button>
+                <button
+                    @click="handleSubmit"
+                    :disabled="isSubmitting"
+                    class="flex-1 px-4 py-3 rounded-lg bg-gradient-to-r from-yellow-500 to-amber-500 text-white font-semibold hover:from-yellow-600 hover:to-amber-600 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all duration-200 shadow-lg"
+                >
+                    <span v-if="!isSubmitting" class="flex items-center justify-center gap-2">
+                        <span>Add Collections</span>
+                    </span>
+                    <span v-else class="flex items-center justify-center gap-2">
+                        <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Adding...</span>
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+</template>

@@ -195,19 +195,24 @@ const handleBalanceInput = (event) => {
     // Remove all non-digit and non-decimal characters
     value = value.replace(/[^\d.]/g, '');
     
-    // Split by decimal point - only keep first decimal
-    const dotIndex = value.indexOf('.');
-    if (dotIndex !== -1) {
-        // Has a decimal point
-        const integerPart = value.substring(0, dotIndex);
-        const decimalPart = value.substring(dotIndex + 1, dotIndex + 3); // Only 2 decimal places
+    // Prevent multiple decimal points
+    const parts = value.split('.');
+    if (parts.length > 2) {
+        value = parts[0] + '.' + parts.slice(1).join('');
+    }
+    
+    // Limit decimal places to 2
+    const decimalIndex = value.indexOf('.');
+    if (decimalIndex !== -1) {
+        const integerPart = value.substring(0, decimalIndex);
+        const decimalPart = value.substring(decimalIndex + 1, decimalIndex + 3);
         value = integerPart + '.' + decimalPart;
     }
     
     // Split into parts for formatting
-    const parts = value.split('.');
-    const integerPart = parts[0] || '0';
-    const decimalPart = parts[1] || '';
+    const parts2 = value.split('.');
+    const integerPart = parts2[0] || '0';
+    const decimalPart = parts2[1] || '';
     
     // Add commas to integer part
     const withCommas = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -217,6 +222,23 @@ const handleBalanceInput = (event) => {
         form.value.beginning_balance = withCommas + '.' + decimalPart;
     } else {
         form.value.beginning_balance = withCommas;
+    }
+};
+
+const handleBalanceKeydown = (event) => {
+    const key = event.key;
+    const isNumber = /[0-9]/.test(key);
+    const isDecimal = key === '.';
+    const isBackspace = key === 'Backspace';
+    const isDelete = key === 'Delete';
+    const isTab = key === 'Tab';
+    const isArrow = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(key);
+    const isCtrlCommand = event.ctrlKey || event.metaKey;
+    
+    // Allow: numbers, decimal, backspace, delete, tab, arrows, and Ctrl+C/V/X
+    if (!((isNumber || isDecimal || isBackspace || isDelete || isTab || isArrow) || 
+          (isCtrlCommand && ['c', 'v', 'x', 'a'].includes(key.toLowerCase())))) {
+        event.preventDefault();
     }
 };
 </script>
@@ -298,7 +320,9 @@ const handleBalanceInput = (event) => {
                             <input
                                 :value="form.beginning_balance"
                                 @input="handleBalanceInput"
+                                @keydown="handleBalanceKeydown"
                                 type="text"
+                                inputmode="numeric"
                                 placeholder="0"
                                 class="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
                                 :class="{ 'border-red-500 focus:ring-red-500': errors.beginning_balance }"

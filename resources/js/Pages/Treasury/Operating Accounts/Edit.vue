@@ -171,6 +171,23 @@ const handleBalanceInput = (event) => {
     }
 };
 
+const handleBalanceKeydown = (event) => {
+    const key = event.key;
+    const isNumber = /[0-9]/.test(key);
+    const isDecimal = key === '.';
+    const isBackspace = key === 'Backspace';
+    const isDelete = key === 'Delete';
+    const isTab = key === 'Tab';
+    const isArrow = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(key);
+    const isCtrlCommand = event.ctrlKey || event.metaKey;
+    
+    // Allow: numbers, decimal, backspace, delete, tab, arrows, and Ctrl+C/V/X
+    if (!((isNumber || isDecimal || isBackspace || isDelete || isTab || isArrow) || 
+          (isCtrlCommand && ['c', 'v', 'x', 'a'].includes(key.toLowerCase())))) {
+        event.preventDefault();
+    }
+};
+
 const convertToDateInput = (dateString) => {
     if (!dateString) return '';
     const parts = dateString.split('/');
@@ -292,7 +309,9 @@ const handleDateInput = (event) => {
                             <input
                                 :value="form.beginning_balance"
                                 @input="handleBalanceInput"
+                                @keydown="handleBalanceKeydown"
                                 type="text"
+                                inputmode="numeric"
                                 placeholder="0"
                                 class="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
                                 :class="{ 'border-red-500 focus:ring-red-500': errors.beginning_balance }"
