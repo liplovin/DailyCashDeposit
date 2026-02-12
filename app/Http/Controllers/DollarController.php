@@ -22,8 +22,10 @@ class DollarController extends Controller
             'dollar_name' => 'required|string|max:255',
             'account_number' => 'required|string|unique:dollars,account_number',
             'beginning_balance' => 'required|numeric|min:0',
+            'maturity_date' => 'required|date_format:m/d/Y',
         ]);
 
+        $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
         Dollar::create($validated);
 
         return redirect('/treasury/dollar')->with('success', 'Dollar created successfully.');
@@ -37,8 +39,10 @@ class DollarController extends Controller
             'dollar_name' => 'required|string|max:255',
             'account_number' => 'required|string|unique:dollars,account_number,' . $id,
             'beginning_balance' => 'required|numeric|min:0',
+            'maturity_date' => 'required|date_format:m/d/Y',
         ]);
 
+        $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
         $dollar->update($validated);
 
         return redirect('/treasury/dollar')->with('success', 'Dollar updated successfully.');
@@ -50,5 +54,17 @@ class DollarController extends Controller
         $dollar->delete();
 
         return redirect('/treasury/dollar')->with('success', 'Dollar deleted successfully.');
+    }
+
+    private function convertDateFormat($dateString)
+    {
+        $parts = explode('/', $dateString);
+        if (count($parts) === 3) {
+            $month = $parts[0];
+            $day = $parts[1];
+            $year = $parts[2];
+            return $year . '-' . $month . '-' . $day;
+        }
+        return $dateString;
     }
 }

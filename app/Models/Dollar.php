@@ -13,5 +13,6 @@ class Dollar extends Model
         'dollar_name',
         'account_number',
         'beginning_balance',
+        'maturity_date',
     ];
 }

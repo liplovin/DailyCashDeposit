@@ -13,5 +13,6 @@ class CorporateBond extends Model
         'corporate_bond_name',
         'account_number',
         'beginning_balance',
+        'maturity_date',
     ];
 }

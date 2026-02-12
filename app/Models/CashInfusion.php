@@ -13,5 +13,6 @@ class CashInfusion extends Model
         'cash_infusion_name',
         'account_number',
         'beginning_balance',
+        'maturity_date',
     ];
 }

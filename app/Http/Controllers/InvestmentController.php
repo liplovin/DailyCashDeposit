@@ -22,8 +22,10 @@ class InvestmentController extends Controller
             'investment_name' => 'required|string|max:255',
             'account_number' => 'required|string|unique:investments,account_number',
             'beginning_balance' => 'required|numeric|min:0',
+            'maturity_date' => 'required|date_format:m/d/Y',
         ]);
 
+        $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
         Investment::create($validated);
 
         return redirect('/treasury/investment')->with('success', 'Investment created successfully.');
@@ -37,8 +39,10 @@ class InvestmentController extends Controller
             'investment_name' => 'required|string|max:255',
             'account_number' => 'required|string|unique:investments,account_number,' . $id,
             'beginning_balance' => 'required|numeric|min:0',
+            'maturity_date' => 'required|date_format:m/d/Y',
         ]);
 
+        $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
         $investment->update($validated);
 
         return redirect('/treasury/investment')->with('success', 'Investment updated successfully.');
@@ -50,5 +54,11 @@ class InvestmentController extends Controller
         $investment->delete();
 
         return redirect('/treasury/investment')->with('success', 'Investment deleted successfully.');
+    }
+
+    private function convertDateFormat($dateString)
+    {
+        $parts = explode('/', $dateString);
+        return $parts[2] . '-' . $parts[0] . '-' . $parts[1];
     }
 }

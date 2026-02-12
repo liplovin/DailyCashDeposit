@@ -21,6 +21,7 @@ const form = ref({
     dollar_name: '',
     account_number: '',
     beginning_balance: '',
+    maturity_date: '',
     customDollar: ''
 });
 
@@ -61,6 +62,9 @@ const handleSubmit = () => {
     if (isNaN(balanceValue) || balanceValue < 0) {
         errors.value.beginning_balance = 'Beginning balance must be a valid positive number';
     }
+    if (!form.value.maturity_date.trim()) {
+        errors.value.maturity_date = 'Maturity date is required';
+    }
     
     if (Object.keys(errors.value).length === 0) {
         isSubmitting.value = true;
@@ -68,7 +72,8 @@ const handleSubmit = () => {
         const submitData = {
             dollar_name: dollarValue,
             account_number: form.value.account_number,
-            beginning_balance: balanceValue.toFixed(2)
+            beginning_balance: balanceValue.toFixed(2),
+            maturity_date: form.value.maturity_date
         };
         router.post('/treasury/dollar', submitData, {
             onSuccess: () => {
@@ -97,7 +102,7 @@ const handleSubmit = () => {
 };
 
 const closeModal = () => {
-    form.value = { dollar_name: '', account_number: '', beginning_balance: '', customDollar: '' };
+    form.value = { dollar_name: '', account_number: '', beginning_balance: '', maturity_date: '', customDollar: '' };
     errors.value = {};
     emit('close');
 };
@@ -131,6 +136,53 @@ const handleBalanceInput = (event) => {
     } else {
         form.value.beginning_balance = withCommas;
     }
+};
+
+const convertToDateInput = (dateString) => {
+    if (!dateString) return '';
+    // Convert mm/dd/yyyy to YYYY-MM-DD format for date input
+    const parts = dateString.split('/');
+    if (parts.length !== 3) return '';
+    
+    const month = parts[0];
+    const day = parts[1];
+    const year = parts[2];
+    
+    return `${year}-${month}-${day}`;
+};
+
+const convertFromDateInput = (dateString) => {
+    if (!dateString) return '';
+    // Convert YYYY-MM-DD to mm/dd/yyyy format
+    const parts = dateString.split('-');
+    if (parts.length !== 3) return '';
+    
+    const year = parts[0];
+    const month = parts[1];
+    const day = parts[2];
+    
+    return `${month}/${day}/${year}`;
+};
+
+const handleNativeDateChange = (event) => {
+    form.value.maturity_date = convertFromDateInput(event.target.value);
+};
+
+const handleDateInput = (event) => {
+    let value = event.target.value;
+    
+    // Remove all non-digit characters
+    value = value.replace(/\D/g, '');
+    
+    // Format as mm/dd/yyyy
+    if (value.length >= 2) {
+        value = value.substring(0, 2) + '/' + value.substring(2);
+    }
+    if (value.length >= 4) {
+        value = value.substring(0, 5) + '/' + value.substring(5, 9);
+    }
+    
+    form.value.maturity_date = value;
 };
 </script>
 
@@ -217,6 +269,34 @@ const handleBalanceInput = (event) => {
                             />
                         </div>
                         <p v-if="errors.beginning_balance" class="text-red-500 text-sm mt-1">{{ errors.beginning_balance }}</p>
+                    </div>
+
+                    <!-- Maturity Date Field -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">
+                            Maturity Date <span class="text-red-500">*</span>
+                        </label>
+                        <div class="flex space-x-2">
+                            <!-- Date Picker -->
+                            <input
+                                :value="convertToDateInput(form.maturity_date)"
+                                @change="handleNativeDateChange"
+                                type="date"
+                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900"
+                                :class="{ 'border-red-500 focus:ring-red-500': errors.maturity_date }"
+                            />
+                            <!-- Text Input -->
+                            <input
+                                :value="form.maturity_date"
+                                @input="handleDateInput"
+                                type="text"
+                                placeholder="mm/dd/yyyy"
+                                maxlength="10"
+                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
+                                :class="{ 'border-red-500 focus:ring-red-500': errors.maturity_date }"
+                            />
+                        </div>
+                        <p v-if="errors.maturity_date" class="text-red-500 text-sm mt-1">{{ errors.maturity_date }}</p>
                     </div>
 
                     <!-- Modal Actions -->
