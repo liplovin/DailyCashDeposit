@@ -22,7 +22,7 @@ class TimeDepositController extends Controller
             'time_deposit_name' => 'required|string|max:255',
             'account_number' => 'required|string|unique:time_deposits,account_number',
             'beginning_balance' => 'required|numeric|min:0',
-            'maturity_date' => 'required|date_format:m/d/y',
+            'maturity_date' => 'required|date_format:m/d/Y',
         ]);
 
         // Convert mm/dd/yy to Y-m-d format for storage
@@ -49,7 +49,7 @@ class TimeDepositController extends Controller
             'time_deposit_name' => 'required|string|max:255',
             'account_number' => 'required|string|unique:time_deposits,account_number,' . $id,
             'beginning_balance' => 'required|numeric|min:0',
-            'maturity_date' => 'required|date_format:m/d/y',
+            'maturity_date' => 'required|date_format:m/d/Y',
         ]);
 
         // Convert mm/dd/yy to Y-m-d format for storage
@@ -62,17 +62,12 @@ class TimeDepositController extends Controller
 
     private function convertDateFormat($dateString)
     {
-        // Convert mm/dd/yy to Y-m-d
+        // Convert mm/dd/yyyy to Y-m-d
         $parts = explode('/', $dateString);
         if (count($parts) === 3) {
             $month = $parts[0];
             $day = $parts[1];
             $year = $parts[2];
-
-            // Convert 2-digit year to 4-digit
-            if (strlen($year) === 2) {
-                $year = (int)$year > 30 ? '19' . $year : '20' . $year;
-            }
 
             return $year . '-' . $month . '-' . $day;
         }

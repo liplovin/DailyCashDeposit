@@ -159,11 +159,11 @@ const convertToDateInput = (dateString) => {
 
 const convertFromDateInput = (dateString) => {
     if (!dateString) return '';
-    // Convert YYYY-MM-DD to mm/dd/yy format
+    // Convert YYYY-MM-DD to mm/dd/yyyy format
     const parts = dateString.split('-');
     if (parts.length !== 3) return '';
     
-    const year = parts[0].slice(-2);
+    const year = parts[0];
     const month = parts[1];
     const day = parts[2];
     
@@ -180,12 +180,12 @@ const handleDateInput = (event) => {
     // Remove all non-digit characters
     value = value.replace(/\D/g, '');
     
-    // Format as mm/dd/yy
+    // Format as mm/dd/yyyy
     if (value.length >= 2) {
         value = value.substring(0, 2) + '/' + value.substring(2);
     }
-    if (value.length >= 5) {
-        value = value.substring(0, 5) + '/' + value.substring(5, 7);
+    if (value.length >= 4) {
+        value = value.substring(0, 5) + '/' + value.substring(5, 9);
     }
     
     form.value.maturity_date = value;
@@ -296,8 +296,8 @@ const handleDateInput = (event) => {
                                 :value="form.maturity_date"
                                 @input="handleDateInput"
                                 type="text"
-                                placeholder="mm/dd/yy"
-                                maxlength="8"
+                                placeholder="mm/dd/yyyy"
+                                maxlength="10"
                                 class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
                                 :class="{ 'border-red-500 focus:ring-red-500': errors.maturity_date }"
                             />

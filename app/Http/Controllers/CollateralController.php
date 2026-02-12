@@ -22,14 +22,11 @@ class CollateralController extends Controller
             'collateral' => 'required|string|max:255',
             'account_number' => 'required|string|unique:collaterals,account_number',
             'beginning_balance' => 'required|numeric|min:0',
-            'maturity_date' => 'required|date_format:m/d/y',
+            'maturity_date' => 'required|date_format:m/d/Y',
         ]);
 
-        // Convert mm/dd/yy format to yyyy-mm-dd for database
-        if ($validated['maturity_date']) {
-            $date = \DateTime::createFromFormat('m/d/y', $validated['maturity_date']);
-            $validated['maturity_date'] = $date->format('Y-m-d');
-        }
+        // Convert mm/dd/yy to Y-m-d format for storage
+        $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
 
         Collateral::create($validated);
 
@@ -52,17 +49,28 @@ class CollateralController extends Controller
             'collateral' => 'required|string|max:255',
             'account_number' => 'required|string|unique:collaterals,account_number,' . $id,
             'beginning_balance' => 'required|numeric|min:0',
-            'maturity_date' => 'required|date_format:m/d/y',
+            'maturity_date' => 'required|date_format:m/d/Y',
         ]);
 
-        // Convert mm/dd/yy format to yyyy-mm-dd for database
-        if ($validated['maturity_date']) {
-            $date = \DateTime::createFromFormat('m/d/y', $validated['maturity_date']);
-            $validated['maturity_date'] = $date->format('Y-m-d');
-        }
+        // Convert mm/dd/yyyy to Y-m-d format for storage
+        $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
 
         $collateral->update($validated);
 
         return redirect()->route('treasury.collateral')->with('success', 'Collateral updated successfully');
+    }
+
+    private function convertDateFormat($dateString)
+    {
+        // Convert mm/dd/yyyy to Y-m-d
+        $parts = explode('/', $dateString);
+        if (count($parts) === 3) {
+            $month = $parts[0];
+            $day = $parts[1];
+            $year = $parts[2];
+
+            return $year . '-' . $month . '-' . $day;
+        }
+        return $dateString;
     }
 }

@@ -91,6 +91,30 @@ const handleDragEnd = () => {
     draggedIndex.value = null;
 };
 
+const formatMaturityDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    
+    const diffTime = date - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    const formattedDate = new Intl.DateTimeFormat('en-US', options).format(date);
+    
+    if (diffDays < 0) {
+        return `${formattedDate} (Overdue by ${Math.abs(diffDays)} days)`;
+    } else if (diffDays === 0) {
+        return `${formattedDate} (Due Today)`;
+    } else if (diffDays <= 30) {
+        return `${formattedDate} (${diffDays} days remaining)`;
+    }
+    
+    return formattedDate;
+};
+
 const deleteGovernmentSecurity = async (security) => {
     const result = await Swal.fire({
         title: 'Delete Government Security?',

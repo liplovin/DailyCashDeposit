@@ -13,5 +13,6 @@ class OperatingAccount extends Model
         'operating_account_name',
         'account_number',
         'beginning_balance',
+        'maturity_date',
     ];
 }

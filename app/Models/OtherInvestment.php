@@ -13,5 +13,6 @@ class OtherInvestment extends Model
         'other_investment_name',
         'account_number',
         'beginning_balance',
+        'maturity_date',
     ];
 }
