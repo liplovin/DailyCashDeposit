@@ -75,7 +75,7 @@ const menuItems = [
                         
                         <div v-if="sidebarOpen" class="transition-opacity duration-300 text-left">
                             <h1 class="text-sm font-black text-gray-900 tracking-tight leading-tight">Daily Deposit</h1>
-                            <p class="text-xs text-gray-500 font-medium">Treasury 2 Management</p>
+                            <p class="text-xs text-gray-500 font-medium">Treasury Management</p>
                         </div>
                     </button>
 
@@ -132,7 +132,7 @@ const menuItems = [
                         </div>
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-semibold text-gray-900 truncate">{{ user.name }}</p>
-                            <p class="text-xs text-gray-600 font-medium">Treasury 2 Officer</p>
+                            <p class="text-xs text-gray-600 font-medium">Treasury Assistant</p>
                         </div>
                     </div>
                 </div>

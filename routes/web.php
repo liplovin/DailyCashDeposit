@@ -25,6 +25,7 @@ Route::get('/dashboard', function () {
         'admin' => 'Admin/Dashboard',
         'treasury' => 'Treasury/Dashboard',
         'treasury2' => 'Treasury2/Dashboard',
+        'treasury3' => 'Treasury3/Dashboard',
         'accounting' => 'Accounting/Dashboard',
         default => 'Admin/Dashboard'
     };
