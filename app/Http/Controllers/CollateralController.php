@@ -22,7 +22,14 @@ class CollateralController extends Controller
             'collateral' => 'required|string|max:255',
             'account_number' => 'required|string|unique:collaterals,account_number',
             'beginning_balance' => 'required|numeric|min:0',
+            'maturity_date' => 'required|date_format:m/d/y',
         ]);
+
+        // Convert mm/dd/yy format to yyyy-mm-dd for database
+        if ($validated['maturity_date']) {
+            $date = \DateTime::createFromFormat('m/d/y', $validated['maturity_date']);
+            $validated['maturity_date'] = $date->format('Y-m-d');
+        }
 
         Collateral::create($validated);
 
@@ -45,7 +52,14 @@ class CollateralController extends Controller
             'collateral' => 'required|string|max:255',
             'account_number' => 'required|string|unique:collaterals,account_number,' . $id,
             'beginning_balance' => 'required|numeric|min:0',
+            'maturity_date' => 'required|date_format:m/d/y',
         ]);
+
+        // Convert mm/dd/yy format to yyyy-mm-dd for database
+        if ($validated['maturity_date']) {
+            $date = \DateTime::createFromFormat('m/d/y', $validated['maturity_date']);
+            $validated['maturity_date'] = $date->format('Y-m-d');
+        }
 
         $collateral->update($validated);
 

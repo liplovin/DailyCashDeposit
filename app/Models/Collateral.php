@@ -10,5 +10,6 @@ class Collateral extends Model
         'collateral',
         'account_number',
         'beginning_balance',
+        'maturity_date',
     ];
 }

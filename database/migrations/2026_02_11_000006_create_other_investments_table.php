@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('other_investment_name')->nullable();
             $table->string('account_number')->unique();
             $table->decimal('beginning_balance', 15, 2);
+            $table->date('maturity_date')->nullable();
             $table->timestamps();
         });
     }

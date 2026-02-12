@@ -134,6 +134,30 @@ const deleteCollateral = async (collateral) => {
         });
     }
 };
+
+const formatMaturityDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    
+    const diffTime = date - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    const formattedDate = new Intl.DateTimeFormat('en-US', options).format(date);
+    
+    if (diffDays < 0) {
+        return `${formattedDate} (Overdue by ${Math.abs(diffDays)} days)`;
+    } else if (diffDays === 0) {
+        return `${formattedDate} (Due Today)`;
+    } else if (diffDays <= 30) {
+        return `${formattedDate} (${diffDays} days remaining)`;
+    }
+    
+    return formattedDate;
+};
 </script>
 
 <template>
@@ -211,6 +235,7 @@ const deleteCollateral = async (collateral) => {
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300 cursor-move">⋮⋮ Collateral Name</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Account Number</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Created</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white">Actions</th>
                             </tr>
@@ -240,6 +265,9 @@ const deleteCollateral = async (collateral) => {
                                 <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-300">{{ collateral.account_number }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-300">
                                     ₱ {{ parseFloat(collateral.beginning_balance).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-300">
+                                    {{ formatMaturityDate(collateral.maturity_date) }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-300">
                                     {{ new Date(collateral.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) }}
@@ -271,6 +299,7 @@ const deleteCollateral = async (collateral) => {
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">
                                     ₱ {{ totalBeginningBalance.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                                 </td>
+                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900"></td>
                             </tr>

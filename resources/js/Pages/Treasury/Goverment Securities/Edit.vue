@@ -25,6 +25,7 @@ const form = ref({
     government_security_name: '',
     account_number: '',
     beginning_balance: '',
+    maturity_date: '',
     customGovernmentSecurity: ''
 });
 
@@ -52,6 +53,7 @@ watch(() => props.governmentSecurity, (newGovernmentSecurity) => {
             government_security_name: existsInList ? newGovernmentSecurity.government_security_name : 'other',
             account_number: newGovernmentSecurity.account_number || '',
             beginning_balance: formatBalanceDisplay(newGovernmentSecurity.beginning_balance),
+            maturity_date: formatDateDisplay(newGovernmentSecurity.maturity_date),
             customGovernmentSecurity: !existsInList ? newGovernmentSecurity.government_security_name : ''
         };
     }
@@ -62,6 +64,15 @@ const formatBalanceDisplay = (value) => {
     const numValue = parseFloat(value);
     const formatted = numValue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     return formatted;
+};
+
+const formatDateDisplay = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = String(date.getFullYear()).slice(-2);
+    return `${month}/${day}/${year}`;
 };
 
 const handleSubmit = () => {
@@ -86,6 +97,9 @@ const handleSubmit = () => {
     if (isNaN(balanceValue) || balanceValue < 0) {
         errors.value.beginning_balance = 'Beginning balance must be a valid positive number';
     }
+    if (!form.value.maturity_date.trim()) {
+        errors.value.maturity_date = 'Maturity date is required';
+    }
     
     if (Object.keys(errors.value).length === 0) {
         isSubmitting.value = true;
@@ -93,7 +107,8 @@ const handleSubmit = () => {
         const submitData = {
             government_security_name: governmentSecurityValue,
             account_number: form.value.account_number,
-            beginning_balance: balanceValue.toFixed(2)
+            beginning_balance: balanceValue.toFixed(2),
+            maturity_date: form.value.maturity_date
         };
         router.put(`/treasury/government-securities/${props.governmentSecurity.id}`, submitData, {
             onSuccess: () => {
@@ -122,9 +137,62 @@ const handleSubmit = () => {
 };
 
 const closeModal = () => {
-    form.value = { government_security_name: '', account_number: '', beginning_balance: '', customGovernmentSecurity: '' };
+    form.value = { government_security_name: '', account_number: '', beginning_balance: '', maturity_date: '', customGovernmentSecurity: '' };
     errors.value = {};
     emit('close');
+};
+
+const handleDateInput = (event) => {
+    let value = event.target.value;
+    
+    // Remove all non-digit characters
+    value = value.replace(/\D/g, '');
+    
+    // Format as mm/dd/yy
+    if (value.length >= 2) {
+        value = value.substring(0, 2) + '/' + value.substring(2);
+    }
+    if (value.length >= 5) {
+        value = value.substring(0, 5) + '/' + value.substring(5, 7);
+    }
+    
+    form.value.maturity_date = value;
+};
+
+const convertToDateInput = (dateString) => {
+    if (!dateString) return '';
+    // Convert mm/dd/yy to YYYY-MM-DD format for date input
+    const parts = dateString.split('/');
+    if (parts.length !== 3) return '';
+    
+    let month = parts[0];
+    let day = parts[1];
+    let year = parts[2];
+    
+    // Convert 2-digit year to 4-digit
+    if (year.length === 2) {
+        const numYear = parseInt(year);
+        year = (numYear > 30) ? '19' + year : '20' + year;
+    }
+    
+    return `${year}-${month}-${day}`;
+};
+
+const convertFromDateInput = (dateString) => {
+    if (!dateString) return '';
+    // Convert YYYY-MM-DD to mm/dd/yy format
+    const parts = dateString.split('-');
+    if (parts.length !== 3) return '';
+    
+    const year = parts[0].slice(-2);
+    const month = parts[1];
+    const day = parts[2];
+    
+    return `${month}/${day}/${year}`;
+};
+
+const handleNativeDateChange = (event) => {
+    form.value.maturity_date = convertFromDateInput(event.target.value);
 };
 
 const handleBalanceInput = (event) => {
@@ -243,6 +311,34 @@ const handleBalanceInput = (event) => {
                             />
                         </div>
                         <p v-if="errors.beginning_balance" class="text-red-500 text-sm mt-1">{{ errors.beginning_balance }}</p>
+                    </div>
+
+                    <!-- Maturity Date Field -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">
+                            Maturity Date <span class="text-red-500">*</span>
+                        </label>
+                        <div class="flex space-x-2">
+                            <!-- Date Picker -->
+                            <input
+                                :value="convertToDateInput(form.maturity_date)"
+                                @change="handleNativeDateChange"
+                                type="date"
+                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900"
+                                :class="{ 'border-red-500 focus:ring-red-500': errors.maturity_date }"
+                            />
+                            <!-- Text Input -->
+                            <input
+                                :value="form.maturity_date"
+                                @input="handleDateInput"
+                                type="text"
+                                placeholder="mm/dd/yy"
+                                maxlength="8"
+                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
+                                :class="{ 'border-red-500 focus:ring-red-500': errors.maturity_date }"
+                            />
+                        </div>
+                        <p v-if="errors.maturity_date" class="text-red-500 text-sm mt-1">{{ errors.maturity_date }}</p>
                     </div>
 
                     <!-- Modal Actions -->
