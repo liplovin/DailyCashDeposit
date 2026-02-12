@@ -216,9 +216,10 @@ const handleSubmit = () => {
                 confirmButtonColor: '#F59E0B',
                 timer: 2000,
                 timerProgressBar: true
+            }).then(() => {
+                closeModal();
+                router.visit('/treasury/operating-accounts');
             });
-            closeModal();
-            window.location.reload();
         } else {
             Swal.fire({
                 title: 'Error!',

@@ -243,4 +243,103 @@ class OperatingAccountController extends Controller
             ];
         }
     }
+
+    /**
+     * Delete a collection
+     */
+    public function deleteCollection($id)
+    {
+        try {
+            $collection = Collection::findOrFail($id);
+            
+            // Delete the file if it exists
+            if ($collection->deposit_slip) {
+                $filePath = storage_path('app/public/' . $collection->deposit_slip);
+                if (file_exists($filePath)) {
+                    unlink($filePath);
+                }
+            }
+            
+            // Delete the collection record
+            $collection->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Collection deleted successfully.',
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error deleting collection: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Update a collection
+     */
+    public function updateCollection(Request $request, $id)
+    {
+        try {
+            $collection = Collection::findOrFail($id);
+
+            // Only allow updating pending collections
+            if ($collection->status !== 'pending') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Only pending collections can be edited.',
+                ], 422);
+            }
+
+            $amount = (float)$request->input('collection_amount');
+
+            if ($amount <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Collection amount must be greater than 0.',
+                ], 422);
+            }
+
+            $collection->collection_amount = $amount;
+
+            // Update file if provided
+            if ($request->hasFile('deposit_slip')) {
+                $file = $request->file('deposit_slip');
+
+                if (!$file->isValid()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'The uploaded file is invalid.',
+                    ], 422);
+                }
+
+                // Delete old file if exists
+                if ($collection->deposit_slip) {
+                    $oldFilePath = storage_path('app/public/' . $collection->deposit_slip);
+                    if (file_exists($oldFilePath)) {
+                        unlink($oldFilePath);
+                    }
+                }
+
+                // Store new file
+                $filePath = $file->store('deposit-slips/' . $collection->operating_account_id, 'public');
+                $collection->deposit_slip = $filePath;
+            }
+
+            $collection->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Collection updated successfully.',
+                'collection' => $collection,
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating collection: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }
