@@ -3,14 +3,28 @@ import { computed, ref } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
-import { Home, Users, BarChart3, Settings, LogOut } from 'lucide-vue-next';
+import { Home, Users, LogOut, Menu } from 'lucide-vue-next';
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 const sidebarOpen = ref(true);
 
-const handleMenuClick = (itemName) => {
-    if (itemName === 'Logout') {
+const currentRoute = computed(() => page.url);
+
+const isRouteActive = (routeName) => {
+    const routeList = {
+        'dashboard': '/dashboard',
+        'admin.users': '/admin/users'
+    };
+    
+    const routePath = routeList[routeName];
+    const currentPath = currentRoute.value;
+    
+    return currentPath === routePath || currentPath.startsWith(routePath + '/');
+};
+
+const handleMenuClick = (item) => {
+    if (item === 'Logout') {
         Swal.fire({
             title: 'Are you sure?',
             text: 'You will be logged out of the system.',
@@ -24,6 +38,12 @@ const handleMenuClick = (itemName) => {
                 router.post('/logout');
             }
         });
+    } else if (item.route) {
+        const routeUrls = {
+            'dashboard': '/dashboard',
+            'admin.users': '/admin/users'
+        };
+        router.get(routeUrls[item.route]);
     }
 };
 
@@ -31,150 +51,115 @@ const menuItems = [
     {
         name: 'Dashboard',
         component: Home,
-        active: true
+        route: 'dashboard'
     },
     {
         name: 'User Management',
         component: Users,
-    },
-    {
-        name: 'System Reports',
-        component: BarChart3,
-    },
-    {
-        name: 'Settings',
-        component: Settings,
+        route: 'admin.users'
     }
 ];
 </script>
 
 <template>
-    <div class="flex h-screen bg-gray-100">
-        <!-- Sidebar -->
-        <div class="w-64 bg-gradient-to-b from-yellow-600 to-yellow-700 text-white shadow-xl overflow-y-auto">
-            <!-- Logo Area -->
-            <div class="p-6 border-b border-yellow-500">
-                <div class="flex items-center space-x-3">
-                    <div class="bg-white/20 rounded-lg p-2">
-                        <img src="/logoonly.png" alt="Daily Deposit Logo" class="h-6 w-6">
-                    </div>
-                    <div>
-                        <h1 class="text-lg font-bold">Daily Deposit</h1>
-                        <p class="text-xs text-yellow-100">Management System</p>
-                    </div>
+    <div class="flex h-screen bg-gray-50">
+        <!-- Clean Modern Sidebar -->
+        <div :class="['bg-white shadow-sm flex flex-col h-screen transition-all duration-300', sidebarOpen ? 'w-64' : 'w-20']">
+            <!-- Header - Clean Branding -->
+            <div class="px-4 py-4 border-b border-gray-100">
+                <div class="flex items-center justify-between gap-3">
+                    <!-- Logo and Text - Left Aligned -->
+                    <button
+                        @click="sidebarOpen = true"
+                        class="flex items-center gap-3 transition-all duration-200 hover:opacity-80 flex-1"
+                        :title="!sidebarOpen ? 'Expand sidebar' : ''"
+                    >
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center shadow-md">
+                                <img src="/logoonly.png" alt="Daily Deposit Logo" class="h-6 w-6">
+                            </div>
+                        </div>
+                        
+                        <div v-if="sidebarOpen" class="transition-opacity duration-300 text-left">
+                            <h1 class="text-sm font-black text-gray-900 tracking-tight leading-tight">Daily Deposit</h1>
+                            <p class="text-xs text-gray-500 font-medium">Admin Management</p>
+                        </div>
+                    </button>
+
+                    <!-- Menu Button - Only visible when expanded, minimizes sidebar -->
+                    <button
+                        v-if="sidebarOpen"
+                        @click="sidebarOpen = false"
+                        class="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-all duration-200 flex-shrink-0"
+                        title="Minimize sidebar"
+                    >
+                        <Menu class="h-5 w-5" />
+                    </button>
                 </div>
             </div>
 
-            <!-- User Info -->
-            <div class="px-6 py-4 border-b border-yellow-500">
-                <p class="text-sm text-yellow-100">Logged in as</p>
-                <p class="font-semibold text-white">{{ user.name }}</p>
-                <p class="text-xs text-yellow-100">Administrator</p>
-            </div>
-
-            <!-- Navigation Menu -->
-            <nav class="mt-6 px-3 flex-1">
-                <div v-for="(item, index) in menuItems" :key="index" class="mb-2">
+            <!-- Navigation - Minimal & Clean -->
+            <nav class="flex-1 px-2 py-8 space-y-2 overflow-y-auto">
+                <p v-if="sidebarOpen" class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4 transition-opacity duration-300">Main Menu</p>
+                <div v-for="(item, index) in menuItems" :key="index">
                     <button
-                        @click="handleMenuClick(item.name)"
+                        @click="handleMenuClick(item)"
                         :class="[
-                            'w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200',
-                            item.active
-                                ? 'bg-white/20 text-white'
-                                : 'text-yellow-100 hover:bg-white/10'
+                            'w-full flex items-center rounded-lg transition-all duration-200 text-sm font-medium group relative',
+                            sidebarOpen ? 'space-x-3 px-4 py-2.5 justify-start' : 'justify-center p-2.5',
+                            isRouteActive(item.route)
+                                ? 'bg-yellow-50 text-yellow-700 font-semibold'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                         ]"
+                        :title="!sidebarOpen ? item.name : ''"
                     >
-                        <component :is="item.component" class="h-5 w-5 flex-shrink-0" />
-                        <span class="font-medium">{{ item.name }}</span>
+                        <component :is="item.component" :class="[
+                            'flex-shrink-0 transition-all duration-200',
+                            sidebarOpen ? 'h-5 w-5' : 'h-5 w-5',
+                            isRouteActive(item.route) ? 'text-yellow-600' : 'text-gray-400 group-hover:text-gray-600'
+                        ]" />
+                        <span v-if="sidebarOpen" class="flex-1 text-left transition-opacity duration-300">{{ item.name }}</span>
+                        <div v-if="isRouteActive(item.route) && sidebarOpen" class="w-1 h-1 rounded-full bg-yellow-600 flex-shrink-0"></div>
                     </button>
                 </div>
             </nav>
 
-            <!-- Logout Button -->
-            <div class="px-3 pb-6 border-t border-yellow-500 pt-4">
+            <!-- Divider -->
+            <div class="px-4">
+                <div class="h-px bg-gray-100"></div>
+            </div>
+
+            <!-- User Profile Section -->
+            <div :class="['px-4 py-6 space-y-4', sidebarOpen ? '' : 'px-2']">
+                <!-- User Info Card -->
+                <div v-if="sidebarOpen" class="bg-gradient-to-br from-yellow-50 to-amber-50 border border-yellow-100 rounded-xl p-4 transition-opacity duration-300">
+                    <div class="flex items-center space-x-3 mb-3">
+                        <div class="w-11 h-11 rounded-lg bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center flex-shrink-0 text-white font-bold text-sm shadow-md">
+                            {{ user.name.split(' ').map(n => n[0]).join('') }}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-semibold text-gray-900 truncate">{{ user.name }}</p>
+                            <p class="text-xs text-gray-600 font-medium">Administrator</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logout Button -->
                 <button
                     @click="handleMenuClick('Logout')"
-                    class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-200 hover:bg-red-500/20 transition-colors text-sm font-medium"
+                    :class="['flex items-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all duration-200 text-sm font-semibold border border-red-200', sidebarOpen ? 'w-full justify-center space-x-2 px-4 py-2.5' : 'w-full justify-center p-2.5']"
+                    :title="!sidebarOpen ? 'Logout' : ''"
                 >
-                    <LogOut class="h-5 w-5 flex-shrink-0" />
-                    <span>Logout</span>
+                    <LogOut class="h-4 w-4" />
+                    <span v-if="sidebarOpen" class="transition-opacity duration-300">Logout</span>
                 </button>
             </div>
         </div>
 
         <!-- Main Content -->
         <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- Top Header -->
-            <div class="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-800">Admin Dashboard</h2>
-                        <p class="text-sm text-gray-500 mt-1">Welcome back! Here's what's happening with your system today.</p>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <span class="rounded-full bg-yellow-100 px-4 py-2 text-sm font-medium text-yellow-800">
-                            Administrator
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Content Area -->
-            <div class="flex-1 overflow-auto p-6">
-                <!-- Welcome Card -->
-                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">
-                        Welcome, {{ user.name }}!
-                    </h3>
-                    <p class="text-gray-600">
-                        You have full system access as an administrator. Manage users, view reports, and configure system settings from the navigation menu above.
-                    </p>
-                </div>
-
-                <!-- Admin Controls Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- User Management Card -->
-                    <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200 cursor-pointer">
-                        <div class="h-16 bg-gradient-to-r from-yellow-500 to-yellow-600"></div>
-                        <div class="p-6">
-                            <div class="flex items-center justify-between mb-4">
-                                <h4 class="text-lg font-semibold text-gray-900">User Management</h4>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 12H9m6 0a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                            </div>
-                            <p class="text-gray-600 text-sm">Manage system users, assign roles, and control access permissions.</p>
-                        </div>
-                    </div>
-
-                    <!-- System Reports Card -->
-                    <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200 cursor-pointer">
-                        <div class="h-16 bg-gradient-to-r from-yellow-500 to-yellow-600"></div>
-                        <div class="p-6">
-                            <div class="flex items-center justify-between mb-4">
-                                <h4 class="text-lg font-semibold text-gray-900">System Reports</h4>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                </svg>
-                            </div>
-                            <p class="text-gray-600 text-sm">Generate and view comprehensive system analytics and performance reports.</p>
-                        </div>
-                    </div>
-
-                    <!-- Settings Card -->
-                    <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200 cursor-pointer">
-                        <div class="h-16 bg-gradient-to-r from-yellow-500 to-yellow-600"></div>
-                        <div class="p-6">
-                            <div class="flex items-center justify-between mb-4">
-                                <h4 class="text-lg font-semibold text-gray-900">Settings</h4>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                            </div>
-                            <p class="text-gray-600 text-sm">Configure system preferences, email settings, and security options.</p>
-                        </div>
-                    </div>
-                </div>
+            <div class="flex-1 overflow-auto p-8">
+                <slot />
             </div>
         </div>
     </div>

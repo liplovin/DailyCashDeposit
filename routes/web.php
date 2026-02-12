@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\CollateralController;
 use App\Http\Controllers\TimeDepositController;
 use App\Http\Controllers\GovernmentSecurityController;
@@ -90,6 +91,20 @@ Route::middleware('auth')->group(function () {
         Route::put('/investment/{id}', [InvestmentController::class, 'update'])->name('investment.update');
         Route::delete('/investment/{id}', [InvestmentController::class, 'destroy'])->name('investment.destroy');
     });
+
+    // Admin Routes
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::get('/users', [UserController::class, 'index'])->name('users');
+
+        Route::get('/settings', function () {
+            return Inertia::render('Admin/Settings/Index');
+        })->name('settings');
+    });
+
+    // User Management Routes
+    Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 });
 
 require __DIR__.'/auth.php';
