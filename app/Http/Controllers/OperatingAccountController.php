@@ -187,4 +187,60 @@ class OperatingAccountController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Mark collections as processed
+     */
+    public function processCollections(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'collection_ids' => 'required|array',
+                'collection_ids.*' => 'integer|exists:collections,id',
+            ]);
+
+            $collectionIds = $validated['collection_ids'];
+
+            // Update all collections to processed status
+            Collection::whereIn('id', $collectionIds)->update(['status' => 'processed']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Collections marked as processed successfully.',
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error processing collections: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Auto-process all pending collections (called by scheduled task at 12:00 AM)
+     */
+    public function autoProcessPendingCollections()
+    {
+        try {
+            // Update all pending collections to processed status
+            $processed = Collection::where('status', 'pending')->update(['status' => 'processed']);
+
+            \Log::info("Auto-process collections: {$processed} collections marked as processed at " . now());
+
+            return [
+                'success' => true,
+                'message' => "Auto-processed {$processed} pending collections at " . now(),
+                'count' => $processed,
+            ];
+
+        } catch (\Exception $e) {
+            \Log::error("Error auto-processing collections: " . $e->getMessage());
+
+            return [
+                'success' => false,
+                'message' => 'Error auto-processing collections: ' . $e->getMessage(),
+            ];
+        }
+    }
 }

@@ -1,11 +1,9 @@
 <script setup>
 import Treasury3Layout from '@/Layouts/Treasury3Layout.vue';
-import AddCollectionModal from './AddCollection.vue';
-import ShowCollection from './ShowCollection.vue';
+import ShowCollection from '../OperatingAccount/ShowCollection.vue';
 import { Head } from '@inertiajs/vue3';
-import { Plus, Search, CheckCircle } from 'lucide-vue-next';
+import { Search, Calendar } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
-import Swal from 'sweetalert2';
 
 const props = defineProps({
     operatingAccounts: {
@@ -14,101 +12,12 @@ const props = defineProps({
     }
 });
 
-const showModal = ref(false);
 const showDetailsModal = ref(false);
-const selectedAccount = ref(null);
 const selectedCollections = ref([]);
 const selectedAccountName = ref('');
 const searchQuery = ref('');
-
-const handleAddCollection = (account) => {
-    selectedAccount.value = account;
-    showModal.value = true;
-};
-
-const handleProcessCollection = async () => {
-    // Find all pending collections
-    const pendingCollections = [];
-    let totalAmount = 0;
-    
-    props.operatingAccounts.forEach(account => {
-        if (account.collections && account.collections.length > 0) {
-            account.collections.forEach(collection => {
-                if (collection.status === 'pending') {
-                    pendingCollections.push(collection);
-                    totalAmount += parseFloat(collection.collection_amount || 0);
-                }
-            });
-        }
-    });
-    
-    if (pendingCollections.length === 0) {
-        Swal.fire({
-            title: 'No Pending Collections',
-            text: 'There are no pending collections to process.',
-            icon: 'info',
-            confirmButtonColor: '#D4A017'
-        });
-        return;
-    }
-    
-    const result = await Swal.fire({
-        title: 'Process Collections',
-        html: `<div class="text-left"><p class="mb-2">Are you sure you want to process <strong>${pendingCollections.length}</strong> pending collection(s)?</p><p class="text-gray-600"><strong>Total Amount:</strong> ₱${totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></div>`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#22C55E',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Yes, process them',
-        cancelButtonText: 'Cancel'
-    });
-    
-    if (result.isConfirmed) {
-        try {
-            const collectionIds = pendingCollections.map(c => c.id);
-            const response = await fetch('/treasury/collections/process', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({ collection_ids: collectionIds })
-            });
-            
-            const data = await response.json();
-            
-            if (response.ok) {
-                Swal.fire({
-                    title: 'Success!',
-                    text: `${pendingCollections.length} collection(s) marked as processed.`,
-                    icon: 'success',
-                    confirmButtonColor: '#D4A017'
-                }).then(() => {
-                    window.location.reload();
-                });
-            } else {
-                Swal.fire({
-                    title: 'Error',
-                    html: data.message || 'Failed to process collections.',
-                    icon: 'error',
-                    confirmButtonColor: '#D4A017'
-                });
-            }
-        } catch (error) {
-            Swal.fire({
-                title: 'Error',
-                text: 'An error occurred while processing collections.',
-                icon: 'error',
-                confirmButtonColor: '#D4A017'
-            });
-        }
-    }
-};
-
-const closeModal = () => {
-    showModal.value = false;
-    selectedAccount.value = null;
-};
+const today = new Date().toISOString().split('T')[0];
+const filterDate = ref(today);
 
 const handleShowDetails = (collections, accountName) => {
     selectedCollections.value = collections;
@@ -127,8 +36,8 @@ const groupedCollections = computed(() => {
     props.operatingAccounts.forEach(account => {
         if (account.collections && account.collections.length > 0) {
             account.collections.forEach(collection => {
-                // Only show pending collections
-                if (collection.status === 'pending') {
+                // Only show processed collections
+                if (collection.status === 'processed') {
                     const timestamp = new Date(collection.created_at).toLocaleString();
                     const key = `${account.id}-${timestamp}`;
                     
@@ -157,23 +66,34 @@ const getTotalAmount = (collections) => {
 
 const hasCollections = computed(() => filteredCollections.value && filteredCollections.value.length > 0);
 
-const hasPendingCollections = computed(() => {
-    return props.operatingAccounts.some(account => 
-        account.collections && 
-        account.collections.some(collection => collection.status === 'pending')
-    );
+const totalFilteredAmount = computed(() => {
+    return filteredCollections.value.reduce((total, group) => {
+        return total + getTotalAmount(group.collections);
+    }, 0);
 });
 
 const filteredCollections = computed(() => {
-    if (!searchQuery.value.trim()) {
-        return groupedCollections.value;
+    let filtered = groupedCollections.value;
+    
+    // Filter by search query
+    if (searchQuery.value.trim()) {
+        const query = searchQuery.value.toLowerCase();
+        filtered = filtered.filter(group => 
+            group.accountName.toLowerCase().includes(query) ||
+            group.timestamp.toLowerCase().includes(query)
+        );
     }
     
-    const query = searchQuery.value.toLowerCase();
-    return groupedCollections.value.filter(group => 
-        group.accountName.toLowerCase().includes(query) ||
-        group.timestamp.toLowerCase().includes(query)
-    );
+    // Filter by specific date
+    if (filterDate.value) {
+        const selectedDate = new Date(filterDate.value).toDateString();
+        filtered = filtered.filter(group => {
+            const groupDate = new Date(group.createdAt).toDateString();
+            return groupDate === selectedDate;
+        });
+    }
+    
+    return filtered;
 });
 
 const formatDateWithTime = (dateString) => {
@@ -184,44 +104,38 @@ const formatDateWithTime = (dateString) => {
 </script>
 
 <template>
-    <Head title="Operating Accounts - Treasury 3" />
+    <Head title="Processed Collection" />
     <Treasury3Layout>
         <div class="w-full px-8">
             <!-- Header Section -->
             <div class="mb-8">
                 <div class="flex items-center justify-between mb-6">
                     <div>
-                        <h1 class="text-3xl font-black text-gray-900">Collection Deposits</h1>
-                        <p class="text-gray-600 mt-1">Manage collection deposits for your operating accounts</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <button
-                            v-if="hasPendingCollections"
-                            @click="handleProcessCollection"
-                            class="flex items-center space-x-2 px-6 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-200 font-semibold shadow-md hover:shadow-lg"
-                        >
-                            <CheckCircle class="h-5 w-5" />
-                            <span>Process</span>
-                        </button>
-                        <button
-                            @click="handleAddCollection(null)"
-                            class="flex items-center space-x-2 px-6 py-2.5 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-all duration-200 font-semibold shadow-md hover:shadow-lg"
-                        >
-                            <Plus class="h-5 w-5" />
-                            <span>Add Collection</span>
-                        </button>
+                        <h1 class="text-3xl font-black text-gray-900">Processed Collections</h1>
+                        <p class="text-gray-600 mt-1">View all processed collection deposits</p>
                     </div>
                 </div>
 
                 <!-- Search Bar -->
-                <div class="relative">
-                    <Search class="absolute left-4 top-3 h-5 w-5 text-gray-400" />
-                    <input
-                        v-model="searchQuery"
-                        type="text"
-                        placeholder="Search by account name or date..."
-                        class="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
-                    />
+                <div class="flex gap-4 flex-col md:flex-row">
+                    <div class="relative flex-1">
+                        <Search class="absolute left-4 top-3 h-5 w-5 text-gray-400" />
+                        <input
+                            v-model="searchQuery"
+                            type="text"
+                            placeholder="Search by account name or date..."
+                            class="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
+                        />
+                    </div>
+                    <div class="relative w-full md:w-48">
+                        <Calendar class="absolute left-4 top-3 h-5 w-5 text-gray-400" />
+                        <input
+                            v-model="filterDate"
+                            type="date"
+                            placeholder="Filter by date"
+                            class="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-gray-900"
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -235,15 +149,8 @@ const formatDateWithTime = (dateString) => {
                             </svg>
                         </div>
                     </div>
-                    <h2 class="text-2xl font-bold text-gray-900 mb-2">No Collections Yet</h2>
-                    <p class="text-gray-600 mb-6">Get started by creating your first collection deposit.</p>
-                    <button
-                        @click="handleAddCollection(null)"
-                        class="inline-flex items-center space-x-2 px-6 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-all duration-200 font-semibold"
-                    >
-                        <Plus class="h-5 w-5" />
-                        <span>Add First Collection</span>
-                    </button>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">No Processed Collections Yet</h2>
+                    <p class="text-gray-600">Once you process collections, they will appear here.</p>
                 </div>
             </div>
 
@@ -256,7 +163,7 @@ const formatDateWithTime = (dateString) => {
                         </div>
                     </div>
                     <h2 class="text-2xl font-bold text-gray-900 mb-2">No Results Found</h2>
-                    <p class="text-gray-600">No collections match your search query.</p>
+                    <p class="text-gray-600">No processed collections match your search query.</p>
                 </div>
             </div>
 
@@ -264,7 +171,7 @@ const formatDateWithTime = (dateString) => {
             <div v-else class="bg-white rounded-xl border-2 border-gray-300 shadow-lg overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full border-collapse">
-                        <thead class="bg-gradient-to-r from-yellow-400 to-yellow-500">
+                        <thead class="bg-gradient-to-r from-green-400 to-green-500">
                             <tr class="border-b-2 border-gray-300">
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Operating Account</th>
                                 <th class="px-6 py-4 text-center text-sm font-bold text-white border-r border-gray-300">Collections</th>
@@ -279,17 +186,17 @@ const formatDateWithTime = (dateString) => {
                                 :key="`${group.accountId}-${group.timestamp}`"
                                 :class="[
                                     'relative transition-all duration-300 ease-out select-none',
-                                    'border-b border-gray-300 hover:bg-yellow-100'
+                                    'border-b border-gray-300 hover:bg-green-100'
                                 ]"
                             >
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-300">
                                     <div class="flex items-center">
-                                        <div class="w-2 h-2 bg-yellow-500 rounded-full mr-3"></div>
+                                        <div class="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
                                         {{ group.accountName }}
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-700 text-center border-r border-gray-300">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
                                         {{ group.collections.length }} item{{ group.collections.length !== 1 ? 's' : '' }}
                                     </span>
                                 </td>
@@ -309,16 +216,23 @@ const formatDateWithTime = (dateString) => {
                                 </td>
                             </tr>
                         </tbody>
+                        <tfoot class="bg-green-100 border-t-2 border-gray-300">
+                            <tr>
+                                <td colspan="2" class="px-6 py-4 text-sm font-bold text-gray-900 border-r border-gray-300">
+                                    Total ({{ filteredCollections.length }} group{{ filteredCollections.length !== 1 ? 's' : '' }})
+                                </td>
+                                <td class="px-6 py-4 text-sm font-bold text-gray-900 text-right border-r border-gray-300">
+                                    ₱ {{ totalFilteredAmount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                                </td>
+                                <td colspan="2" class="px-6 py-4"></td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
             </div>
         </div>
     </Treasury3Layout>
 
-    <!-- Add Collection Modal -->
-    <AddCollectionModal :isOpen="showModal" :account="selectedAccount" :operatingAccounts="props.operatingAccounts" @close="closeModal" />
-    
     <!-- Show Collection Details Modal -->
     <ShowCollection :isOpen="showDetailsModal" :collections="selectedCollections" :accountName="selectedAccountName" @close="closeDetailsModal" />
 </template>
-

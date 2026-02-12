@@ -70,6 +70,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/operating-accounts/{id}', [OperatingAccountController::class, 'update'])->name('operating-accounts.update');
         Route::delete('/operating-accounts/{id}', [OperatingAccountController::class, 'destroy'])->name('operating-accounts.destroy');
         Route::post('/operating-accounts/{id}/collection', [OperatingAccountController::class, 'storeCollections'])->name('operating-accounts.store-collections');
+        Route::post('/collections/process', [OperatingAccountController::class, 'processCollections'])->name('collections.process');
 
         // Dollar Routes
         Route::get('/dollar', [DollarController::class, 'index'])->name('dollar');
@@ -94,6 +95,16 @@ Route::middleware('auth')->group(function () {
         Route::post('/investment', [InvestmentController::class, 'store'])->name('investment.store');
         Route::put('/investment/{id}', [InvestmentController::class, 'update'])->name('investment.update');
         Route::delete('/investment/{id}', [InvestmentController::class, 'destroy'])->name('investment.destroy');
+
+        // Processed Collection Routes
+        Route::get('/processed-collection', function () {
+            $operatingAccounts = \App\Models\OperatingAccount::with(['collections' => function($query) {
+                $query->where('status', 'processed');
+            }])->get();
+            return Inertia::render('Treasury3/ProcessedCollection/Index', [
+                'operatingAccounts' => $operatingAccounts,
+            ]);
+        })->name('processed-collection');
     });
 
     // Admin Routes

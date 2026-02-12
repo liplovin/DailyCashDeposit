@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
-import { Home, LogOut, Menu, Wallet } from 'lucide-vue-next';
+import { Home, LogOut, Menu, Wallet, CheckCircle } from 'lucide-vue-next';
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
@@ -14,7 +14,8 @@ const currentRoute = computed(() => page.url);
 const isRouteActive = (routeName) => {
     const routeList = {
         'dashboard': '/dashboard',
-        'operating-accounts': '/treasury/operating-accounts'
+        'operating-accounts': '/treasury/operating-accounts',
+        'processed-collection': '/treasury/processed-collection'
     };
     
     const routePath = routeList[routeName];
@@ -41,7 +42,8 @@ const handleMenuClick = (item) => {
     } else if (item.route) {
         const routeUrls = {
             'dashboard': '/dashboard',
-            'operating-accounts': '/treasury/operating-accounts'
+            'operating-accounts': '/treasury/operating-accounts',
+            'processed-collection': '/treasury/processed-collection'
         };
         router.get(routeUrls[item.route]);
     }
@@ -57,6 +59,11 @@ const menuItems = [
         name: 'Operating Accounts',
         component: Wallet,
         route: 'operating-accounts'
+    },
+    {
+        name: 'Processed Collection',
+        component: CheckCircle,
+        route: 'processed-collection'
     }
 ];
 </script>
