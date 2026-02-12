@@ -29,7 +29,8 @@ const roles = [
     { value: 'treasury', label: 'Treasury' },
     { value: 'treasury2', label: 'Treasury 2' },
     { value: 'treasury3', label: 'Treasury 3' },
-    { value: 'accounting', label: 'Accounting' }
+    { value: 'accounting', label: 'Accounting' },
+    { value: 'accounting2', label: 'Accounting 2' }
 ];
 
 const handleSubmit = () => {

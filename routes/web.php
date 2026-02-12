@@ -27,6 +27,7 @@ Route::get('/dashboard', function () {
         'treasury2' => 'Treasury2/Dashboard',
         'treasury3' => 'Treasury3/Dashboard',
         'accounting' => 'Accounting/Dashboard',
+        'accounting2' => 'Accounting2/Dashboard',
         default => 'Admin/Dashboard'
     };
     return Inertia::render($component);

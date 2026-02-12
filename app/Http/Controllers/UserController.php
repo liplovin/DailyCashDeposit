@@ -24,7 +24,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:admin,treasury,treasury2,treasury3,accounting'
+            'role' => 'required|in:admin,treasury,treasury2,treasury3,accounting,accounting2'
         ]);
 
         User::create([
@@ -43,7 +43,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:8|confirmed',
-            'role' => 'required|in:admin,treasury,treasury2,treasury3,accounting'
+            'role' => 'required|in:admin,treasury,treasury2,treasury3,accounting,accounting2'
         ]);
 
         $user->name = $validated['name'];

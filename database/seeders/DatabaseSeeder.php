@@ -49,5 +49,11 @@ class DatabaseSeeder extends Seeder
             'email' => 'accounting@intra.com',
             'role' => 'accounting',
         ]);
-    }
+
+        // Create accounting2 user
+        User::factory()->create([
+            'name' => 'Accounting 2 User',
+            'email' => 'accounting2@intra.com',
+            'role' => 'accounting2',
+        ]);    }
 }
