@@ -316,13 +316,13 @@ const handleDateInput = (event) => {
                         <label class="block text-sm font-semibold text-gray-900 mb-2">
                             Maturity Date <span class="text-red-500">*</span>
                         </label>
-                        <div class="space-y-2">
+                        <div class="flex space-x-2">
                             <!-- Date Picker -->
                             <input
-                                type="date"
                                 :value="convertToDateInput(form.maturity_date)"
                                 @change="handleNativeDateChange"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900"
+                                type="date"
+                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900"
                                 :class="{ 'border-red-500 focus:ring-red-500': errors.maturity_date }"
                             />
                             <!-- Text Input -->
@@ -332,7 +332,7 @@ const handleDateInput = (event) => {
                                 type="text"
                                 placeholder="mm/dd/yyyy"
                                 maxlength="10"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
+                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
                                 :class="{ 'border-red-500 focus:ring-red-500': errors.maturity_date }"
                             />
                         </div>
