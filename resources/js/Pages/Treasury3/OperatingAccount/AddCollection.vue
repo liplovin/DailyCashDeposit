@@ -33,7 +33,8 @@ const form = ref({
     collections: [
         {
             collection_amount: '',
-            deposit_slip: null
+            deposit_slip: null,
+            check: null
         }
     ]
 });
@@ -41,27 +42,44 @@ const form = ref({
 const errors = ref({});
 const isSubmitting = ref(false);
 const depositSlipFileNames = ref(['']);
+const checkFileNames = ref(['']);
 
 const handleAmountInput = (event, index) => {
-    // Remove all non-numeric characters except decimal point
-    let value = event.target.value.replace(/[^\d.]/g, '');
+    let value = event.target.value;
     
-    // Prevent multiple decimal points
-    const parts = value.split('.');
-    if (parts.length > 2) {
-        value = parts[0] + '.' + parts.slice(1).join('');
+    // Remove all non-numeric characters except decimal point
+    value = value.replace(/[^\d.]/g, '');
+    
+    // Prevent multiple decimal points - keep only the first one
+    if (value.split('.').length > 2) {
+        const decimalIndex = value.indexOf('.');
+        value = value.substring(0, decimalIndex + 1) + value.substring(decimalIndex + 1).replace(/\./g, '');
     }
     
-    if (value === '' || value === '.') {
+    if (value === '') {
         form.value.collections[index].collection_amount = '';
         return;
     }
     
-    // Format with commas in real-time
-    const parts2 = value.split('.');
-    const integerPart = parts2[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    const decimalPart = parts2[1] ? '.' + parts2[1] : '';
-    form.value.collections[index].collection_amount = integerPart + decimalPart;
+    // Split into integer and decimal parts
+    const parts = value.split('.');
+    let integerPart = parts[0] || '';
+    let decimalPart = parts[1];
+    
+    // Add commas to integer part
+    if (integerPart) {
+        integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+    
+    // Format the value - preserve decimal point if it exists
+    let formattedValue;
+    if (value.includes('.')) {
+        formattedValue = `${integerPart}.${decimalPart !== undefined ? decimalPart : ''}`;
+    } else {
+        formattedValue = integerPart;
+    }
+    
+    form.value.collections[index].collection_amount = formattedValue;
 };
 
 const handleFileUpload = (event, index) => {
@@ -100,25 +118,66 @@ const removeFile = (index) => {
     errors.value[index].deposit_slip = '';
 };
 
+const handleCheckUpload = (event, index) => {
+    const file = event.target.files[0];
+    if (file) {
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
+        if (!validTypes.includes(file.type)) {
+            if (!errors.value[index]) errors.value[index] = {};
+            errors.value[index].check = 'Only images (JPG, PNG, GIF) and PDF files are allowed';
+            form.value.collections[index].check = null;
+            checkFileNames.value[index] = '';
+            return;
+        }
+        
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            if (!errors.value[index]) errors.value[index] = {};
+            errors.value[index].check = 'File size must be less than 5MB';
+            form.value.collections[index].check = null;
+            checkFileNames.value[index] = '';
+            return;
+        }
+        
+        form.value.collections[index].check = file;
+        checkFileNames.value[index] = file.name;
+        if (!errors.value[index]) errors.value[index] = {};
+        errors.value[index].check = '';
+    }
+};
+
+const removeCheckFile = (index) => {
+    form.value.collections[index].check = null;
+    checkFileNames.value[index] = '';
+    if (!errors.value[index]) errors.value[index] = {};
+    errors.value[index].check = '';
+};
+
 const addCollection = () => {
     form.value.collections.push({
         collection_amount: '',
-        deposit_slip: null
+        deposit_slip: null,
+        check: null
     });
     depositSlipFileNames.value.push('');
+    checkFileNames.value.push('');
 };
 
 const removeCollection = (index) => {
     form.value.collections.splice(index, 1);
     depositSlipFileNames.value.splice(index, 1);
+    checkFileNames.value.splice(index, 1);
 };
 
 const getTotalAmount = () => {
-    return form.value.collections.reduce((total, collection) => {
+    const total = form.value.collections.reduce((total, collection) => {
         const cleanAmount = collection.collection_amount.toString().replace(/,/g, '');
         const amount = parseFloat(cleanAmount) || 0;
         return total + amount;
-    }, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }, 0);
+    
+    return total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 const handleSubmit = () => {
@@ -183,6 +242,7 @@ const handleSubmit = () => {
         const cleanAmount = collection.collection_amount.toString().replace(/,/g, '');
         formData.append(`collections[${index}][collection_amount]`, cleanAmount);
         formData.append(`collections[${index}][deposit_slip]`, collection.deposit_slip);
+        formData.append(`collections[${index}][check]`, collection.check);
     });
     
     const page = usePage();
@@ -247,11 +307,13 @@ const closeModal = () => {
         collections: [
             {
                 collection_amount: '',
-                deposit_slip: null
+                deposit_slip: null,
+                check: null
             }
         ]
     };
     depositSlipFileNames.value = [''];
+    checkFileNames.value = [''];
     errors.value = {};
     emit('close');
 };
@@ -352,7 +414,7 @@ watch(() => selectedAccountId.value, (newValue) => {
                                             v-model="collection.collection_amount"
                                             @input="handleAmountInput($event, index)"
                                             type="text"
-                                            inputmode="numeric"
+                                            inputmode="decimal"
                                             :placeholder="'0.00'"
                                             class="w-full pl-7 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all bg-white"
                                         />
@@ -404,6 +466,49 @@ watch(() => selectedAccountId.value, (newValue) => {
                                         {{ errors[index].deposit_slip }}
                                     </p>
                                 </div>
+
+                                <!-- Check Upload (Optional) -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                        Check <span class="text-gray-500 text-xs">(Optional)</span>
+                                    </label>
+                                    
+                                    <div v-if="!checkFileNames[index]" class="relative">
+                                        <input
+                                            @change="handleCheckUpload($event, index)"
+                                            type="file"
+                                            accept="image/*,.pdf"
+                                            class="hidden"
+                                            :id="`check_${index}`"
+                                        />
+                                        <label
+                                            :for="`check_${index}`"
+                                            class="flex items-center justify-center gap-2 px-3 py-3 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50 hover:bg-blue-100 cursor-pointer transition-colors"
+                                        >
+                                            <Upload class="h-4 w-4 text-blue-600" />
+                                            <span class="text-sm font-medium text-blue-900">Click to upload</span>
+                                        </label>
+                                    </div>
+
+                                    <div v-else class="flex items-center gap-2 p-3 bg-green-50 rounded-lg border border-green-200">
+                                        <div class="flex-shrink-0 w-5 h-5 rounded-full bg-green-200 flex items-center justify-center">
+                                            <span class="text-xs font-bold text-green-700">✓</span>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-medium text-gray-900 truncate">{{ checkFileNames[index] }}</p>
+                                        </div>
+                                        <button
+                                            @click="removeCheckFile(index)"
+                                            class="flex-shrink-0 text-gray-400 hover:text-gray-600"
+                                        >
+                                            <X class="h-4 w-4" />
+                                        </button>
+                                    </div>
+
+                                    <p v-if="errors[index]?.check" class="mt-1 text-xs text-red-600">
+                                        {{ errors[index].check }}
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -438,6 +543,11 @@ watch(() => selectedAccountId.value, (newValue) => {
                                     <span class="text-gray-700">Slip:</span>
                                     <span v-if="depositSlipFileNames[index]" class="text-green-600 font-semibold text-xs bg-green-100 px-2 py-0.5 rounded-full">✓ Attached</span>
                                     <span v-else class="text-red-600 font-semibold text-xs bg-red-100 px-2 py-0.5 rounded-full">Missing</span>
+                                </div>
+                                <div class="flex justify-between items-center pt-2 border-t border-gray-100">
+                                    <span class="text-gray-700">Check:</span>
+                                    <span v-if="checkFileNames[index]" class="text-blue-600 font-semibold text-xs bg-blue-100 px-2 py-0.5 rounded-full">✓ Attached</span>
+                                    <span v-else class="text-gray-400 font-semibold text-xs bg-gray-100 px-2 py-0.5 rounded-full">Optional</span>
                                 </div>
                             </div>
                         </div>

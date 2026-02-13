@@ -122,6 +122,7 @@ class OperatingAccountController extends Controller
                 $collectionsData[] = [
                     'collection_amount' => $request->input("collections.$index.collection_amount"),
                     'deposit_slip' => $request->file("collections.$index.deposit_slip"),
+                    'check' => $request->file("collections.$index.check"),
                 ];
                 $index++;
             }
@@ -135,7 +136,9 @@ class OperatingAccountController extends Controller
 
             // Process each collection
             foreach ($collectionsData as $collectionData) {
-                $amount = (float)$collectionData['collection_amount'];
+                // Remove commas from the amount before converting to float
+                $amountString = str_replace(',', '', $collectionData['collection_amount']);
+                $amount = (float)$amountString;
                 
                 // Validate amount
                 if ($amount <= 0) {
@@ -146,6 +149,7 @@ class OperatingAccountController extends Controller
                 }
 
                 $filePath = null;
+                $checkPath = null;
 
                 // Store the deposit slip file if present
                 if ($collectionData['deposit_slip']) {
@@ -163,11 +167,28 @@ class OperatingAccountController extends Controller
                     $filePath = $file->store('deposit-slips/' . $operatingAccount->id, 'public');
                 }
 
+                // Store the check file if present (optional)
+                if ($collectionData['check']) {
+                    $file = $collectionData['check'];
+                    
+                    // Validate file
+                    if (!$file->isValid()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'One of the uploaded check files is invalid.',
+                        ], 422);
+                    }
+
+                    // Store file
+                    $checkPath = $file->store('checks/' . $operatingAccount->id, 'public');
+                }
+
                 // Create collection record with status = pending
                 $collection = Collection::create([
                     'operating_account_id' => $operatingAccount->id,
                     'collection_amount' => $amount,
                     'deposit_slip' => $filePath,
+                    'check' => $checkPath,
                     'status' => 'pending',
                 ]);
 

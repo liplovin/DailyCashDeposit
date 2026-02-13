@@ -16,6 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('operating_account_id');
             $table->decimal('collection_amount', 15, 2);
             $table->string('deposit_slip')->nullable();
+            $table->string('check')->nullable();
             $table->enum('status', ['pending', 'processed'])->default('pending');
             $table->timestamps();
 
