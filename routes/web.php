@@ -116,6 +116,43 @@ Route::middleware('auth')->group(function () {
         Route::get('/settings', function () {
             return Inertia::render('Admin/Settings/Index');
         })->name('settings');
+
+        // Treasury Module Routes - Coming Soon
+        Route::get('/collateral', function () {
+            return Inertia::render('Admin/Collateral/Index');
+        })->name('collateral');
+
+        Route::get('/time-deposit', function () {
+            return Inertia::render('Admin/Time Deposit/Index');
+        })->name('time-deposit');
+
+        Route::get('/government-securities', function () {
+            return Inertia::render('Admin/Goverment Securities/Index');
+        })->name('government-securities');
+
+        Route::get('/other-investment', function () {
+            return Inertia::render('Admin/Other Investment/Index');
+        })->name('other-investment');
+
+        Route::get('/operating-accounts', function () {
+            return Inertia::render('Admin/Operating Accounts/Index');
+        })->name('operating-accounts');
+
+        Route::get('/dollar', function () {
+            return Inertia::render('Admin/Dollar/Index');
+        })->name('dollar');
+
+        Route::get('/corporate-bonds', function () {
+            return Inertia::render('Admin/Corporate Bonds/Index');
+        })->name('corporate-bonds');
+
+        Route::get('/cash-infusion', function () {
+            return Inertia::render('Admin/Cash Infusion/Index');
+        })->name('cash-infusion');
+
+        Route::get('/investment', function () {
+            return Inertia::render('Admin/Investment/Index');
+        })->name('investment');
     });
 
     // User Management Routes

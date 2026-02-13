@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
-import { Home, Users, LogOut, Menu } from 'lucide-vue-next';
+import { Home, Users, LogOut, Menu, Wallet, BarChart3, Shield, Clock, FileText, TrendingUp, Banknote, DollarSign, Coins, ArrowUpRight, PiggyBank } from 'lucide-vue-next';
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
@@ -14,7 +14,16 @@ const currentRoute = computed(() => page.url);
 const isRouteActive = (routeName) => {
     const routeList = {
         'dashboard': '/dashboard',
-        'admin.users': '/admin/users'
+        'admin.users': '/admin/users',
+        'admin.collateral': '/admin/collateral',
+        'admin.time-deposit': '/admin/time-deposit',
+        'admin.government-securities': '/admin/government-securities',
+        'admin.other-investment': '/admin/other-investment',
+        'admin.operating-accounts': '/admin/operating-accounts',
+        'admin.dollar': '/admin/dollar',
+        'admin.corporate-bonds': '/admin/corporate-bonds',
+        'admin.cash-infusion': '/admin/cash-infusion',
+        'admin.investment': '/admin/investment'
     };
     
     const routePath = routeList[routeName];
@@ -41,7 +50,16 @@ const handleMenuClick = (item) => {
     } else if (item.route) {
         const routeUrls = {
             'dashboard': '/dashboard',
-            'admin.users': '/admin/users'
+            'admin.users': '/admin/users',
+            'admin.collateral': '/admin/collateral',
+            'admin.time-deposit': '/admin/time-deposit',
+            'admin.government-securities': '/admin/government-securities',
+            'admin.other-investment': '/admin/other-investment',
+            'admin.operating-accounts': '/admin/operating-accounts',
+            'admin.dollar': '/admin/dollar',
+            'admin.corporate-bonds': '/admin/corporate-bonds',
+            'admin.cash-infusion': '/admin/cash-infusion',
+            'admin.investment': '/admin/investment'
         };
         router.get(routeUrls[item.route]);
     }
@@ -57,6 +75,51 @@ const menuItems = [
         name: 'User Management',
         component: Users,
         route: 'admin.users'
+    },
+    {
+        name: 'Collateral',
+        component: Shield,
+        route: 'admin.collateral'
+    },
+    {
+        name: 'Time Deposit',
+        component: Clock,
+        route: 'admin.time-deposit'
+    },
+    {
+        name: 'Government Securities',
+        component: FileText,
+        route: 'admin.government-securities'
+    },
+    {
+        name: 'Other Investment',
+        component: TrendingUp,
+        route: 'admin.other-investment'
+    },
+    {
+        name: 'Operating Accounts',
+        component: Wallet,
+        route: 'admin.operating-accounts'
+    },
+    {
+        name: 'Dollar',
+        component: DollarSign,
+        route: 'admin.dollar'
+    },
+    {
+        name: 'Corporate Bonds',
+        component: Banknote,
+        route: 'admin.corporate-bonds'
+    },
+    {
+        name: 'Cash Infusion',
+        component: ArrowUpRight,
+        route: 'admin.cash-infusion'
+    },
+    {
+        name: 'Investments',
+        component: PiggyBank,
+        route: 'admin.investment'
     }
 ];
 </script>
@@ -160,6 +223,13 @@ const menuItems = [
         <div class="flex-1 flex flex-col overflow-hidden">
             <div class="flex-1 overflow-auto p-8">
                 <slot />
+            </div>
+            
+            <!-- Footer -->
+            <div class="border-t border-gray-200 bg-gray-50 px-8 py-4">
+                <p class="text-center text-sm text-gray-600">
+                    © {{ new Date().getFullYear() }} Crafted by John Philip Pera & Robert Janipin
+                </p>
             </div>
         </div>
     </div>

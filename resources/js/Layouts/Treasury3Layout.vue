@@ -168,6 +168,13 @@ const menuItems = [
             <div class="flex-1 overflow-auto p-8">
                 <slot />
             </div>
+            
+            <!-- Footer -->
+            <div class="border-t border-gray-200 bg-gray-50 px-8 py-4">
+                <p class="text-center text-sm text-gray-600">
+                    © {{ new Date().getFullYear() }} Crafted by John Philip Pera & Robert Janipin
+                </p>
+            </div>
         </div>
     </div>
 </template>
