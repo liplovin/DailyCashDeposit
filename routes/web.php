@@ -139,8 +139,18 @@ Route::middleware('auth')->group(function () {
             return Inertia::render('Admin/Other Investment/Index');
         })->name('other-investment');
 
+        Route::get('/operating-accounts/view-collection', function () {
+            $operatingAccounts = \App\Models\OperatingAccount::with('collections')->get();
+            return Inertia::render('Admin/Operating Accounts/ViewCollectionOperatingAccounts', [
+                'operatingAccounts' => $operatingAccounts,
+            ]);
+        })->name('operating-accounts.view-collection');
+
         Route::get('/operating-accounts', function () {
-            return Inertia::render('Admin/Operating Accounts/Index');
+            $operatingAccounts = \App\Models\OperatingAccount::with('collections')->get();
+            return Inertia::render('Admin/Operating Accounts/Index', [
+                'operatingAccounts' => $operatingAccounts,
+            ]);
         })->name('operating-accounts');
 
         Route::get('/dollar', function () {
