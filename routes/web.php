@@ -117,6 +117,11 @@ Route::middleware('auth')->group(function () {
             return Inertia::render('Admin/Settings/Index');
         })->name('settings');
 
+        // Reports Module - Important
+        Route::get('/reports', function () {
+            return Inertia::render('Admin/Reports/Index');
+        })->name('reports');
+
         // Treasury Module Routes - Coming Soon
         Route::get('/collateral', function () {
             return Inertia::render('Admin/Collateral/Index');

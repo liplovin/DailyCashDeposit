@@ -15,6 +15,7 @@ const isRouteActive = (routeName) => {
     const routeList = {
         'dashboard': '/dashboard',
         'admin.users': '/admin/users',
+        'admin.reports': '/admin/reports',
         'admin.collateral': '/admin/collateral',
         'admin.time-deposit': '/admin/time-deposit',
         'admin.government-securities': '/admin/government-securities',
@@ -51,6 +52,7 @@ const handleMenuClick = (item) => {
         const routeUrls = {
             'dashboard': '/dashboard',
             'admin.users': '/admin/users',
+            'admin.reports': '/admin/reports',
             'admin.collateral': '/admin/collateral',
             'admin.time-deposit': '/admin/time-deposit',
             'admin.government-securities': '/admin/government-securities',
@@ -75,6 +77,12 @@ const menuItems = [
         name: 'User Management',
         component: Users,
         route: 'admin.users'
+    },
+    {
+        name: 'Reports',
+        component: BarChart3,
+        route: 'admin.reports',
+        isImportant: true
     },
     {
         name: 'Collateral',
@@ -170,7 +178,11 @@ const menuItems = [
                         :class="[
                             'w-full flex items-center rounded-lg transition-all duration-200 text-sm font-medium group relative',
                             sidebarOpen ? 'space-x-3 px-4 py-2.5 justify-start' : 'justify-center p-2.5',
-                            isRouteActive(item.route)
+                            item.isImportant
+                                ? isRouteActive(item.route)
+                                    ? 'bg-red-50 text-red-700 font-semibold border border-red-200'
+                                    : 'text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200'
+                                : isRouteActive(item.route)
                                 ? 'bg-yellow-50 text-yellow-700 font-semibold'
                                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                         ]"
@@ -179,10 +191,12 @@ const menuItems = [
                         <component :is="item.component" :class="[
                             'flex-shrink-0 transition-all duration-200',
                             sidebarOpen ? 'h-5 w-5' : 'h-5 w-5',
-                            isRouteActive(item.route) ? 'text-yellow-600' : 'text-gray-400 group-hover:text-gray-600'
+                            item.isImportant
+                                ? isRouteActive(item.route) ? 'text-red-600' : 'text-red-500 group-hover:text-red-600'
+                                : isRouteActive(item.route) ? 'text-yellow-600' : 'text-gray-400 group-hover:text-gray-600'
                         ]" />
                         <span v-if="sidebarOpen" class="flex-1 text-left transition-opacity duration-300">{{ item.name }}</span>
-                        <div v-if="isRouteActive(item.route) && sidebarOpen" class="w-1 h-1 rounded-full bg-yellow-600 flex-shrink-0"></div>
+                        <div v-if="isRouteActive(item.route) && sidebarOpen" :class="['w-1 h-1 rounded-full flex-shrink-0', item.isImportant ? 'bg-red-600' : 'bg-yellow-600']"></div>
                     </button>
                 </div>
             </nav>
