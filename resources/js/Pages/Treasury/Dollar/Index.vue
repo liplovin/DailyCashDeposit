@@ -264,7 +264,7 @@ const deleteDollar = async (dollar) => {
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-300">{{ dollar.account_number }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-300">
-                                    ₱ {{ parseFloat(dollar.beginning_balance).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                                    $ {{ parseFloat(dollar.beginning_balance).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-300">
                                     {{ formatMaturityDate(dollar.maturity_date) }}
@@ -297,7 +297,7 @@ const deleteDollar = async (dollar) => {
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">SUB-TOTAL DOLLARS</td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">
-                                    ₱ {{ totalBeginningBalance.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                                    $ {{ totalBeginningBalance.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>

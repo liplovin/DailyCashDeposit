@@ -275,7 +275,7 @@ const handleDateInput = (event) => {
                             Beginning Balance <span class="text-red-500">*</span>
                         </label>
                         <div class="relative">
-                            <span class="absolute left-4 top-2 text-gray-500 font-semibold">₱</span>
+                            <span class="absolute left-4 top-2 text-gray-500 font-semibold">$</span>
                             <input
                                 :value="form.beginning_balance"
                                 @input="handleBalanceInput"
