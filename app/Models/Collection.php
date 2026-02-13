@@ -13,6 +13,7 @@ class Collection extends Model
         'operating_account_id',
         'collection_amount',
         'deposit_slip',
+        'check',
         'status',
     ];
 

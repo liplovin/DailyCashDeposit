@@ -18,9 +18,11 @@ const emit = defineEmits(['close', 'updated']);
 
 const form = ref({
     collection_amount: '',
-    deposit_slip: null
+    deposit_slip: null,
+    check: null
 });
 const editFileNames = ref('');
+const checkFileNames = ref('');
 const isEditing = ref(false);
 
 const handleAmountKeyDown = (event) => {
@@ -108,6 +110,48 @@ const removeFile = () => {
     if (fileInput) fileInput.value = '';
 };
 
+const handleCheckUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
+        if (!validTypes.includes(file.type)) {
+            Swal.fire({
+                title: 'Invalid File Type',
+                text: 'Only images (JPG, PNG, GIF) and PDF files are allowed',
+                icon: 'warning',
+                confirmButtonColor: '#3B82F6'
+            });
+            event.target.value = '';
+            form.value.check = null;
+            checkFileNames.value = '';
+            return;
+        }
+        
+        if (file.size > 5 * 1024 * 1024) {
+            Swal.fire({
+                title: 'File Too Large',
+                text: 'File size must be less than 5MB',
+                icon: 'warning',
+                confirmButtonColor: '#3B82F6'
+            });
+            event.target.value = '';
+            form.value.check = null;
+            checkFileNames.value = '';
+            return;
+        }
+        
+        form.value.check = file;
+        checkFileNames.value = file.name;
+    }
+};
+
+const removeCheckFile = () => {
+    form.value.check = null;
+    checkFileNames.value = '';
+    const checkInput = document.querySelectorAll('input[type="file"]')[1];
+    if (checkInput) checkInput.value = '';
+};
+
 const saveEdit = async () => {
     const cleanAmount = form.value.collection_amount.toString().replace(/,/g, '');
     
@@ -137,6 +181,9 @@ const saveEdit = async () => {
     formData.append('collection_amount', cleanAmount);
     if (form.value.deposit_slip) {
         formData.append('deposit_slip', form.value.deposit_slip);
+    }
+    if (form.value.check) {
+        formData.append('check', form.value.check);
     }
     
     try {
@@ -187,9 +234,11 @@ const closeModal = () => {
     emit('close');
     form.value = {
         collection_amount: '',
-        deposit_slip: null
+        deposit_slip: null,
+        check: null
     };
     editFileNames.value = '';
+    checkFileNames.value = '';
 };
 
 const initializeForm = () => {
@@ -296,6 +345,51 @@ watch(() => props.isOpen, (newValue) => {
                             </div>
                             <button
                                 @click="removeFile"
+                                class="text-gray-400 hover:text-red-600 transition-colors"
+                            >
+                                <X class="h-5 w-5" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Check File Upload Section (Optional) -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Check <span class="text-gray-500 text-xs">(Optional)</span></label>
+                        
+                        <!-- Current File Info -->
+                        <div v-if="collection.check && !checkFileNames" class="mb-4 p-4 bg-green-50 border-l-4 border-green-500 rounded-lg">
+                            <p class="text-xs font-semibold text-green-700 uppercase mb-2">Current File</p>
+                            <p class="text-sm text-green-900 font-medium mb-2">✓ Check file uploaded</p>
+                            <p class="text-xs text-green-600">Upload a new file to replace it</p>
+                        </div>
+
+                        <!-- New File Upload -->
+                        <label class="border-2 border-dashed border-purple-300 rounded-xl p-8 hover:border-purple-500 hover:bg-purple-50 transition-all duration-200 cursor-pointer group block">
+                            <input
+                                type="file"
+                                @change="handleCheckUpload"
+                                accept="image/jpeg,image/jpg,image/png,image/gif,.pdf"
+                                class="hidden"
+                            />
+                            <div class="flex flex-col items-center justify-center text-center pointer-events-none">
+                                <div class="mb-3 p-3 bg-purple-100 rounded-full group-hover:bg-purple-200 transition-colors">
+                                    <Upload class="h-6 w-6 text-purple-600" />
+                                </div>
+                                <p class="text-sm font-semibold text-gray-700 group-hover:text-purple-600">Click to upload new file</p>
+                                <p class="text-xs text-gray-500 mt-1">JPG, PNG, GIF or PDF (max 5MB)</p>
+                            </div>
+                        </label>
+
+                        <!-- Selected File Display -->
+                        <div v-if="checkFileNames" class="mt-4 p-3 bg-purple-50 rounded-lg border border-purple-200 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="p-2 bg-purple-100 rounded">
+                                    <Upload class="h-4 w-4 text-purple-600" />
+                                </div>
+                                <p class="text-sm font-medium text-purple-900">{{ checkFileNames }}</p>
+                            </div>
+                            <button
+                                @click="removeCheckFile"
                                 class="text-gray-400 hover:text-red-600 transition-colors"
                             >
                                 <X class="h-5 w-5" />

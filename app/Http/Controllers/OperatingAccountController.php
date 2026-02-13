@@ -313,7 +313,10 @@ class OperatingAccountController extends Controller
                 ], 422);
             }
 
-            $amount = (float)$request->input('collection_amount');
+            $amount = $request->input('collection_amount');
+            // Remove commas from the amount before converting to float
+            $amountString = str_replace(',', '', $amount);
+            $amount = (float)$amountString;
 
             if ($amount <= 0) {
                 return response()->json([
@@ -324,7 +327,7 @@ class OperatingAccountController extends Controller
 
             $collection->collection_amount = $amount;
 
-            // Update file if provided
+            // Update deposit slip file if provided
             if ($request->hasFile('deposit_slip')) {
                 $file = $request->file('deposit_slip');
 
@@ -346,6 +349,30 @@ class OperatingAccountController extends Controller
                 // Store new file
                 $filePath = $file->store('deposit-slips/' . $collection->operating_account_id, 'public');
                 $collection->deposit_slip = $filePath;
+            }
+
+            // Update check file if provided
+            if ($request->hasFile('check')) {
+                $file = $request->file('check');
+
+                if (!$file->isValid()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'The uploaded check file is invalid.',
+                    ], 422);
+                }
+
+                // Delete old file if exists
+                if ($collection->check) {
+                    $oldFilePath = storage_path('app/public/' . $collection->check);
+                    if (file_exists($oldFilePath)) {
+                        unlink($oldFilePath);
+                    }
+                }
+
+                // Store new file
+                $filePath = $file->store('checks/' . $collection->operating_account_id, 'public');
+                $collection->check = $filePath;
             }
 
             $collection->save();

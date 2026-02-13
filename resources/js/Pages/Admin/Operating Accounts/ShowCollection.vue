@@ -88,9 +88,19 @@ const formatDateWithTime = (dateString) => {
                             <!-- Deposit Slip -->
                             <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
                                 <p class="text-xs font-semibold text-gray-600 mb-2 uppercase">Deposit Slip</p>
-                                <a v-if="collection.deposit_slip" :href="`/storage/${collection.deposit_slip}`" download class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-lg transition-all duration-200 shadow-md hover:shadow-lg">
+                                <a v-if="collection.deposit_slip" :href="`/storage/${collection.deposit_slip}`" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-lg transition-all duration-200 shadow-md hover:shadow-lg">
                                     <Download class="h-4 w-4" />
-                                    <span>Download</span>
+                                    <span>View</span>
+                                </a>
+                                <span v-else class="text-gray-400 text-sm">No file attached</span>
+                            </div>
+
+                            <!-- Check (Optional) -->
+                            <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <p class="text-xs font-semibold text-gray-600 mb-2 uppercase">Check <span class="text-gray-400 text-xs">(Optional)</span></p>
+                                <a v-if="collection.check" :href="`/storage/${collection.check}`" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-sm rounded-lg transition-all duration-200 shadow-md hover:shadow-lg">
+                                    <Download class="h-4 w-4" />
+                                    <span>View</span>
                                 </a>
                                 <span v-else class="text-gray-400 text-sm">No file attached</span>
                             </div>
