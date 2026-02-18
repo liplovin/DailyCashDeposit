@@ -20,7 +20,7 @@ class InvestmentController extends Controller
     {
         $validated = $request->validate([
             'investment_name' => 'required|string|max:255',
-            'account_number' => 'required|string|unique:investments,account_number',
+            'reference_number' => 'required|string',
             'beginning_balance' => 'required|numeric|min:0',
             'maturity_date' => 'required|date_format:m/d/Y',
         ]);
@@ -37,7 +37,7 @@ class InvestmentController extends Controller
 
         $validated = $request->validate([
             'investment_name' => 'required|string|max:255',
-            'account_number' => 'required|string|unique:investments,account_number,' . $id,
+            'reference_number' => 'required|string',
             'beginning_balance' => 'required|numeric|min:0',
             'maturity_date' => 'required|date_format:m/d/Y',
         ]);

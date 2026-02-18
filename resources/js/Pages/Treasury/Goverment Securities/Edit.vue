@@ -23,7 +23,7 @@ const emit = defineEmits(['close']);
 
 const form = ref({
     government_security_name: '',
-    account_number: '',
+    reference_number: '',
     beginning_balance: '',
     maturity_date: '',
     customGovernmentSecurity: ''
@@ -51,7 +51,7 @@ watch(() => props.governmentSecurity, (newGovernmentSecurity) => {
         
         form.value = {
             government_security_name: existsInList ? newGovernmentSecurity.government_security_name : 'other',
-            account_number: newGovernmentSecurity.account_number || '',
+            reference_number: newGovernmentSecurity.reference_number || '',
             beginning_balance: formatBalanceDisplay(newGovernmentSecurity.beginning_balance),
             maturity_date: formatDateDisplay(newGovernmentSecurity.maturity_date),
             customGovernmentSecurity: !existsInList ? newGovernmentSecurity.government_security_name : ''
@@ -91,8 +91,8 @@ const handleSubmit = () => {
     if (!governmentSecurityValue.trim()) {
         errors.value.government_security_name = 'Government security name is required';
     }
-    if (!form.value.account_number.trim()) {
-        errors.value.account_number = 'Account number is required';
+    if (!form.value.reference_number.trim()) {
+        errors.value.reference_number = 'Reference number is required';
     }
     if (isNaN(balanceValue) || balanceValue < 0) {
         errors.value.beginning_balance = 'Beginning balance must be a valid positive number';
@@ -106,7 +106,7 @@ const handleSubmit = () => {
         // Send the numeric value (without commas) to the server
         const submitData = {
             government_security_name: governmentSecurityValue,
-            account_number: form.value.account_number,
+            reference_number: form.value.reference_number,
             beginning_balance: balanceValue.toFixed(2),
             maturity_date: form.value.maturity_date
         };
@@ -124,8 +124,8 @@ const handleSubmit = () => {
                 isSubmitting.value = false;
             },
             onError: (err) => {
-                if (err.account_number) {
-                    errors.value.account_number = err.account_number;
+                if (err.reference_number) {
+                    errors.value.reference_number = err.reference_number;
                 }
                 if (err.beginning_balance) {
                     errors.value.beginning_balance = err.beginning_balance;
@@ -137,7 +137,7 @@ const handleSubmit = () => {
 };
 
 const closeModal = () => {
-    form.value = { government_security_name: '', account_number: '', beginning_balance: '', maturity_date: '', customGovernmentSecurity: '' };
+    form.value = { government_security_name: '', reference_number: '', beginning_balance: '', maturity_date: '', customGovernmentSecurity: '' };
     errors.value = {};
     emit('close');
 };
@@ -290,19 +290,19 @@ const handleBalanceKeydown = (event) => {
                         />
                     </div>
 
-                    <!-- Account Number Field -->
+                    <!-- Reference Number Field -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-900 mb-2">
-                            Account Number <span class="text-red-500">*</span>
+                            Reference Number <span class="text-red-500">*</span>
                         </label>
                         <input
-                            v-model="form.account_number"
+                            v-model="form.reference_number"
                             type="text"
-                            placeholder="Enter account number"
+                            placeholder="Enter reference number"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
-                            :class="{ 'border-red-500 focus:ring-red-500': errors.account_number }"
+                            :class="{ 'border-red-500 focus:ring-red-500': errors.reference_number }"
                         />
-                        <p v-if="errors.account_number" class="text-red-500 text-sm mt-1">{{ errors.account_number }}</p>
+                        <p v-if="errors.reference_number" class="text-red-500 text-sm mt-1">{{ errors.reference_number }}</p>
                     </div>
 
                     <!-- Beginning Balance Field -->

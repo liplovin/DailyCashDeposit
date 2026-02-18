@@ -34,18 +34,18 @@ const filteredGovernmentSecurities = computed(() => {
     const query = searchQuery.value.toLowerCase();
     return props.governmentSecurities.filter(security => 
         security.government_security_name.toLowerCase().includes(query) ||
-        security.account_number.toLowerCase().includes(query)
+        security.reference_number.toLowerCase().includes(query)
     );
 });
-
-const openModal = () => {
-    selectedGovernmentSecurity.value = null;
-    showModal.value = true;
-};
 
 const closeModal = () => {
     showModal.value = false;
     selectedGovernmentSecurity.value = null;
+};
+
+const openModal = () => {
+    selectedGovernmentSecurity.value = null;
+    showModal.value = true;
 };
 
 const openEditModal = (security) => {
@@ -121,7 +121,7 @@ const deleteGovernmentSecurity = async (security) => {
         html: `
             <div class="text-left">
                 <p class="mb-3"><strong>Government Security:</strong> ${security.government_security_name}</p>
-                <p class="mb-3"><strong>Account:</strong> ${security.account_number}</p>
+                <p class="mb-3"><strong>Reference:</strong> ${security.reference_number}</p>
                 <p class="text-red-600 text-sm"><strong>⚠️ This action cannot be undone.</strong></p>
             </div>
         `,
@@ -185,7 +185,7 @@ const deleteGovernmentSecurity = async (security) => {
                     <input
                         v-model="searchQuery"
                         type="text"
-                        placeholder="Search by government security name or account number..."
+                        placeholder="Search by government security name or reference number..."
                         class="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
                     />
                 </div>
@@ -233,7 +233,7 @@ const deleteGovernmentSecurity = async (security) => {
                         <thead class="bg-gradient-to-r from-yellow-400 to-yellow-500">
                             <tr class="border-b-2 border-gray-300">
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300 cursor-move">⋮⋮ Government Security Name</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Account Number</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Reference Number</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Created</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white">Actions</th>
                             </tr>
@@ -260,7 +260,7 @@ const deleteGovernmentSecurity = async (security) => {
                                         {{ security.government_security_name }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-300">{{ security.account_number }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-300">{{ security.reference_number }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-300">
                                     ₱ {{ parseFloat(security.beginning_balance).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                                 </td>

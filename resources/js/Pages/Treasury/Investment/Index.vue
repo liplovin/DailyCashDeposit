@@ -34,7 +34,7 @@ const filteredInvestments = computed(() => {
     const query = searchQuery.value.toLowerCase();
     return props.investments.filter(investment => 
         investment.investment_name.toLowerCase().includes(query) ||
-        investment.account_number.toLowerCase().includes(query)
+        investment.reference_number.toLowerCase().includes(query)
     );
 });
 
@@ -121,7 +121,7 @@ const deleteInvestment = async (investment) => {
         html: `
             <div class="text-left">
                 <p class="mb-3"><strong>Investment:</strong> ${investment.investment_name}</p>
-                <p class="mb-3"><strong>Account:</strong> ${investment.account_number}</p>
+                <p class="mb-3"><strong>Reference:</strong> ${investment.reference_number}</p>
                 <p class="text-red-600 text-sm"><strong>⚠️ This action cannot be undone.</strong></p>
             </div>
         `,
@@ -185,7 +185,7 @@ const deleteInvestment = async (investment) => {
                     <input
                         v-model="searchQuery"
                         type="text"
-                        placeholder="Search by investment name or account number..."
+                        placeholder="Search by investment name or reference number..."
                         class="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
                     />
                 </div>
@@ -233,7 +233,7 @@ const deleteInvestment = async (investment) => {
                         <thead class="bg-gradient-to-r from-yellow-400 to-yellow-500">
                             <tr class="border-b-2 border-gray-300">
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300 cursor-move">⋮⋮ Investment Name</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Account Number</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Reference Number</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Created</th>
@@ -262,7 +262,7 @@ const deleteInvestment = async (investment) => {
                                         {{ investment.investment_name }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-300">{{ investment.account_number }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-300">{{ investment.reference_number }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-300">
                                     ₱ {{ parseFloat(investment.beginning_balance).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                                 </td>

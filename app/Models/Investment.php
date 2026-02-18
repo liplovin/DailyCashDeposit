@@ -11,7 +11,7 @@ class Investment extends Model
 
     protected $fillable = [
         'investment_name',
-        'account_number',
+        'reference_number',
         'beginning_balance',
         'maturity_date',
     ];
