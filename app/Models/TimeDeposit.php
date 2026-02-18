@@ -8,3 +8,4 @@ class TimeDeposit extends Model
 {
     protected $fillable = ['time_deposit_name', 'account_number', 'beginning_balance', 'maturity_date'];
 }
+

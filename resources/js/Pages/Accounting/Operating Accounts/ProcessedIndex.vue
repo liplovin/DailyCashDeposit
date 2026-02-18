@@ -7,14 +7,13 @@ import { Search, Calendar, ArrowLeft } from 'lucide-vue-next';
 
 const page = usePage();
 const showDetailsModal = ref(false);
-const selectedDisbursements = ref([]);
-const selectedCollateralName = ref('');
+const selectedGroup = ref(null);
 const searchQuery = ref('');
 const today = new Date().toISOString().split('T')[0];
 const filterDate = ref(today);
 
 const props = defineProps({
-    collaterals: {
+    operatingAccounts: {
         type: Array,
         default: () => []
     },
@@ -24,15 +23,14 @@ const props = defineProps({
     }
 });
 
-const handleShowDetails = (disbursements, collateralName) => {
-    selectedDisbursements.value = disbursements;
-    selectedCollateralName.value = collateralName;
+const handleShowDetails = (group) => {
+    selectedGroup.value = group;
     showDetailsModal.value = true;
 };
 
 const closeDetailsModal = () => {
     showDetailsModal.value = false;
-    selectedDisbursements.value = [];
+    selectedGroup.value = null;
 };
 
 const groupedDisbursements = computed(() => {
@@ -40,15 +38,15 @@ const groupedDisbursements = computed(() => {
     
     props.disbursements.forEach(disbursement => {
         const timestamp = new Date(disbursement.created_at).toLocaleString();
-        const collateralId = disbursement.collateral_id;
-        const key = `${collateralId}-${timestamp}`;
+        const operatingAccountId = disbursement.operating_account_id;
+        const key = `${operatingAccountId}-${timestamp}`;
         
         if (!groups[key]) {
             groups[key] = {
                 timestamp,
                 createdAt: disbursement.created_at,
-                collateralName: disbursement.collateral?.collateral,
-                collateralId: collateralId,
+                operatingAccountName: disbursement.operating_account?.operating_account_name,
+                operatingAccountId: operatingAccountId,
                 disbursements: []
             };
         }
@@ -70,7 +68,7 @@ const filteredDisbursements = computed(() => {
     if (searchQuery.value.trim()) {
         const query = searchQuery.value.toLowerCase();
         filtered = filtered.filter(group => 
-            group.collateralName.toLowerCase().includes(query) ||
+            group.operatingAccountName.toLowerCase().includes(query) ||
             group.timestamp.toLowerCase().includes(query)
         );
     }
@@ -95,6 +93,28 @@ const totalFilteredAmount = computed(() => {
     }, 0);
 });
 
+const groupedByOperatingAccount = computed(() => {
+    const grouped = {};
+    
+    filteredDisbursements.value.forEach(group => {
+        const accountId = group.operatingAccountId;
+        const accountName = group.operatingAccountName;
+        
+        if (!grouped[accountId]) {
+            grouped[accountId] = {
+                accountName,
+                groups: [],
+                total: 0
+            };
+        }
+        
+        grouped[accountId].groups.push(group);
+        grouped[accountId].total += getTotalAmount(group.disbursements);
+    });
+    
+    return grouped;
+});
+
 const formatDateWithTime = (dateString) => {
     const date = new Date(dateString);
     const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
@@ -113,7 +133,7 @@ const formatDateWithTime = (dateString) => {
                         <p class="text-gray-600 mt-1">View all processed disbursement records</p>
                     </div>
                     <Link
-                        href="/accounting/collateral"
+                        href="/accounting/operating-accounts"
                         class="flex items-center space-x-2 px-6 py-2.5 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 font-semibold shadow-md hover:shadow-lg"
                     >
                         <ArrowLeft class="h-5 w-5" />
@@ -128,8 +148,8 @@ const formatDateWithTime = (dateString) => {
                         <input
                             v-model="searchQuery"
                             type="text"
-                            placeholder="Search by collateral name or date..."
-                            class="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
+                            placeholder="Search by operating account name or date..."
+                            class="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
                         />
                     </div>
                     <div class="relative w-full md:w-48">
@@ -138,7 +158,7 @@ const formatDateWithTime = (dateString) => {
                             v-model="filterDate"
                             type="date"
                             placeholder="Filter by date"
-                            class="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-gray-900"
+                            class="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900"
                         />
                     </div>
                 </div>
@@ -176,9 +196,9 @@ const formatDateWithTime = (dateString) => {
             <div v-else class="bg-white rounded-xl border-2 border-gray-300 shadow-lg overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full border-collapse">
-                        <thead class="bg-gradient-to-r from-green-400 to-green-500">
+                        <thead class="bg-gradient-to-r from-blue-400 to-blue-500">
                             <tr class="border-b-2 border-gray-300">
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Collateral</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Operating Account</th>
                                 <th class="px-6 py-4 text-center text-sm font-bold text-white border-r border-gray-300">Disbursements</th>
                                 <th class="px-6 py-4 text-right text-sm font-bold text-white border-r border-gray-300">Total Amount</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Created At</th>
@@ -186,42 +206,55 @@ const formatDateWithTime = (dateString) => {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr 
-                                v-for="group in filteredDisbursements" 
-                                :key="`${group.collateralId}-${group.timestamp}`"
-                                :class="[
-                                    'relative transition-all duration-300 ease-out select-none',
-                                    'border-b border-gray-300 hover:bg-green-100'
-                                ]"
-                            >
-                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-300">
-                                    <div class="flex items-center">
-                                        <div class="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                                        {{ group.collateralName }}
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-700 text-center border-r border-gray-300">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                                        {{ group.disbursements.length }} item{{ group.disbursements.length !== 1 ? 's' : '' }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-900 font-bold text-right border-r border-gray-300">
-                                    ₱ {{ getTotalAmount(group.disbursements).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-300">
-                                    {{ formatDateWithTime(group.createdAt) }}
-                                </td>
-                                <td class="px-6 py-4 text-sm text-center">
-                                    <button
-                                        @click="handleShowDetails(group.disbursements, group.collateralName)"
-                                        class="inline-flex items-center px-4 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 font-semibold text-sm transition-colors"
-                                    >
-                                        Show Details
-                                    </button>
-                                </td>
-                            </tr>
+                            <template v-for="(accountData, accountId) in groupedByOperatingAccount" :key="accountId">
+                                <tr 
+                                    v-for="group in accountData.groups" 
+                                    :key="`${group.operatingAccountId}-${group.timestamp}`"
+                                    :class="[
+                                        'relative transition-all duration-300 ease-out select-none',
+                                        'border-b border-gray-300 hover:bg-blue-100'
+                                    ]"
+                                >
+                                    <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-300">
+                                        <div class="flex items-center">
+                                            <div class="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
+                                            {{ group.operatingAccountName }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-700 text-center border-r border-gray-300">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                                            {{ group.disbursements.length }} item{{ group.disbursements.length !== 1 ? 's' : '' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-900 font-bold text-right border-r border-gray-300">
+                                        ₱ {{ getTotalAmount(group.disbursements).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-300">
+                                        {{ formatDateWithTime(group.createdAt) }}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-center">
+                                        <button
+                                            @click="handleShowDetails(group)"
+                                            class="inline-flex items-center px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 font-semibold text-sm transition-colors"
+                                        >
+                                            Show Details
+                                        </button>
+                                    </td>
+                                </tr>
+                                <!-- Subtotal row for operating account -->
+                                <tr class="bg-blue-50 border-b-2 border-blue-300">
+                                    <td class="px-6 py-4 text-sm font-bold text-gray-900 border-r border-gray-300">
+                                        {{ accountData.accountName }} Subtotal
+                                    </td>
+                                    <td class="px-6 py-4 text-sm font-bold text-gray-900 border-r border-gray-300"></td>
+                                    <td class="px-6 py-4 text-sm font-bold text-blue-700 text-right border-r border-gray-300">
+                                        ₱ {{ accountData.total.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                                    </td>
+                                    <td colspan="2" class="px-6 py-4"></td>
+                                </tr>
+                            </template>
                         </tbody>
-                        <tfoot class="bg-green-100 border-t-2 border-gray-300">
+                        <tfoot class="bg-blue-100 border-t-2 border-gray-300">
                             <tr>
                                 <td colspan="1" class="px-6 py-4 text-sm font-bold text-gray-900 border-r border-gray-300">
                                     Total ({{ filteredDisbursements.length }} group{{ filteredDisbursements.length !== 1 ? 's' : '' }})
@@ -241,9 +274,9 @@ const formatDateWithTime = (dateString) => {
         <!-- Show Disbursement Details Modal -->
         <ShowDisbursement 
             :isOpen="showDetailsModal"
-            :disbursements="selectedDisbursements"
-            :collateralName="selectedCollateralName"
+            :group="selectedGroup"
             @close="closeDetailsModal"
+            @refresh="$emit('refresh')"
         />
     </AccountingLayout>
 </template>

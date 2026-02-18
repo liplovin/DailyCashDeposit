@@ -3,15 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CollateralController;
-use App\Http\Controllers\TimeDepositController;
-use App\Http\Controllers\GovernmentSecurityController;
-use App\Http\Controllers\OtherInvestmentController;
 use App\Http\Controllers\OperatingAccountController;
-use App\Http\Controllers\DollarController;
-use App\Http\Controllers\CorporateBondController;
-use App\Http\Controllers\CashInfusionController;
-use App\Http\Controllers\InvestmentController;
-use App\Http\Controllers\DisbursementController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -47,24 +39,6 @@ Route::middleware('auth')->group(function () {
         Route::put('/collateral/{id}', [CollateralController::class, 'update'])->name('collateral.update');
         Route::delete('/collateral/{id}', [CollateralController::class, 'destroy'])->name('collateral.destroy');
 
-        // Time Deposit Routes
-        Route::get('/time-deposit', [TimeDepositController::class, 'index'])->name('timedeposit');
-        Route::post('/time-deposit', [TimeDepositController::class, 'store'])->name('timedeposit.store');
-        Route::put('/time-deposit/{id}', [TimeDepositController::class, 'update'])->name('timedeposit.update');
-        Route::delete('/time-deposit/{id}', [TimeDepositController::class, 'destroy'])->name('timedeposit.destroy');
-
-        // Government Securities Routes
-        Route::get('/government-securities', [GovernmentSecurityController::class, 'index'])->name('government-securities');
-        Route::post('/government-securities', [GovernmentSecurityController::class, 'store'])->name('government-securities.store');
-        Route::put('/government-securities/{id}', [GovernmentSecurityController::class, 'update'])->name('government-securities.update');
-        Route::delete('/government-securities/{id}', [GovernmentSecurityController::class, 'destroy'])->name('government-securities.destroy');
-
-        // Other Investment Routes
-        Route::get('/other-investment', [OtherInvestmentController::class, 'index'])->name('other-investment');
-        Route::post('/other-investment', [OtherInvestmentController::class, 'store'])->name('other-investment.store');
-        Route::put('/other-investment/{id}', [OtherInvestmentController::class, 'update'])->name('other-investment.update');
-        Route::delete('/other-investment/{id}', [OtherInvestmentController::class, 'destroy'])->name('other-investment.destroy');
-
         // Operating Accounts Routes
         Route::get('/operating-accounts', [OperatingAccountController::class, 'index'])->name('operating-accounts');
         Route::post('/operating-accounts', [OperatingAccountController::class, 'store'])->name('operating-accounts.store');
@@ -75,31 +49,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/collections/{id}', [OperatingAccountController::class, 'deleteCollection'])->name('collections.delete');
         Route::post('/collections/{id}', [OperatingAccountController::class, 'updateCollection'])->name('collections.update');
 
-        // Dollar Routes
-        Route::get('/dollar', [DollarController::class, 'index'])->name('dollar');
-        Route::post('/dollar', [DollarController::class, 'store'])->name('dollar.store');
-        Route::put('/dollar/{id}', [DollarController::class, 'update'])->name('dollar.update');
-        Route::delete('/dollar/{id}', [DollarController::class, 'destroy'])->name('dollar.destroy');
-
-        // Corporate Bonds Routes
-        Route::get('/corporate-bonds', [CorporateBondController::class, 'index'])->name('corporate-bonds');
-        Route::post('/corporate-bonds', [CorporateBondController::class, 'store'])->name('corporate-bonds.store');
-        Route::put('/corporate-bonds/{id}', [CorporateBondController::class, 'update'])->name('corporate-bonds.update');
-        Route::delete('/corporate-bonds/{id}', [CorporateBondController::class, 'destroy'])->name('corporate-bonds.destroy');
-
-        // Cash Infusion Routes
-        Route::get('/cash-infusion', [CashInfusionController::class, 'index'])->name('cash-infusion');
-        Route::post('/cash-infusion', [CashInfusionController::class, 'store'])->name('cash-infusion.store');
-        Route::put('/cash-infusion/{id}', [CashInfusionController::class, 'update'])->name('cash-infusion.update');
-        Route::delete('/cash-infusion/{id}', [CashInfusionController::class, 'destroy'])->name('cash-infusion.destroy');
-
         // Investment Routes
-        Route::get('/investment', [InvestmentController::class, 'index'])->name('investment');
-        Route::post('/investment', [InvestmentController::class, 'store'])->name('investment.store');
-        Route::put('/investment/{id}', [InvestmentController::class, 'update'])->name('investment.update');
-        Route::delete('/investment/{id}', [InvestmentController::class, 'destroy'])->name('investment.destroy');
-
-        // Processed Collection Routes
         Route::get('/processed-collection', function () {
             $operatingAccounts = \App\Models\OperatingAccount::with(['collections' => function($query) {
                 $query->where('status', 'processed');
@@ -153,79 +103,31 @@ Route::middleware('auth')->group(function () {
                 'operatingAccounts' => $operatingAccounts,
             ]);
         })->name('operating-accounts');
-
-        Route::get('/dollar', function () {
-            return Inertia::render('Admin/Dollar/Index');
-        })->name('dollar');
-
-        Route::get('/corporate-bonds', function () {
-            return Inertia::render('Admin/Corporate Bonds/Index');
-        })->name('corporate-bonds');
-
-        Route::get('/cash-infusion', function () {
-            return Inertia::render('Admin/Cash Infusion/Index');
-        })->name('cash-infusion');
-
-        Route::get('/investment', function () {
-            return Inertia::render('Admin/Investment/Index');
-        })->name('investment');
     });
 
     // Accounting Routes
     Route::prefix('accounting')->name('accounting.')->group(function () {
-        Route::get('/collateral', function () {
-            $collaterals = \App\Models\Collateral::all();
-            $disbursements = \App\Models\Disbursement::with('collateral')->where('status', 'pending')->get();
-            return Inertia::render('Accounting/Collateral/Index', [
-                'collaterals' => $collaterals,
-                'disbursements' => $disbursements,
-            ]);
-        })->name('collateral');
-        Route::get('/processed-disbursement', function () {
-            $collaterals = \App\Models\Collateral::all();
-            $disbursements = \App\Models\Disbursement::with('collateral')->where('status', 'processed')->get();
-            return Inertia::render('Accounting/Collateral/ProcessedIndex', [
-                'collaterals' => $collaterals,
-                'disbursements' => $disbursements,
-            ]);
-        })->name('processed-disbursement');
-        Route::post('/disbursement', [DisbursementController::class, 'store'])->name('disbursement.store');
-        Route::post('/validate-disbursement', [DisbursementController::class, 'validate'])->name('disbursement.validate');
-        Route::post('/disbursement/process', [DisbursementController::class, 'processDisbursements'])->name('disbursement.process');
-        Route::put('/disbursement/{id}', [DisbursementController::class, 'update'])->name('disbursement.update');
-        Route::delete('/disbursement/{id}', [DisbursementController::class, 'destroy'])->name('disbursement.destroy');
-
-        Route::get('/time-deposit', function () {
-            return Inertia::render('Accounting/Time Deposit/Index');
-        })->name('time-deposit');
-
-        Route::get('/government-securities', function () {
-            return Inertia::render('Accounting/Goverment Securities/Index');
-        })->name('government-securities');
-
-        Route::get('/other-investment', function () {
-            return Inertia::render('Accounting/Other Investment/Index');
-        })->name('other-investment');
-
         Route::get('/operating-accounts', function () {
-            return Inertia::render('Accounting/Operating Accounts/Index');
+            $operatingAccounts = \App\Models\OperatingAccount::all();
+            $disbursements = \App\Models\OperatingAccountDisbursement::with('operatingAccount')->where('status', 'pending')->get();
+            return Inertia::render('Accounting/Operating Accounts/Index', [
+                'operatingAccounts' => $operatingAccounts,
+                'disbursements' => $disbursements,
+            ]);
         })->name('operating-accounts');
-
-        Route::get('/dollar', function () {
-            return Inertia::render('Accounting/Dollar/Index');
-        })->name('dollar');
-
-        Route::get('/corporate-bonds', function () {
-            return Inertia::render('Accounting/Corporate Bonds/Index');
-        })->name('corporate-bonds');
-
-        Route::get('/cash-infusion', function () {
-            return Inertia::render('Accounting/Cash Infusion/Index');
-        })->name('cash-infusion');
-
-        Route::get('/investment', function () {
-            return Inertia::render('Accounting/Investment/Index');
-        })->name('investment');
+        Route::get('/operating-accounts/processed', function () {
+            $operatingAccounts = \App\Models\OperatingAccount::all();
+            $disbursements = \App\Models\OperatingAccountDisbursement::with('operatingAccount')->where('status', 'processed')->get();
+            return Inertia::render('Accounting/Operating Accounts/ProcessedIndex', [
+                'operatingAccounts' => $operatingAccounts,
+                'disbursements' => $disbursements,
+            ]);
+        })->name('operating-accounts.processed');
+        Route::post('/operating-account-disbursement', [\App\Http\Controllers\OperatingAccountDisbursementController::class, 'store'])->name('operating-account-disbursement.store');
+        Route::post('/validate-operating-account-disbursement', [\App\Http\Controllers\OperatingAccountDisbursementController::class, 'validate'])->name('operating-account-disbursement.validate');
+        Route::post('/operating-account-disbursement/process', [\App\Http\Controllers\OperatingAccountDisbursementController::class, 'processDisbursements'])->name('operating-account-disbursement.process');
+        Route::put('/operating-account-disbursement/{operatingAccountDisbursement}', [\App\Http\Controllers\OperatingAccountDisbursementController::class, 'update'])->name('operating-account-disbursement.update');
+        Route::delete('/operating-account-disbursement/{operatingAccountDisbursement}', [\App\Http\Controllers\OperatingAccountDisbursementController::class, 'destroy'])->name('operating-account-disbursement.destroy');
     });
 
     // User Management Routes

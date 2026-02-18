@@ -18,9 +18,9 @@ class Kernel extends ConsoleKernel
             $controller->autoProcessPendingCollections();
         })->dailyAt('00:00');
 
-        // Auto-process pending disbursements at 12:00 AM (midnight)
+        // Auto-process pending operating account disbursements at 12:00 AM (midnight)
         $schedule->call(function () {
-            $controller = new \App\Http\Controllers\DisbursementController();
+            $controller = new \App\Http\Controllers\OperatingAccountDisbursementController();
             $controller->autoProcessPendingDisbursements();
         })->dailyAt('00:00');
     }

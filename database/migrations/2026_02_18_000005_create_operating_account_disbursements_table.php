@@ -11,14 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('disbursements', function (Blueprint $table) {
+        Schema::create('operating_account_disbursements', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('collateral_id')->constrained('collaterals')->onDelete('cascade');
+            $table->foreignId('operating_account_id')->constrained('operating_accounts')->onDelete('cascade');
             $table->string('check_number');
             $table->date('date');
             $table->decimal('amount', 12, 2);
             $table->enum('status', ['pending', 'processed'])->default('pending');
             $table->timestamps();
+
+            // Index for faster queries
+            $table->index('operating_account_id');
         });
     }
 
@@ -27,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('disbursements');
+        Schema::dropIfExists('operating_account_disbursements');
     }
 };

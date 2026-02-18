@@ -127,13 +127,13 @@ const handleSubmit = async () => {
     isSubmitting.value = true;
 
     try {
-        const response = await axios.put(`/accounting/disbursement/${props.disbursement.id}`, {
+        const response = await axios.put(`/accounting/operating-account-disbursement/${props.disbursement.id}`, {
             check_number: form.value.check_number,
             date: form.value.date,
             amount: cleanAmount
         });
 
-        if (response.data.success) {
+        if (response.data.message) {
             Swal.fire({
                 title: 'Success!',
                 text: 'Disbursement has been updated successfully.',
@@ -184,15 +184,12 @@ const handleClose = () => {
 
 <template>
     <div v-if="isOpen && disbursement" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <!-- Backdrop -->
         <div
             class="absolute inset-0 bg-black/50 backdrop-blur-sm"
             @click="handleClose"
         ></div>
 
-        <!-- Modal -->
         <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col transform transition-all duration-300">
-            <!-- Header with Gradient -->
             <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 px-8 py-6 flex items-center justify-between flex-shrink-0">
                 <div class="flex-1">
                     <h2 class="text-3xl font-bold text-white">Edit Disbursement</h2>
@@ -206,10 +203,8 @@ const handleClose = () => {
                 </button>
             </div>
 
-            <!-- Body -->
             <div class="flex-1 overflow-y-auto px-8 py-8 min-h-0">
                 <div class="space-y-7">
-                    <!-- Current Values Display -->
                     <div class="p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg">
                         <p class="text-xs font-semibold text-yellow-700 uppercase mb-3">Current Values</p>
                         <div class="space-y-2">
@@ -228,7 +223,6 @@ const handleClose = () => {
                         </div>
                     </div>
 
-                    <!-- Check Number Input -->
                     <div>
                         <label class="block text-sm font-bold text-gray-800 mb-3">Check Number</label>
                         <div class="relative group">
@@ -244,7 +238,6 @@ const handleClose = () => {
                         <p class="text-xs text-gray-600 mt-2">✓ Numbers only</p>
                     </div>
 
-                    <!-- Date Input -->
                     <div>
                         <label class="block text-sm font-bold text-gray-800 mb-3">Date</label>
                         <input
@@ -254,7 +247,6 @@ const handleClose = () => {
                         />
                     </div>
 
-                    <!-- Amount Input -->
                     <div>
                         <label class="block text-sm font-bold text-gray-800 mb-3">Amount</label>
                         <div class="relative group">
@@ -274,7 +266,6 @@ const handleClose = () => {
                 </div>
             </div>
 
-            <!-- Footer -->
             <div class="bg-gray-50 px-8 py-5 border-t border-gray-200 flex justify-end gap-3 flex-shrink-0">
                 <button
                     @click="handleClose"

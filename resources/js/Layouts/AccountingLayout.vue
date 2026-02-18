@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
-import { Home, LogOut, Menu, Shield, Clock, FileText, TrendingUp, Wallet, DollarSign, Banknote, ArrowUpRight, PiggyBank } from 'lucide-vue-next';
+import { Home, LogOut, Menu, Wallet } from 'lucide-vue-next';
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
@@ -14,15 +14,7 @@ const currentRoute = computed(() => page.url);
 const isRouteActive = (routeName) => {
     const routeList = {
         'dashboard': '/dashboard',
-        'accounting.collateral': '/accounting/collateral',
-        'accounting.time-deposit': '/accounting/time-deposit',
-        'accounting.government-securities': '/accounting/government-securities',
-        'accounting.other-investment': '/accounting/other-investment',
-        'accounting.operating-accounts': '/accounting/operating-accounts',
-        'accounting.dollar': '/accounting/dollar',
-        'accounting.corporate-bonds': '/accounting/corporate-bonds',
-        'accounting.cash-infusion': '/accounting/cash-infusion',
-        'accounting.investment': '/accounting/investment'
+        'accounting.operating-accounts': '/accounting/operating-accounts'
     };
     
     const routePath = routeList[routeName];
@@ -49,15 +41,7 @@ const handleMenuClick = (item) => {
     } else if (item.route) {
         const routeUrls = {
             'dashboard': '/dashboard',
-            'accounting.collateral': '/accounting/collateral',
-            'accounting.time-deposit': '/accounting/time-deposit',
-            'accounting.government-securities': '/accounting/government-securities',
-            'accounting.other-investment': '/accounting/other-investment',
-            'accounting.operating-accounts': '/accounting/operating-accounts',
-            'accounting.dollar': '/accounting/dollar',
-            'accounting.corporate-bonds': '/accounting/corporate-bonds',
-            'accounting.cash-infusion': '/accounting/cash-infusion',
-            'accounting.investment': '/accounting/investment'
+            'accounting.operating-accounts': '/accounting/operating-accounts'
         };
         router.get(routeUrls[item.route]);
     }
@@ -70,49 +54,9 @@ const menuItems = [
         route: 'dashboard'
     },
     {
-        name: 'Collateral',
-        component: Shield,
-        route: 'accounting.collateral'
-    },
-    {
-        name: 'Time Deposit',
-        component: Clock,
-        route: 'accounting.time-deposit'
-    },
-    {
-        name: 'Government Securities',
-        component: FileText,
-        route: 'accounting.government-securities'
-    },
-    {
-        name: 'Other Investment',
-        component: TrendingUp,
-        route: 'accounting.other-investment'
-    },
-    {
         name: 'Operating Accounts',
         component: Wallet,
         route: 'accounting.operating-accounts'
-    },
-    {
-        name: 'Dollar',
-        component: DollarSign,
-        route: 'accounting.dollar'
-    },
-    {
-        name: 'Corporate Bonds',
-        component: Banknote,
-        route: 'accounting.corporate-bonds'
-    },
-    {
-        name: 'Cash Infusion',
-        component: ArrowUpRight,
-        route: 'accounting.cash-infusion'
-    },
-    {
-        name: 'Investments',
-        component: PiggyBank,
-        route: 'accounting.investment'
     }
 ];
 </script>

@@ -23,4 +23,12 @@ class OperatingAccount extends Model
     {
         return $this->hasMany(Collection::class);
     }
+
+    /**
+     * Get the disbursements for the operating account.
+     */
+    public function disbursements()
+    {
+        return $this->hasMany(OperatingAccountDisbursement::class);
+    }
 }
