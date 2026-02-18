@@ -266,7 +266,18 @@ const handleSubmit = () => {
         },
         body: formData,
     })
-    .then(response => response.json())
+    .then(response => {
+        // Check if response is OK (status 200-299)
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
+        // Check if response is actually JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Server returned non-JSON response. Please check the request.');
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             Swal.fire({
@@ -291,6 +302,7 @@ const handleSubmit = () => {
         isSubmitting.value = false;
     })
     .catch(error => {
+        console.error('Collection submission error:', error);
         Swal.fire({
             title: 'Error!',
             text: error.message || 'Failed to save collections. Please try again.',

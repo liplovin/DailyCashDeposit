@@ -11,6 +11,7 @@ use App\Http\Controllers\DollarController;
 use App\Http\Controllers\CorporateBondController;
 use App\Http\Controllers\CashInfusionController;
 use App\Http\Controllers\InvestmentController;
+use App\Http\Controllers\DisbursementController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -173,8 +174,26 @@ Route::middleware('auth')->group(function () {
     // Accounting Routes
     Route::prefix('accounting')->name('accounting.')->group(function () {
         Route::get('/collateral', function () {
-            return Inertia::render('Accounting/Collateral/Index');
+            $collaterals = \App\Models\Collateral::all();
+            $disbursements = \App\Models\Disbursement::with('collateral')->where('status', 'pending')->get();
+            return Inertia::render('Accounting/Collateral/Index', [
+                'collaterals' => $collaterals,
+                'disbursements' => $disbursements,
+            ]);
         })->name('collateral');
+        Route::get('/processed-disbursement', function () {
+            $collaterals = \App\Models\Collateral::all();
+            $disbursements = \App\Models\Disbursement::with('collateral')->where('status', 'processed')->get();
+            return Inertia::render('Accounting/Collateral/ProcessedIndex', [
+                'collaterals' => $collaterals,
+                'disbursements' => $disbursements,
+            ]);
+        })->name('processed-disbursement');
+        Route::post('/disbursement', [DisbursementController::class, 'store'])->name('disbursement.store');
+        Route::post('/validate-disbursement', [DisbursementController::class, 'validate'])->name('disbursement.validate');
+        Route::post('/disbursement/process', [DisbursementController::class, 'processDisbursements'])->name('disbursement.process');
+        Route::put('/disbursement/{id}', [DisbursementController::class, 'update'])->name('disbursement.update');
+        Route::delete('/disbursement/{id}', [DisbursementController::class, 'destroy'])->name('disbursement.destroy');
 
         Route::get('/time-deposit', function () {
             return Inertia::render('Accounting/Time Deposit/Index');
