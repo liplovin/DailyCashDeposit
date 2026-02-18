@@ -234,7 +234,8 @@ const formatMaturityDate = (dateString) => {
                             <tr class="border-b-2 border-gray-300">
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300 cursor-move">⋮⋮ Operating Account Name</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Account Number</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Created</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white">Actions</th>
                             </tr>
                         </thead>
@@ -267,9 +268,6 @@ const formatMaturityDate = (dateString) => {
                                 <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-300">
                                     {{ formatMaturityDate(account.maturity_date) }}
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-300">
-                                    {{ new Date(account.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) }}
-                                </td>
                                 <td class="px-6 py-4 text-sm">
                                     <div class="flex items-center space-x-2">
                                         <button
@@ -298,7 +296,6 @@ const formatMaturityDate = (dateString) => {
                                     ₱ {{ totalBeginningBalance.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
-                                <td class="px-6 py-4 text-sm text-gray-900"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900"></td>
                             </tr>
                         </tfoot>
