@@ -170,6 +170,45 @@ Route::middleware('auth')->group(function () {
         })->name('investment');
     });
 
+    // Accounting Routes
+    Route::prefix('accounting')->name('accounting.')->group(function () {
+        Route::get('/collateral', function () {
+            return Inertia::render('Accounting/Collateral/Index');
+        })->name('collateral');
+
+        Route::get('/time-deposit', function () {
+            return Inertia::render('Accounting/Time Deposit/Index');
+        })->name('time-deposit');
+
+        Route::get('/government-securities', function () {
+            return Inertia::render('Accounting/Goverment Securities/Index');
+        })->name('government-securities');
+
+        Route::get('/other-investment', function () {
+            return Inertia::render('Accounting/Other Investment/Index');
+        })->name('other-investment');
+
+        Route::get('/operating-accounts', function () {
+            return Inertia::render('Accounting/Operating Accounts/Index');
+        })->name('operating-accounts');
+
+        Route::get('/dollar', function () {
+            return Inertia::render('Accounting/Dollar/Index');
+        })->name('dollar');
+
+        Route::get('/corporate-bonds', function () {
+            return Inertia::render('Accounting/Corporate Bonds/Index');
+        })->name('corporate-bonds');
+
+        Route::get('/cash-infusion', function () {
+            return Inertia::render('Accounting/Cash Infusion/Index');
+        })->name('cash-infusion');
+
+        Route::get('/investment', function () {
+            return Inertia::render('Accounting/Investment/Index');
+        })->name('investment');
+    });
+
     // User Management Routes
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
     Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');

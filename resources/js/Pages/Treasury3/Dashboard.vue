@@ -96,7 +96,7 @@ onMounted(() => {
                     Welcome, {{ user.name }}! 👋
                 </h1>
                 <p class="text-yellow-50 text-lg">
-                    Treasury 3 Management System - Manage your collection deposits efficiently
+                    Treasury Management System - Manage your collection deposits efficiently
                 </p>
             </div>
 
