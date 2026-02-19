@@ -278,7 +278,7 @@ const handleDisbursementSubmit = async (disbursementData) => {
                         </thead>
                         <tbody>
                             <tr v-if="filteredSecurities.length === 0" class="border-b border-gray-200">
-                                <td colspan="8" class="px-6 py-8 text-center text-gray-500">
+                                <td colspan="7" class="px-6 py-8 text-center text-gray-500">
                                     No government securities found.
                                 </td>
                             </tr>
@@ -301,7 +301,6 @@ const handleDisbursementSubmit = async (disbursementData) => {
                                 <td class="px-6 py-4 text-sm text-green-600 font-semibold border-r border-gray-200">{{ formatCurrency(getCollectionAmount(security)) }}</td>
                                 <td class="px-6 py-4 text-sm text-red-600 font-semibold border-r border-gray-200">{{ formatCurrency(getDisbursementAmount(security)) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(security, filterDate) + parseFloat(getCollectionAmount(security)) - parseFloat(getDisbursementAmount(security))) }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-200">{{ formatDate(security.maturity_date) }}</td>
                                 <td class="px-6 py-4 text-sm space-x-2 flex">
                                     <button
                                         @click="handleCollection(security)"
@@ -328,7 +327,6 @@ const handleDisbursementSubmit = async (disbursementData) => {
                                 <td class="px-6 py-4 text-sm text-green-600 border-r border-gray-300">{{ formatCurrency(totalCollection) }}</td>
                                 <td class="px-6 py-4 text-sm text-red-600 border-r border-gray-300">{{ formatCurrency(totalDisbursement) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 border-r border-gray-300">{{ formatCurrency(totalEndingBalance) }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900"></td>
                             </tr>
                         </tfoot>

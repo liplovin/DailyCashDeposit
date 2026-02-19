@@ -277,13 +277,12 @@ const handleDisbursement = (investment) => {
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Collection</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Disbursement</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Ending Balance</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="filteredInvestments.length === 0" class="border-b border-gray-200">
-                                <td colspan="8" class="px-6 py-8 text-center text-gray-500">
+                                <td colspan="7" class="px-6 py-8 text-center text-gray-500">
                                     No investment records found.
                                 </td>
                             </tr>
@@ -306,7 +305,6 @@ const handleDisbursement = (investment) => {
                                 <td class="px-6 py-4 text-sm text-green-600 font-semibold border-r border-gray-200">{{ formatCurrency(getCollectionAmount(investment)) }}</td>
                                 <td class="px-6 py-4 text-sm text-red-600 font-semibold border-r border-gray-200">{{ formatCurrency(getDisbursementAmount(investment)) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(investment, filterDate) + parseFloat(getCollectionAmount(investment)) - parseFloat(getDisbursementAmount(investment))) }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-200">{{ formatDate(investment.maturity_date) }}</td>
                                 <td class="px-6 py-4 text-sm space-x-2 flex">
                                     <button
                                         @click="handleCollection(investment)"
@@ -333,7 +331,6 @@ const handleDisbursement = (investment) => {
                                 <td class="px-6 py-4 text-sm text-green-600 border-r border-gray-300">{{ formatCurrency(totalCollection) }}</td>
                                 <td class="px-6 py-4 text-sm text-red-600 border-r border-gray-300">{{ formatCurrency(totalDisbursement) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 border-r border-gray-300">{{ formatCurrency(totalEndingBalance) }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900"></td>
                             </tr>
                         </tfoot>
