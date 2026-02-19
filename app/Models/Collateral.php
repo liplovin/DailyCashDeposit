@@ -10,6 +10,11 @@ class Collateral extends Model
         'collateral',
         'account_number',
         'beginning_balance',
+        'collection',
+        'collection_date',
+        'disbursement',
+        'disbursement_date',
+        'ending_balance',
         'maturity_date',
     ];
 }

@@ -113,6 +113,9 @@ Route::middleware('auth')->group(function () {
             ]);
         })->name('collateral');
 
+        Route::post('/collateral/{id}/collection', [CollateralController::class, 'addCollection'])->name('collateral.add-collection');
+        Route::post('/collateral/{id}/disbursement', [CollateralController::class, 'addDisbursement'])->name('collateral.add-disbursement');
+
         Route::get('/time-deposit', function () {
             $timeDeposits = \App\Models\TimeDeposit::all();
             return Inertia::render('Treasury2/Time Deposit/Index', [

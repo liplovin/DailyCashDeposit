@@ -1,7 +1,10 @@
 <script setup>
 import Treasury2Layout from '@/Layouts/Treasury2Layout.vue';
+import AddCollection from './AddCollection.vue';
+import AddDisbursement from './AddDisbursement.vue';
 import { Search, Plus } from 'lucide-vue-next';
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
+import axios from 'axios';
 import Swal from 'sweetalert2';
 
 const props = defineProps({
@@ -11,11 +14,44 @@ const props = defineProps({
     }
 });
 
+const collateralsData = ref(props.collaterals);
+const highlightId = ref(null);
+
 onMounted(() => {
     document.title = 'Collateral Management - Daily Deposit';
+    collateralsData.value = props.collaterals;
+    
+    // Read date from URL query parameters
+    const params = new URLSearchParams(window.location.search);
+    const dateFromUrl = params.get('date');
+    
+    if (dateFromUrl) {
+        filterDate.value = dateFromUrl;
+    } else {
+        // Set today's date in URL
+        const today = new Date().toISOString().split('T')[0];
+        filterDate.value = today;
+        updateUrlWithDate(today);
+    }
 });
 
 const searchQuery = ref('');
+const filterDate = ref(new Date().toISOString().split('T')[0]);
+const isAddCollectionOpen = ref(false);
+const isAddDisbursementOpen = ref(false);
+const selectedCollateral = ref(null);
+
+// Function to update URL with date parameter
+const updateUrlWithDate = (date) => {
+    const params = new URLSearchParams(window.location.search);
+    params.set('date', date);
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+};
+
+// Watch for date changes and update URL
+watch(filterDate, (newDate) => {
+    updateUrlWithDate(newDate);
+});
 
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', {
@@ -33,58 +69,161 @@ const formatDate = (dateString) => {
 };
 
 const filteredCollaterals = computed(() => {
-    if (!searchQuery.value.trim()) {
-        return props.collaterals;
+    let filtered = collateralsData.value;
+    
+    // Filter by search query only
+    if (searchQuery.value.trim()) {
+        const query = searchQuery.value.toLowerCase();
+        filtered = filtered.filter(collateral => 
+            collateral.collateral.toLowerCase().includes(query) ||
+            collateral.account_number.toLowerCase().includes(query)
+        );
     }
     
-    const query = searchQuery.value.toLowerCase();
-    return props.collaterals.filter(collateral => 
-        collateral.collateral.toLowerCase().includes(query) ||
-        collateral.account_number.toLowerCase().includes(query)
-    );
+    return filtered;
 });
+
+const getCollectionAmount = (collateral) => {
+    if (!filterDate.value) {
+        return collateral.collection || 0;
+    }
+    const collectionDate = collateral.collection_date ? new Date(collateral.collection_date).toISOString().split('T')[0] : null;
+    return collectionDate === filterDate.value ? (collateral.collection || 0) : 0;
+};
+
+const getDisbursementAmount = (collateral) => {
+    if (!filterDate.value) {
+        return collateral.disbursement || 0;
+    }
+    const disbursementDate = collateral.disbursement_date ? new Date(collateral.disbursement_date).toISOString().split('T')[0] : null;
+    return disbursementDate === filterDate.value ? (collateral.disbursement || 0) : 0;
+};
+
+// Get rolling beginning balance for the selected date
+// This is the previous day's ending balance (or original if first day)
+const getRollingBeginningBalance = (collateral, selectedDate) => {
+    if (!selectedDate) {
+        return parseFloat(collateral.beginning_balance || 0);
+    }
+    
+    // Start with the original beginning balance
+    let balance = parseFloat(collateral.beginning_balance || 0);
+    
+    // Add all collection amounts from dates BEFORE the selected date
+    const collectionDate = collateral.collection_date ? new Date(collateral.collection_date).toISOString().split('T')[0] : null;
+    if (collectionDate && collectionDate < selectedDate) {
+        balance += parseFloat(collateral.collection || 0);
+    }
+    
+    // Subtract all disbursement amounts from dates BEFORE the selected date
+    const disbursementDate = collateral.disbursement_date ? new Date(collateral.disbursement_date).toISOString().split('T')[0] : null;
+    if (disbursementDate && disbursementDate < selectedDate) {
+        balance -= parseFloat(collateral.disbursement || 0);
+    }
+    
+    return balance;
+};
 
 const totalBeginningBalance = computed(() => {
     return filteredCollaterals.value.reduce((sum, collateral) => {
-        return sum + parseFloat(collateral.beginning_balance || 0);
+        return sum + getRollingBeginningBalance(collateral, filterDate.value);
     }, 0);
 });
 
 const totalCollection = computed(() => {
     return filteredCollaterals.value.reduce((sum, collateral) => {
-        return sum + parseFloat(collateral.collection || 0);
+        return sum + getCollectionAmount(collateral);
     }, 0);
 });
 
 const totalDisbursement = computed(() => {
     return filteredCollaterals.value.reduce((sum, collateral) => {
-        return sum + parseFloat(collateral.disbursement || 0);
+        return sum + getDisbursementAmount(collateral);
     }, 0);
 });
 
 const totalEndingBalance = computed(() => {
     return filteredCollaterals.value.reduce((sum, collateral) => {
-        const ending = parseFloat(collateral.beginning_balance || 0) + parseFloat(collateral.collection || 0) - parseFloat(collateral.disbursement || 0);
+        const beginning = getRollingBeginningBalance(collateral, filterDate.value);
+        const collection = parseFloat(getCollectionAmount(collateral) || 0);
+        const disbursement = parseFloat(getDisbursementAmount(collateral) || 0);
+        const ending = beginning + collection - disbursement;
         return sum + ending;
     }, 0);
 });
 
 const handleCollection = (collateral) => {
-    Swal.fire({
-        title: 'Collection',
-        text: `Add collection for ${collateral.collateral}`,
-        icon: 'info',
-        confirmButtonColor: '#10B981'
-    });
+    selectedCollateral.value = collateral;
+    isAddCollectionOpen.value = true;
+};
+
+const handleCollectionSubmit = async (collectionData) => {
+    try {
+        // Find and update the collateral in the local data
+        const index = collateralsData.value.findIndex(c => c.id === collectionData.collateral_id);
+        if (index !== -1) {
+            collateralsData.value[index].collection += collectionData.amount;
+            collateralsData.value[index].ending_balance = 
+                collateralsData.value[index].beginning_balance + 
+                collateralsData.value[index].collection - 
+                collateralsData.value[index].disbursement;
+        }
+        
+        Swal.fire({
+            title: 'Success!',
+            text: `Collection of ₱${collectionData.amount.toFixed(2)} added to ${selectedCollateral.value.collateral}`,
+            icon: 'success',
+            confirmButtonColor: '#10B981'
+        }).then(() => {
+            window.location.reload();
+        });
+    } catch (error) {
+        Swal.fire({
+            title: 'Error!',
+            text: 'Failed to update collateral data',
+            icon: 'error',
+            confirmButtonColor: '#EF4444'
+        });
+    }
+    isAddCollectionOpen.value = false;
+    selectedCollateral.value = null;
+};
+
+const handleDisbursementSubmit = async (disbursementData) => {
+    try {
+        // Find and update the collateral in the local data
+        const index = collateralsData.value.findIndex(c => c.id === disbursementData.collateral_id);
+        if (index !== -1) {
+            collateralsData.value[index].disbursement += disbursementData.amount;
+            collateralsData.value[index].ending_balance = 
+                collateralsData.value[index].beginning_balance + 
+                collateralsData.value[index].collection - 
+                collateralsData.value[index].disbursement;
+        }
+        
+        Swal.fire({
+            title: 'Success!',
+            text: `Disbursement of ₱${disbursementData.amount.toFixed(2)} added to ${selectedCollateral.value.collateral}`,
+            icon: 'success',
+            confirmButtonColor: '#EF4444'
+        }).then(() => {
+            window.location.reload();
+        });
+    } catch (error) {
+        Swal.fire({
+            title: 'Error!',
+            text: 'Failed to update collateral data',
+            icon: 'error',
+            confirmButtonColor: '#EF4444'
+        });
+    }
+    isAddDisbursementOpen.value = false;
+    selectedCollateral.value = null;
 };
 
 const handleDisbursement = (collateral) => {
-    Swal.fire({
-        title: 'Disbursement',
-        text: `Add disbursement for ${collateral.collateral}`,
-        icon: 'info',
-        confirmButtonColor: '#EF4444'
-    });
+    selectedCollateral.value = collateral;
+    isAddDisbursementOpen.value = true;
 };
 </script>
 
@@ -97,16 +236,32 @@ const handleDisbursement = (collateral) => {
                 <p class="text-gray-600 text-sm font-medium">Monitor and manage all collateral accounts with real-time balance tracking</p>
             </div>
 
-            <!-- Search Bar -->
-            <div class="mb-6">
-                <div class="relative">
-                    <Search class="absolute left-4 top-3 h-5 w-5 text-gray-400" />
-                    <input
-                        v-model="searchQuery"
-                        type="text"
-                        placeholder="Search by collateral name or account number..."
-                        class="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
-                    />
+            <!-- Search Bar and Date Filter -->
+            <div class="bg-yellow-50 rounded-xl border-2 border-yellow-200 p-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                    <!-- Search Bar -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Search Collateral</label>
+                        <div class="relative">
+                            <Search class="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
+                            <input
+                                v-model="searchQuery"
+                                type="text"
+                                placeholder="Search by collateral name or account number..."
+                                class="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Date Filter -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Select Date</label>
+                        <input
+                            v-model="filterDate"
+                            type="date"
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -146,11 +301,11 @@ const handleDisbursement = (collateral) => {
                                         {{ collateral.collateral }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-200">{{ collateral.account_number }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(collateral.beginning_balance) }}</td>
-                                <td class="px-6 py-4 text-sm text-green-600 font-semibold border-r border-gray-200">{{ formatCurrency(collateral.collection) }}</td>
-                                <td class="px-6 py-4 text-sm text-red-600 font-semibold border-r border-gray-200">{{ formatCurrency(collateral.disbursement) }}</td>
-                                <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(parseFloat(collateral.beginning_balance || 0) + parseFloat(collateral.collection || 0) - parseFloat(collateral.disbursement || 0)) }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(collateral.account_number) }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(collateral, filterDate)) }}</td>
+                                <td class="px-6 py-4 text-sm text-green-600 font-semibold border-r border-gray-200">{{ formatCurrency(getCollectionAmount(collateral)) }}</td>
+                                <td class="px-6 py-4 text-sm text-red-600 font-semibold border-r border-gray-200">{{ formatCurrency(getDisbursementAmount(collateral)) }}</td>
+                                <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(collateral, filterDate) + parseFloat(getCollectionAmount(collateral)) - parseFloat(getDisbursementAmount(collateral))) }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-200">{{ formatDate(collateral.maturity_date) }}</td>
                                 <td class="px-6 py-4 text-sm space-x-2 flex">
                                     <button
@@ -187,6 +342,24 @@ const handleDisbursement = (collateral) => {
             </div>
         </div>
     </Treasury2Layout>
+
+    <!-- Add Collection Modal -->
+    <AddCollection 
+        :is-open="isAddCollectionOpen" 
+        :collateral="selectedCollateral"
+        :filter-date="filterDate"
+        @close="isAddCollectionOpen = false"
+        @submit="handleCollectionSubmit"
+    />
+
+    <!-- Add Disbursement Modal -->
+    <AddDisbursement 
+        :is-open="isAddDisbursementOpen" 
+        :collateral="selectedCollateral"
+        :filter-date="filterDate"
+        @close="isAddDisbursementOpen = false"
+        @submit="handleDisbursementSubmit"
+    />
 </template>
 
 <style scoped>

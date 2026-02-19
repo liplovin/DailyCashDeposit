@@ -60,6 +60,44 @@ class CollateralController extends Controller
         return redirect()->route('treasury.collateral')->with('success', 'Collateral updated successfully');
     }
 
+    public function addCollection(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'date' => 'required|date',
+        ]);
+
+        $collateral = Collateral::findOrFail($id);
+        $collateral->collection += $validated['amount'];
+        $collateral->collection_date = $validated['date'];
+        $collateral->ending_balance = $collateral->beginning_balance + $collateral->collection - $collateral->disbursement;
+        $collateral->save();
+
+        return response()->json([
+            'message' => 'Collection added successfully',
+            'collateral' => $collateral
+        ]);
+    }
+
+    public function addDisbursement(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'date' => 'required|date',
+        ]);
+
+        $collateral = Collateral::findOrFail($id);
+        $collateral->disbursement += $validated['amount'];
+        $collateral->disbursement_date = $validated['date'];
+        $collateral->ending_balance = $collateral->beginning_balance + $collateral->collection - $collateral->disbursement;
+        $collateral->save();
+
+        return response()->json([
+            'message' => 'Disbursement added successfully',
+            'collateral' => $collateral
+        ]);
+    }
+
     private function convertDateFormat($dateString)
     {
         // Convert mm/dd/yyyy to Y-m-d

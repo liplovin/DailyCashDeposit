@@ -4,6 +4,7 @@ import { router, usePage } from '@inertiajs/vue3';
 import { ref, computed, watch, nextTick } from 'vue';
 import Swal from 'sweetalert2';
 import { Upload, Plus } from 'lucide-vue-next';
+import axios from 'axios';
 
 const props = defineProps({
     isOpen: {
@@ -259,27 +260,13 @@ const handleSubmit = () => {
         return;
     }
     
-    fetch(`/treasury/operating-accounts/${selectedAccount.value.id}/collection`, {
-        method: 'POST',
+    axios.post(`/treasury/operating-accounts/${selectedAccount.value.id}/collection`, formData, {
         headers: {
-            'X-CSRF-TOKEN': csrfToken,
-        },
-        body: formData,
+            'X-CSRF-TOKEN': csrfToken
+        }
     })
     .then(response => {
-        // Check if response is OK (status 200-299)
-        if (!response.ok) {
-            throw new Error(`Server error: ${response.status} ${response.statusText}`);
-        }
-        // Check if response is actually JSON
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            throw new Error('Server returned non-JSON response. Please check the request.');
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
+        if (response.data.success) {
             Swal.fire({
                 title: 'Success!',
                 text: 'Collections saved successfully.',
@@ -294,7 +281,7 @@ const handleSubmit = () => {
         } else {
             Swal.fire({
                 title: 'Error!',
-                text: data.message || 'Failed to save collections.',
+                text: response.data.message || 'Failed to save collections.',
                 icon: 'error',
                 confirmButtonColor: '#F59E0B'
             });
@@ -305,7 +292,7 @@ const handleSubmit = () => {
         console.error('Collection submission error:', error);
         Swal.fire({
             title: 'Error!',
-            text: error.message || 'Failed to save collections. Please try again.',
+            text: error.response?.data?.message || error.message || 'Failed to save collections. Please try again.',
             icon: 'error',
             confirmButtonColor: '#F59E0B'
         });
