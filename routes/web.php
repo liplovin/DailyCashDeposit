@@ -155,15 +155,24 @@ Route::middleware('auth')->group(function () {
             return Inertia::render('Treasury2/Corporate Bonds/Index', ['corporateBonds' => $corporateBonds]);
         })->name('corporate-bonds');
 
+        Route::post('/corporate-bonds/{id}/collection', [CorporateBondController::class, 'addCollection'])->name('corporate-bonds.add-collection');
+        Route::post('/corporate-bonds/{id}/disbursement', [CorporateBondController::class, 'addDisbursement'])->name('corporate-bonds.add-disbursement');
+
         Route::get('/cash-infusion', function () {
             $cashInfusions = \App\Models\CashInfusion::all();
             return Inertia::render('Treasury2/Cash Infusion/Index', ['cashInfusions' => $cashInfusions]);
         })->name('cash-infusion');
 
+        Route::post('/cash-infusion/{id}/collection', [CashInfusionController::class, 'addCollection'])->name('cash-infusion.add-collection');
+        Route::post('/cash-infusion/{id}/disbursement', [CashInfusionController::class, 'addDisbursement'])->name('cash-infusion.add-disbursement');
+
         Route::get('/investment', function () {
             $investments = \App\Models\Investment::all();
             return Inertia::render('Treasury2/Investment/Index', ['investments' => $investments]);
         })->name('investment');
+
+        Route::post('/investment/{id}/collection', [InvestmentController::class, 'addCollection'])->name('investment.add-collection');
+        Route::post('/investment/{id}/disbursement', [InvestmentController::class, 'addDisbursement'])->name('investment.add-disbursement');
     });
 
     // Admin Routes - For 'admin' role only

@@ -67,4 +67,42 @@ class CorporateBondController extends Controller
         }
         return $dateString;
     }
+
+    public function addCollection(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'date' => 'required|date',
+        ]);
+
+        $corporateBond = CorporateBond::findOrFail($id);
+        $corporateBond->collection += $validated['amount'];
+        $corporateBond->collection_date = $validated['date'];
+        $corporateBond->ending_balance = $corporateBond->beginning_balance + $corporateBond->collection - ($corporateBond->disbursement ?? 0);
+        $corporateBond->save();
+
+        return response()->json([
+            'message' => 'Collection added successfully',
+            'corporateBond' => $corporateBond
+        ]);
+    }
+
+    public function addDisbursement(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'date' => 'required|date',
+        ]);
+
+        $corporateBond = CorporateBond::findOrFail($id);
+        $corporateBond->disbursement += $validated['amount'];
+        $corporateBond->disbursement_date = $validated['date'];
+        $corporateBond->ending_balance = $corporateBond->beginning_balance + $corporateBond->collection - $corporateBond->disbursement;
+        $corporateBond->save();
+
+        return response()->json([
+            'message' => 'Disbursement added successfully',
+            'corporateBond' => $corporateBond
+        ]);
+    }
 }

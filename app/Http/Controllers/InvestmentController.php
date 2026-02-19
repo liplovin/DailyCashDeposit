@@ -61,4 +61,42 @@ class InvestmentController extends Controller
         $parts = explode('/', $dateString);
         return $parts[2] . '-' . $parts[0] . '-' . $parts[1];
     }
+
+    public function addCollection(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'date' => 'required|date',
+        ]);
+
+        $investment = Investment::findOrFail($id);
+        $investment->collection += $validated['amount'];
+        $investment->collection_date = $validated['date'];
+        $investment->ending_balance = $investment->beginning_balance + $investment->collection - ($investment->disbursement ?? 0);
+        $investment->save();
+
+        return response()->json([
+            'message' => 'Collection added successfully',
+            'investment' => $investment
+        ]);
+    }
+
+    public function addDisbursement(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'date' => 'required|date',
+        ]);
+
+        $investment = Investment::findOrFail($id);
+        $investment->disbursement += $validated['amount'];
+        $investment->disbursement_date = $validated['date'];
+        $investment->ending_balance = $investment->beginning_balance + $investment->collection - $investment->disbursement;
+        $investment->save();
+
+        return response()->json([
+            'message' => 'Disbursement added successfully',
+            'investment' => $investment
+        ]);
+    }
 }

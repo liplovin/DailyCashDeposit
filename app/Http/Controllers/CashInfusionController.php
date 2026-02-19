@@ -67,4 +67,42 @@ class CashInfusionController extends Controller
         }
         return $dateString;
     }
+
+    public function addCollection(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'date' => 'required|date',
+        ]);
+
+        $cashInfusion = CashInfusion::findOrFail($id);
+        $cashInfusion->collection += $validated['amount'];
+        $cashInfusion->collection_date = $validated['date'];
+        $cashInfusion->ending_balance = $cashInfusion->beginning_balance + $cashInfusion->collection - ($cashInfusion->disbursement ?? 0);
+        $cashInfusion->save();
+
+        return response()->json([
+            'message' => 'Collection added successfully',
+            'cashInfusion' => $cashInfusion
+        ]);
+    }
+
+    public function addDisbursement(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'date' => 'required|date',
+        ]);
+
+        $cashInfusion = CashInfusion::findOrFail($id);
+        $cashInfusion->disbursement += $validated['amount'];
+        $cashInfusion->disbursement_date = $validated['date'];
+        $cashInfusion->ending_balance = $cashInfusion->beginning_balance + $cashInfusion->collection - $cashInfusion->disbursement;
+        $cashInfusion->save();
+
+        return response()->json([
+            'message' => 'Disbursement added successfully',
+            'cashInfusion' => $cashInfusion
+        ]);
+    }
 }
