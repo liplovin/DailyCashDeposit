@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch, onMounted } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
@@ -8,6 +8,19 @@ import { Home, LogOut, Menu, Wallet, CheckCircle } from 'lucide-vue-next';
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 const sidebarOpen = ref(true);
+
+// Initialize sidebar state from localStorage
+onMounted(() => {
+    const savedState = localStorage.getItem('treasury3_sidebar_open');
+    if (savedState !== null) {
+        sidebarOpen.value = JSON.parse(savedState);
+    }
+});
+
+// Save sidebar state to localStorage whenever it changes
+watch(sidebarOpen, (newValue) => {
+    localStorage.setItem('treasury3_sidebar_open', JSON.stringify(newValue));
+});
 
 const currentRoute = computed(() => page.url);
 
