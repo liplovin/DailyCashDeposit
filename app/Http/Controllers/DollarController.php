@@ -16,6 +16,74 @@ class DollarController extends Controller
         ]);
     }
 
+    /**
+     * Add collection to dollar
+     */
+    public function addCollection(Request $request, $id)
+    {
+        try {
+            $validated = $request->validate([
+                'amount' => 'required|numeric|min:0.01',
+                'date' => 'required|date_format:Y-m-d',
+            ]);
+
+            $dollar = Dollar::findOrFail($id);
+
+            // Update collection fields - accumulate the amount
+            $dollar->collection += $validated['amount'];
+            $dollar->collection_date = $validated['date'];
+
+            // Calculate ending balance: beginning + collection - disbursement
+            $beginning = (float) $dollar->beginning_balance;
+            $collection = (float) $dollar->collection;
+            $disbursement = (float) ($dollar->disbursement ?? 0);
+            $dollar->ending_balance = $beginning + $collection - $disbursement;
+
+            $dollar->save();
+
+            return response()->json([
+                'message' => 'Collection added successfully',
+                'dollar' => $dollar
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Add disbursement to dollar
+     */
+    public function addDisbursement(Request $request, $id)
+    {
+        try {
+            $validated = $request->validate([
+                'amount' => 'required|numeric|min:0.01',
+                'date' => 'required|date_format:Y-m-d',
+            ]);
+
+            $dollar = Dollar::findOrFail($id);
+
+            // Update disbursement fields - accumulate the amount
+            $dollar->disbursement += $validated['amount'];
+            $dollar->disbursement_date = $validated['date'];
+
+            // Calculate ending balance: beginning + collection - disbursement
+            $beginning = (float) $dollar->beginning_balance;
+            $collection = (float) ($dollar->collection ?? 0);
+            $disbursement = (float) $dollar->disbursement;
+            $dollar->ending_balance = $beginning + $collection - $disbursement;
+
+            $dollar->save();
+
+            return response()->json([
+                'message' => 'Disbursement added successfully',
+                'dollar' => $dollar
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([

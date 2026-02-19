@@ -14,7 +14,9 @@ return new class extends Migration
             $table->string('account_number')->unique();
             $table->decimal('beginning_balance', 15, 2);
             $table->decimal('collection', 15, 2)->default(0);
+            $table->date('collection_date')->nullable();
             $table->decimal('disbursement', 15, 2)->default(0);
+            $table->date('disbursement_date')->nullable();
             $table->decimal('ending_balance', 15, 2)->default(0);
             $table->date('maturity_date')->nullable();
             $table->timestamps();

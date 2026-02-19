@@ -11,7 +11,7 @@ class GovernmentSecurityController extends Controller
     public function index()
     {
         $governmentSecurities = GovernmentSecurity::all();
-        return Inertia::render('Treasury2/Government Securities/Index', [
+        return Inertia::render('Treasury/Goverment Securities/Index', [
             'governmentSecurities' => $governmentSecurities
         ]);
     }

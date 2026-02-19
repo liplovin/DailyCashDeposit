@@ -1,8 +1,11 @@
 <script setup>
 import Treasury2Layout from '@/Layouts/Treasury2Layout.vue';
 import { Plus, Search } from 'lucide-vue-next';
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import Swal from 'sweetalert2';
+import AddCollection from './AddCollection.vue';
+import AddDisbursement from './AddDisbursement.vue';
+import axios from 'axios';
 
 const props = defineProps({
     dollars: {
@@ -11,29 +14,42 @@ const props = defineProps({
     }
 });
 
-onMounted(() => {
-    document.title = 'Dollar Management - Daily Deposit';
+const dollarsData = ref(props.dollars);
+const searchQuery = ref('');
+const filterDate = ref(new Date().toISOString().split('T')[0]);
+const isAddCollectionOpen = ref(false);
+const isAddDisbursementOpen = ref(false);
+const selectedDollar = ref(null);
+
+// Function to update URL with date parameter
+const updateUrlWithDate = (date) => {
+    const params = new URLSearchParams(window.location.search);
+    params.set('date', date);
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+};
+
+// Watch for date changes and update URL
+watch(filterDate, (newDate) => {
+    updateUrlWithDate(newDate);
 });
 
-const searchQuery = ref('');
-
-const handleCollection = (dollar) => {
-    Swal.fire({
-        title: 'Collection',
-        text: `Add collection for ${dollar.dollar_name}`,
-        icon: 'info',
-        confirmButtonColor: '#10B981'
-    });
-};
-
-const handleDisbursement = (dollar) => {
-    Swal.fire({
-        title: 'Disbursement',
-        text: `Add disbursement for ${dollar.dollar_name}`,
-        icon: 'info',
-        confirmButtonColor: '#EF4444'
-    });
-};
+onMounted(() => {
+    document.title = 'Dollar Management - Daily Deposit';
+    dollarsData.value = props.dollars;
+    
+    // Read date from URL query parameters
+    const params = new URLSearchParams(window.location.search);
+    const dateFromUrl = params.get('date');
+    
+    if (dateFromUrl) {
+        filterDate.value = dateFromUrl;
+    } else {
+        // Set today's date in URL
+        const today = new Date().toISOString().split('T')[0];
+        filterDate.value = today;
+        updateUrlWithDate(today);
+    }
+});
 
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', {
@@ -50,13 +66,77 @@ const formatDate = (dateString) => {
     return new Intl.DateTimeFormat('en-US', options).format(new Date(dateString));
 };
 
+const getCollectionAmount = (dollar) => {
+    if (!filterDate.value) {
+        return dollar.collection || 0;
+    }
+    const collectionDate = dollar.collection_date ? new Date(dollar.collection_date).toISOString().split('T')[0] : null;
+    return collectionDate === filterDate.value ? (dollar.collection || 0) : 0;
+};
+
+const getDisbursementAmount = (dollar) => {
+    if (!filterDate.value) {
+        return dollar.disbursement || 0;
+    }
+    const disbursementDate = dollar.disbursement_date ? new Date(dollar.disbursement_date).toISOString().split('T')[0] : null;
+    return disbursementDate === filterDate.value ? (dollar.disbursement || 0) : 0;
+};
+
+// Calculate rolling beginning balance
+const getRollingBeginningBalance = (dollar) => {
+    if (!filterDate.value) {
+        return parseFloat(dollar.beginning_balance || 0);
+    }
+    
+    let balance = parseFloat(dollar.beginning_balance || 0);
+    
+    // Add collections before the selected date
+    const collectionDate = dollar.collection_date 
+        ? new Date(dollar.collection_date).toISOString().split('T')[0] 
+        : null;
+    if (collectionDate && collectionDate < filterDate.value) {
+        balance += parseFloat(dollar.collection || 0);
+    }
+    
+    // Subtract disbursements before the selected date
+    const disbursementDate = dollar.disbursement_date 
+        ? new Date(dollar.disbursement_date).toISOString().split('T')[0] 
+        : null;
+    if (disbursementDate && disbursementDate < filterDate.value) {
+        balance -= parseFloat(dollar.disbursement || 0);
+    }
+    
+    return balance;
+};
+
+const handleCollection = (dollar) => {
+    selectedDollar.value = dollar;
+    isAddCollectionOpen.value = true;
+};
+
+const handleDisbursement = (dollar) => {
+    selectedDollar.value = dollar;
+    isAddDisbursementOpen.value = true;
+};
+
+const handleModalSubmit = async () => {
+    try {
+        // Reload page to refresh data
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+    } catch (err) {
+        console.error('Error:', err);
+    }
+};
+
 const filteredDollars = computed(() => {
     if (!searchQuery.value.trim()) {
-        return props.dollars;
+        return dollarsData.value;
     }
     
     const query = searchQuery.value.toLowerCase();
-    return props.dollars.filter(dollar => 
+    return dollarsData.value.filter(dollar => 
         dollar.dollar_name.toLowerCase().includes(query) ||
         dollar.account_number.toLowerCase().includes(query)
     );
@@ -64,32 +144,46 @@ const filteredDollars = computed(() => {
 
 const totalBeginningBalance = computed(() => {
     return filteredDollars.value.reduce((sum, dollar) => {
-        return sum + parseFloat(dollar.beginning_balance || 0);
+        return sum + getRollingBeginningBalance(dollar);
     }, 0);
 });
 
 const totalCollection = computed(() => {
     return filteredDollars.value.reduce((sum, dollar) => {
-        return sum + parseFloat(dollar.collection || 0);
+        return sum + getCollectionAmount(dollar);
     }, 0);
 });
 
 const totalDisbursement = computed(() => {
     return filteredDollars.value.reduce((sum, dollar) => {
-        return sum + parseFloat(dollar.disbursement || 0);
+        return sum + getDisbursementAmount(dollar);
     }, 0);
 });
 
 const totalEndingBalance = computed(() => {
     return filteredDollars.value.reduce((sum, dollar) => {
-        const ending = parseFloat(dollar.beginning_balance || 0) + parseFloat(dollar.collection || 0) - parseFloat(dollar.disbursement || 0);
-        return sum + ending;
+        return sum + (parseFloat(dollar.ending_balance) || 0);
     }, 0);
 });
 </script>
 
 <template>
     <Treasury2Layout>
+        <AddCollection 
+            :isOpen="isAddCollectionOpen"
+            :dollar="selectedDollar"
+            :filterDate="filterDate"
+            @close="isAddCollectionOpen = false"
+            @submit="handleModalSubmit"
+        />
+        <AddDisbursement 
+            :isOpen="isAddDisbursementOpen"
+            :dollar="selectedDollar"
+            :filterDate="filterDate"
+            @close="isAddDisbursementOpen = false"
+            @submit="handleModalSubmit"
+        />
+
         <div class="w-full px-8 py-6">
             <!-- Header - Informative Section -->
             <div class="mb-8">
@@ -97,16 +191,32 @@ const totalEndingBalance = computed(() => {
                 <p class="text-gray-600 text-sm font-medium">Track USD currency holdings with real-time balance information in US dollars</p>
             </div>
 
-            <!-- Search Bar -->
-            <div class="mb-6">
-                <div class="relative">
-                    <Search class="absolute left-4 top-3 h-5 w-5 text-gray-400" />
-                    <input
-                        v-model="searchQuery"
-                        type="text"
-                        placeholder="Search by dollar name or account number..."
-                        class="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
-                    />
+            <!-- Filter & Search Section -->
+            <div class="bg-yellow-50 rounded-xl border-2 border-yellow-200 p-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                    <!-- Search Bar -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Search Dollar</label>
+                        <div class="relative">
+                            <Search class="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
+                            <input
+                                v-model="searchQuery"
+                                type="text"
+                                placeholder="Search by dollar name or account number..."
+                                class="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Date Filter -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Select Date</label>
+                        <input
+                            v-model="filterDate"
+                            type="date"
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -147,10 +257,10 @@ const totalEndingBalance = computed(() => {
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-200">{{ dollar.account_number }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(dollar.beginning_balance) }}</td>
-                                <td class="px-6 py-4 text-sm text-green-600 font-semibold border-r border-gray-200">{{ formatCurrency(dollar.collection) }}</td>
-                                <td class="px-6 py-4 text-sm text-red-600 font-semibold border-r border-gray-200">{{ formatCurrency(dollar.disbursement) }}</td>
-                                <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(parseFloat(dollar.beginning_balance || 0) + parseFloat(dollar.collection || 0) - parseFloat(dollar.disbursement || 0)) }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(dollar)) }}</td>
+                                <td class="px-6 py-4 text-sm text-green-600 font-semibold border-r border-gray-200">{{ formatCurrency(getCollectionAmount(dollar)) }}</td>
+                                <td class="px-6 py-4 text-sm text-red-600 font-semibold border-r border-gray-200">{{ formatCurrency(getDisbursementAmount(dollar)) }}</td>
+                                <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(dollar.ending_balance) }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-200">{{ formatDate(dollar.maturity_date) }}</td>
                                 <td class="px-6 py-4 text-sm space-x-2 flex">
                                     <button

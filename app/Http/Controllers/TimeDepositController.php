@@ -11,7 +11,7 @@ class TimeDepositController extends Controller
     public function index()
     {
         $timeDeposits = TimeDeposit::all();
-        return Inertia::render('Treasury2/TimeDeposit/Index', [
+        return Inertia::render('Treasury/Time Deposit/Index', [
             'timeDeposits' => $timeDeposits
         ]);
     }

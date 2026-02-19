@@ -14,7 +14,7 @@ class OtherInvestmentController extends Controller
     public function index()
     {
         $otherInvestments = OtherInvestment::all();
-        return Inertia::render('Treasury2/Other Investment/Index', [
+        return Inertia::render('Treasury/Other Investment/Index', [
             'otherInvestments' => $otherInvestments,
         ]);
     }

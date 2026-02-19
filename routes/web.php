@@ -38,8 +38,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Treasury Routes
-    Route::prefix('treasury')->name('treasury.')->group(function () {
+    // Treasury Routes - For 'treasury' role only
+    Route::prefix('treasury')->name('treasury.')->middleware('role:treasury')->group(function () {
         // Collateral Routes
         Route::get('/collateral', [CollateralController::class, 'index'])->name('collateral');
         Route::post('/collateral', [CollateralController::class, 'store'])->name('collateral.store');
@@ -104,8 +104,8 @@ Route::middleware('auth')->group(function () {
         })->name('processed-collection');
     });
 
-    // Treasury2 Routes
-    Route::prefix('treasury2')->name('treasury2.')->group(function () {
+    // Treasury2 Routes - For 'treasury2' role only
+    Route::prefix('treasury2')->name('treasury2.')->middleware('role:treasury2')->group(function () {
         Route::get('/collateral', function () {
             $collaterals = \App\Models\Collateral::all();
             return Inertia::render('Treasury2/Collateral/Index', [
@@ -147,6 +147,9 @@ Route::middleware('auth')->group(function () {
             return Inertia::render('Treasury2/Dollar/Index', ['dollars' => $dollars]);
         })->name('dollar');
 
+        Route::post('/dollar/{id}/collection', [DollarController::class, 'addCollection'])->name('dollar.add-collection');
+        Route::post('/dollar/{id}/disbursement', [DollarController::class, 'addDisbursement'])->name('dollar.add-disbursement');
+
         Route::get('/corporate-bonds', function () {
             $corporateBonds = \App\Models\CorporateBond::all();
             return Inertia::render('Treasury2/Corporate Bonds/Index', ['corporateBonds' => $corporateBonds]);
@@ -163,8 +166,8 @@ Route::middleware('auth')->group(function () {
         })->name('investment');
     });
 
-    // Admin Routes
-    Route::prefix('admin')->name('admin.')->group(function () {
+    // Admin Routes - For 'admin' role only
+    Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
         Route::get('/users', [UserController::class, 'index'])->name('users');
 
         Route::get('/settings', function () {
@@ -224,8 +227,8 @@ Route::middleware('auth')->group(function () {
         })->name('investment');
     });
 
-    // Accounting Routes
-    Route::prefix('accounting')->name('accounting.')->group(function () {
+    // Accounting Routes - For 'accounting' role only
+    Route::prefix('accounting')->name('accounting.')->middleware('role:accounting')->group(function () {
         Route::get('/operating-accounts', function () {
             $operatingAccounts = \App\Models\OperatingAccount::all();
             $disbursements = \App\Models\OperatingAccountDisbursement::with('operatingAccount')->where('status', 'pending')->get();
