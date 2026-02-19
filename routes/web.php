@@ -131,10 +131,16 @@ Route::middleware('auth')->group(function () {
             return Inertia::render('Treasury2/Government Securities/Index', ['governmentSecurities' => $governmentSecurities]);
         })->name('government-securities');
 
+        Route::post('/government-security/{id}/collection', [GovernmentSecurityController::class, 'addCollection'])->name('government-security.add-collection');
+        Route::post('/government-security/{id}/disbursement', [GovernmentSecurityController::class, 'addDisbursement'])->name('government-security.add-disbursement');
+
         Route::get('/other-investment', function () {
             $otherInvestments = \App\Models\OtherInvestment::all();
             return Inertia::render('Treasury2/Other Investment/Index', ['otherInvestments' => $otherInvestments]);
         })->name('other-investment');
+
+        Route::post('/other-investment/{id}/collection', [OtherInvestmentController::class, 'addCollection'])->name('other-investment.add-collection');
+        Route::post('/other-investment/{id}/disbursement', [OtherInvestmentController::class, 'addDisbursement'])->name('other-investment.add-disbursement');
 
         Route::get('/dollar', function () {
             $dollars = \App\Models\Dollar::all();

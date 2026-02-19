@@ -11,7 +11,7 @@ class GovernmentSecurityController extends Controller
     public function index()
     {
         $governmentSecurities = GovernmentSecurity::all();
-        return Inertia::render('Treasury/Goverment Securities/Index', [
+        return Inertia::render('Treasury2/Government Securities/Index', [
             'governmentSecurities' => $governmentSecurities
         ]);
     }
@@ -72,5 +72,43 @@ class GovernmentSecurityController extends Controller
             return $year . '-' . $month . '-' . $day;
         }
         return $dateString;
+    }
+
+    public function addCollection(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'date' => 'required|date',
+        ]);
+
+        $governmentSecurity = GovernmentSecurity::findOrFail($id);
+        $governmentSecurity->collection += $validated['amount'];
+        $governmentSecurity->collection_date = $validated['date'];
+        $governmentSecurity->ending_balance = $governmentSecurity->beginning_balance + $governmentSecurity->collection - $governmentSecurity->disbursement;
+        $governmentSecurity->save();
+
+        return response()->json([
+            'message' => 'Collection added successfully',
+            'governmentSecurity' => $governmentSecurity
+        ]);
+    }
+
+    public function addDisbursement(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'date' => 'required|date',
+        ]);
+
+        $governmentSecurity = GovernmentSecurity::findOrFail($id);
+        $governmentSecurity->disbursement += $validated['amount'];
+        $governmentSecurity->disbursement_date = $validated['date'];
+        $governmentSecurity->ending_balance = $governmentSecurity->beginning_balance + $governmentSecurity->collection - $governmentSecurity->disbursement;
+        $governmentSecurity->save();
+
+        return response()->json([
+            'message' => 'Disbursement added successfully',
+            'governmentSecurity' => $governmentSecurity
+        ]);
     }
 }

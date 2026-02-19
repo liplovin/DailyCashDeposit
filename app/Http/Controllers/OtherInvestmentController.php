@@ -14,9 +14,80 @@ class OtherInvestmentController extends Controller
     public function index()
     {
         $otherInvestments = OtherInvestment::all();
-        return Inertia::render('Treasury/Other Investment/Index', [
+        return Inertia::render('Treasury2/Other Investment/Index', [
             'otherInvestments' => $otherInvestments,
         ]);
+    }
+
+    /**
+     * Add collection to other investment
+     */
+    public function addCollection(Request $request, $id)
+    {
+        try {
+            $validated = $request->validate([
+                'amount' => 'required|numeric|min:0.01',
+                'date' => 'required|date_format:Y-m-d',
+            ]);
+
+            $otherInvestment = OtherInvestment::findOrFail($id);
+
+            // Update collection fields
+            $otherInvestment->collection = $validated['amount'];
+            $otherInvestment->collection_date = $validated['date'];
+
+            // Calculate ending balance
+            $balance = $otherInvestment->beginning_balance + $validated['amount'];
+            if ($otherInvestment->disbursement) {
+                $balance -= $otherInvestment->disbursement;
+            }
+            $otherInvestment->ending_balance = $balance;
+
+            $otherInvestment->save();
+
+            return response()->json([
+                'message' => 'Collection added successfully',
+                'otherInvestment' => $otherInvestment
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Add disbursement to other investment
+     */
+    public function addDisbursement(Request $request, $id)
+    {
+        try {
+            $validated = $request->validate([
+                'amount' => 'required|numeric|min:0.01',
+                'date' => 'required|date_format:Y-m-d',
+            ]);
+
+            $otherInvestment = OtherInvestment::findOrFail($id);
+
+            // Update disbursement fields
+            $otherInvestment->disbursement = $validated['amount'];
+            $otherInvestment->disbursement_date = $validated['date'];
+
+            // Calculate ending balance
+            $balance = $otherInvestment->beginning_balance;
+            if ($otherInvestment->collection) {
+                $balance += $otherInvestment->collection;
+            }
+            $balance -= $validated['amount'];
+            $otherInvestment->ending_balance = $balance;
+
+            $otherInvestment->save();
+
+            return response()->json([
+                'message' => 'Disbursement added successfully',
+                'otherInvestment' => $otherInvestment
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
     }
 
     /**
