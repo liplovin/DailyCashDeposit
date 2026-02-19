@@ -1,6 +1,6 @@
 <script setup>
 import Treasury2Layout from '@/Layouts/Treasury2Layout.vue';
-import { Plus, Search } from 'lucide-vue-next';
+import { Search, Plus } from 'lucide-vue-next';
 import { ref, computed, onMounted } from 'vue';
 import Swal from 'sweetalert2';
 
@@ -16,24 +16,6 @@ onMounted(() => {
 });
 
 const searchQuery = ref('');
-
-const handleAddCollection = () => {
-    Swal.fire({
-        title: 'Add Collection',
-        text: 'Features coming soon.',
-        icon: 'info',
-        confirmButtonColor: '#F59E0B'
-    });
-};
-
-const handleAddDisbursement = () => {
-    Swal.fire({
-        title: 'Add Disbursement',
-        text: 'Features coming soon.',
-        icon: 'info',
-        confirmButtonColor: '#F59E0B'
-    });
-};
 
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', {
@@ -86,31 +68,33 @@ const totalEndingBalance = computed(() => {
         return sum + ending;
     }, 0);
 });
+
+const handleCollection = (collateral) => {
+    Swal.fire({
+        title: 'Collection',
+        text: `Add collection for ${collateral.collateral}`,
+        icon: 'info',
+        confirmButtonColor: '#10B981'
+    });
+};
+
+const handleDisbursement = (collateral) => {
+    Swal.fire({
+        title: 'Disbursement',
+        text: `Add disbursement for ${collateral.collateral}`,
+        icon: 'info',
+        confirmButtonColor: '#EF4444'
+    });
+};
 </script>
 
 <template>
     <Treasury2Layout>
         <div class="w-full px-8 py-12">
-            <!-- Header with Buttons -->
+            <!-- Header -->
             <div class="mb-8">
                 <div class="flex items-center justify-between mb-6">
                     <h1 class="text-3xl font-black text-gray-900">Collateral Management</h1>
-                    <div class="flex items-center gap-3">
-                        <button
-                            @click="handleAddCollection"
-                            class="flex items-center space-x-2 px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200 font-semibold shadow-md hover:shadow-lg"
-                        >
-                            <Plus class="h-5 w-5" />
-                            <span>Add Collection</span>
-                        </button>
-                        <button
-                            @click="handleAddDisbursement"
-                            class="flex items-center space-x-2 px-6 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-200 font-semibold shadow-md hover:shadow-lg"
-                        >
-                            <Plus class="h-5 w-5" />
-                            <span>Add Disbursement</span>
-                        </button>
-                    </div>
                 </div>
             </div>
 
@@ -139,12 +123,13 @@ const totalEndingBalance = computed(() => {
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Collection</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Disbursement</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Ending Balance</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">Maturity Date</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="filteredCollaterals.length === 0" class="border-b border-gray-200">
-                                <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                                <td colspan="8" class="px-6 py-8 text-center text-gray-500">
                                     No collateral records found.
                                 </td>
                             </tr>
@@ -167,7 +152,23 @@ const totalEndingBalance = computed(() => {
                                 <td class="px-6 py-4 text-sm text-green-600 font-semibold border-r border-gray-200">{{ formatCurrency(collateral.collection) }}</td>
                                 <td class="px-6 py-4 text-sm text-red-600 font-semibold border-r border-gray-200">{{ formatCurrency(collateral.disbursement) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(parseFloat(collateral.beginning_balance || 0) + parseFloat(collateral.collection || 0) - parseFloat(collateral.disbursement || 0)) }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-700">{{ formatDate(collateral.maturity_date) }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-200">{{ formatDate(collateral.maturity_date) }}</td>
+                                <td class="px-6 py-4 text-sm space-x-2 flex">
+                                    <button
+                                        @click="handleCollection(collateral)"
+                                        class="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white rounded hover:bg-green-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
+                                    >
+                                        <Plus class="h-4 w-4" />
+                                        <span>Collection</span>
+                                    </button>
+                                    <button
+                                        @click="handleDisbursement(collateral)"
+                                        class="flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
+                                    >
+                                        <Plus class="h-4 w-4" />
+                                        <span>Disbursement</span>
+                                    </button>
+                                </td>
                             </tr>
                         </tbody>
                         <tfoot v-if="filteredCollaterals.length > 0">
@@ -178,6 +179,7 @@ const totalEndingBalance = computed(() => {
                                 <td class="px-6 py-4 text-sm text-green-600 border-r border-gray-300">{{ formatCurrency(totalCollection) }}</td>
                                 <td class="px-6 py-4 text-sm text-red-600 border-r border-gray-300">{{ formatCurrency(totalDisbursement) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 border-r border-gray-300">{{ formatCurrency(totalEndingBalance) }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900"></td>
                             </tr>
                         </tfoot>

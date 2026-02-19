@@ -4,6 +4,7 @@ import { usePage, router } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
 import { Home, Users, LogOut, Menu, Wallet, BarChart3, Shield, Clock, FileText, TrendingUp, Banknote, DollarSign, Coins, ArrowUpRight, PiggyBank } from 'lucide-vue-next';
+import BackToTopButton from '@/Components/BackToTopButton.vue';
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
@@ -235,7 +236,7 @@ const menuItems = [
 
         <!-- Main Content -->
         <div class="flex-1 flex flex-col overflow-hidden">
-            <div class="flex-1 overflow-auto p-8">
+            <div class="flex-1 overflow-auto p-8" data-scroll-container>
                 <slot />
             </div>
             
@@ -247,4 +248,7 @@ const menuItems = [
             </div>
         </div>
     </div>
+
+    <!-- Back to Top Button -->
+    <BackToTopButton />
 </template>

@@ -17,21 +17,21 @@ onMounted(() => {
 
 const searchQuery = ref('');
 
-const handleAddCollection = () => {
+const handleCollection = (security) => {
     Swal.fire({
-        title: 'Add Collection',
-        text: 'Features coming soon.',
+        title: 'Collection',
+        text: `Add collection for ${security.government_security_name}`,
         icon: 'info',
-        confirmButtonColor: '#F59E0B'
+        confirmButtonColor: '#10B981'
     });
 };
 
-const handleAddDisbursement = () => {
+const handleDisbursement = (security) => {
     Swal.fire({
-        title: 'Add Disbursement',
-        text: 'Features coming soon.',
+        title: 'Disbursement',
+        text: `Add disbursement for ${security.government_security_name}`,
         icon: 'info',
-        confirmButtonColor: '#F59E0B'
+        confirmButtonColor: '#EF4444'
     });
 };
 
@@ -91,26 +91,10 @@ const totalEndingBalance = computed(() => {
 <template>
     <Treasury2Layout>
         <div class="w-full px-8 py-12">
-            <!-- Header with Buttons -->
+            <!-- Header -->
             <div class="mb-8">
                 <div class="flex items-center justify-between mb-6">
                     <h1 class="text-3xl font-black text-gray-900">Government Securities Management</h1>
-                    <div class="flex items-center gap-3">
-                        <button
-                            @click="handleAddCollection"
-                            class="flex items-center space-x-2 px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200 font-semibold shadow-md hover:shadow-lg"
-                        >
-                            <Plus class="h-5 w-5" />
-                            <span>Add Collection</span>
-                        </button>
-                        <button
-                            @click="handleAddDisbursement"
-                            class="flex items-center space-x-2 px-6 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-200 font-semibold shadow-md hover:shadow-lg"
-                        >
-                            <Plus class="h-5 w-5" />
-                            <span>Add Disbursement</span>
-                        </button>
-                    </div>
                 </div>
             </div>
 
@@ -139,12 +123,13 @@ const totalEndingBalance = computed(() => {
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Collection</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Disbursement</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Ending Balance</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">Maturity Date</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="filteredSecurities.length === 0" class="border-b border-gray-200">
-                                <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                                <td colspan="8" class="px-6 py-8 text-center text-gray-500">
                                     No government securities found.
                                 </td>
                             </tr>
@@ -167,7 +152,23 @@ const totalEndingBalance = computed(() => {
                                 <td class="px-6 py-4 text-sm text-green-600 font-semibold border-r border-gray-200">{{ formatCurrency(security.collection) }}</td>
                                 <td class="px-6 py-4 text-sm text-red-600 font-semibold border-r border-gray-200">{{ formatCurrency(security.disbursement) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(parseFloat(security.beginning_balance || 0) + parseFloat(security.collection || 0) - parseFloat(security.disbursement || 0)) }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-700">{{ formatDate(security.maturity_date) }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-200">{{ formatDate(security.maturity_date) }}</td>
+                                <td class="px-6 py-4 text-sm space-x-2 flex">
+                                    <button
+                                        @click="handleCollection(security)"
+                                        class="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white rounded hover:bg-green-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
+                                    >
+                                        <Plus class="h-4 w-4" />
+                                        <span>Collection</span>
+                                    </button>
+                                    <button
+                                        @click="handleDisbursement(security)"
+                                        class="flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
+                                    >
+                                        <Plus class="h-4 w-4" />
+                                        <span>Disbursement</span>
+                                    </button>
+                                </td>
                             </tr>
                         </tbody>
                         <tfoot v-if="filteredSecurities.length > 0">
@@ -178,6 +179,7 @@ const totalEndingBalance = computed(() => {
                                 <td class="px-6 py-4 text-sm text-green-600 border-r border-gray-300">{{ formatCurrency(totalCollection) }}</td>
                                 <td class="px-6 py-4 text-sm text-red-600 border-r border-gray-300">{{ formatCurrency(totalDisbursement) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 border-r border-gray-300">{{ formatCurrency(totalEndingBalance) }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900"></td>
                             </tr>
                         </tfoot>
