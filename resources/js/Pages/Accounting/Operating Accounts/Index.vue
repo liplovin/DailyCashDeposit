@@ -2,9 +2,9 @@
 import AccountingLayout from '@/Layouts/AccountingLayout.vue';
 import AddDisbursement from './AddDisbursement.vue';
 import ShowDisbursement from './ShowDisbursement.vue';
-import { usePage, Link } from '@inertiajs/vue3';
+import { usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
-import { Plus, Search, CheckCircle, Eye } from 'lucide-vue-next';
+import { Plus, Search, CheckCircle } from 'lucide-vue-next';
 import Swal from 'sweetalert2';
 
 const page = usePage();
@@ -170,13 +170,6 @@ const handleProcessDisbursement = async () => {
                         <p class="text-gray-600 mt-1">Manage and track pending operating account disbursement records</p>
                     </div>
                     <div class="flex items-center gap-3">
-                        <Link
-                            href="/accounting/operating-accounts/processed"
-                            class="flex items-center space-x-2 px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200 font-semibold shadow-md hover:shadow-lg"
-                        >
-                            <Eye class="h-5 w-5" />
-                            <span>View Processed</span>
-                        </Link>
                         <button
                             v-if="hasPendingDisbursements"
                             @click="handleProcessDisbursement"

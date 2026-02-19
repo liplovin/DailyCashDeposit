@@ -128,6 +128,15 @@ Route::middleware('auth')->group(function () {
         Route::post('/operating-account-disbursement/process', [\App\Http\Controllers\OperatingAccountDisbursementController::class, 'processDisbursements'])->name('operating-account-disbursement.process');
         Route::put('/operating-account-disbursement/{operatingAccountDisbursement}', [\App\Http\Controllers\OperatingAccountDisbursementController::class, 'update'])->name('operating-account-disbursement.update');
         Route::delete('/operating-account-disbursement/{operatingAccountDisbursement}', [\App\Http\Controllers\OperatingAccountDisbursementController::class, 'destroy'])->name('operating-account-disbursement.destroy');
+
+        Route::get('/processed-disbursement', function () {
+            $operatingAccounts = \App\Models\OperatingAccount::all();
+            $disbursements = \App\Models\OperatingAccountDisbursement::with('operatingAccount')->where('status', 'processed')->get();
+            return Inertia::render('Accounting/Operating Accounts/ProcessedIndex', [
+                'operatingAccounts' => $operatingAccounts,
+                'disbursements' => $disbursements,
+            ]);
+        })->name('processed-disbursement');
     });
 
     // User Management Routes
