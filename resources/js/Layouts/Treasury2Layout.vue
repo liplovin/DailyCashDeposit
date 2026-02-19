@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
-import { Home, LogOut, Menu } from 'lucide-vue-next';
+import { Home, LogOut, Menu, Wallet, BarChart3, Shield, Clock, FileText, TrendingUp, DollarSign, Coins, ArrowUpRight, PiggyBank } from 'lucide-vue-next';
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
@@ -13,7 +13,15 @@ const currentRoute = computed(() => page.url);
 
 const isRouteActive = (routeName) => {
     const routeList = {
-        'dashboard': '/dashboard'
+        'dashboard': '/dashboard',
+        'treasury2.collateral': '/treasury2/collateral',
+        'treasury2.time-deposit': '/treasury2/time-deposit',
+        'treasury2.government-securities': '/treasury2/government-securities',
+        'treasury2.other-investment': '/treasury2/other-investment',
+        'treasury2.dollar': '/treasury2/dollar',
+        'treasury2.corporate-bonds': '/treasury2/corporate-bonds',
+        'treasury2.cash-infusion': '/treasury2/cash-infusion',
+        'treasury2.investment': '/treasury2/investment'
     };
     
     const routePath = routeList[routeName];
@@ -39,7 +47,15 @@ const handleMenuClick = (item) => {
         });
     } else if (item.route) {
         const routeUrls = {
-            'dashboard': '/dashboard'
+            'dashboard': '/dashboard',
+            'treasury2.collateral': '/treasury2/collateral',
+            'treasury2.time-deposit': '/treasury2/time-deposit',
+            'treasury2.government-securities': '/treasury2/government-securities',
+            'treasury2.other-investment': '/treasury2/other-investment',
+            'treasury2.dollar': '/treasury2/dollar',
+            'treasury2.corporate-bonds': '/treasury2/corporate-bonds',
+            'treasury2.cash-infusion': '/treasury2/cash-infusion',
+            'treasury2.investment': '/treasury2/investment'
         };
         router.get(routeUrls[item.route]);
     }
@@ -50,6 +66,46 @@ const menuItems = [
         name: 'Dashboard',
         component: Home,
         route: 'dashboard'
+    },
+    {
+        name: 'Collateral',
+        component: Shield,
+        route: 'treasury2.collateral'
+    },
+    {
+        name: 'Time Deposit',
+        component: Clock,
+        route: 'treasury2.time-deposit'
+    },
+    {
+        name: 'Government Securities',
+        component: FileText,
+        route: 'treasury2.government-securities'
+    },
+    {
+        name: 'Other Investment',
+        component: TrendingUp,
+        route: 'treasury2.other-investment'
+    },
+    {
+        name: 'Dollar',
+        component: DollarSign,
+        route: 'treasury2.dollar'
+    },
+    {
+        name: 'Corporate Bonds',
+        component: Coins,
+        route: 'treasury2.corporate-bonds'
+    },
+    {
+        name: 'Cash Infusion',
+        component: ArrowUpRight,
+        route: 'treasury2.cash-infusion'
+    },
+    {
+        name: 'Investment',
+        component: PiggyBank,
+        route: 'treasury2.investment'
     }
 ];
 </script>

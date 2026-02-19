@@ -104,6 +104,53 @@ Route::middleware('auth')->group(function () {
         })->name('processed-collection');
     });
 
+    // Treasury2 Routes
+    Route::prefix('treasury2')->name('treasury2.')->group(function () {
+        Route::get('/collateral', function () {
+            $collaterals = \App\Models\Collateral::all();
+            return Inertia::render('Treasury2/Collateral/Index', [
+                'collaterals' => $collaterals
+            ]);
+        })->name('collateral');
+
+        Route::get('/time-deposit', function () {
+            $timeDeposits = \App\Models\TimeDeposit::all();
+            return Inertia::render('Treasury2/Time Deposit/Index', [
+                'timeDeposits' => $timeDeposits
+            ]);
+        })->name('time-deposit');
+
+        Route::get('/government-securities', function () {
+            $governmentSecurities = \App\Models\GovernmentSecurity::all();
+            return Inertia::render('Treasury2/Government Securities/Index', ['governmentSecurities' => $governmentSecurities]);
+        })->name('government-securities');
+
+        Route::get('/other-investment', function () {
+            $otherInvestments = \App\Models\OtherInvestment::all();
+            return Inertia::render('Treasury2/Other Investment/Index', ['otherInvestments' => $otherInvestments]);
+        })->name('other-investment');
+
+        Route::get('/dollar', function () {
+            $dollars = \App\Models\Dollar::all();
+            return Inertia::render('Treasury2/Dollar/Index', ['dollars' => $dollars]);
+        })->name('dollar');
+
+        Route::get('/corporate-bonds', function () {
+            $corporateBonds = \App\Models\CorporateBond::all();
+            return Inertia::render('Treasury2/Corporate Bonds/Index', ['corporateBonds' => $corporateBonds]);
+        })->name('corporate-bonds');
+
+        Route::get('/cash-infusion', function () {
+            $cashInfusions = \App\Models\CashInfusion::all();
+            return Inertia::render('Treasury2/Cash Infusion/Index', ['cashInfusions' => $cashInfusions]);
+        })->name('cash-infusion');
+
+        Route::get('/investment', function () {
+            $investments = \App\Models\Investment::all();
+            return Inertia::render('Treasury2/Investment/Index', ['investments' => $investments]);
+        })->name('investment');
+    });
+
     // Admin Routes
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/users', [UserController::class, 'index'])->name('users');
@@ -139,6 +186,30 @@ Route::middleware('auth')->group(function () {
                 'operatingAccounts' => $operatingAccounts,
             ]);
         })->name('operating-accounts');
+
+        Route::get('/government-securities', function () {
+            return Inertia::render('Admin/Government Securities/Index');
+        })->name('government-securities');
+
+        Route::get('/other-investment', function () {
+            return Inertia::render('Admin/Other Investment/Index');
+        })->name('other-investment');
+
+        Route::get('/dollar', function () {
+            return Inertia::render('Admin/Dollar/Index');
+        })->name('dollar');
+
+        Route::get('/corporate-bonds', function () {
+            return Inertia::render('Admin/Corporate Bonds/Index');
+        })->name('corporate-bonds');
+
+        Route::get('/cash-infusion', function () {
+            return Inertia::render('Admin/Cash Infusion/Index');
+        })->name('cash-infusion');
+
+        Route::get('/investment', function () {
+            return Inertia::render('Admin/Investment/Index');
+        })->name('investment');
     });
 
     // Accounting Routes
