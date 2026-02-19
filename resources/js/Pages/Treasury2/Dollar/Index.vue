@@ -90,12 +90,11 @@ const totalEndingBalance = computed(() => {
 
 <template>
     <Treasury2Layout>
-        <div class="w-full px-8 py-12">
-            <!-- Header -->
+        <div class="w-full px-8 py-6">
+            <!-- Header - Informative Section -->
             <div class="mb-8">
-                <div class="flex items-center justify-between mb-6">
-                    <h1 class="text-3xl font-black text-gray-900">Dollar Management</h1>
-                </div>
+                <h1 class="text-4xl font-black text-gray-900 mb-2">Dollar Management</h1>
+                <p class="text-gray-600 text-sm font-medium">Track USD currency holdings with real-time balance information in US dollars</p>
             </div>
 
             <!-- Search Bar -->

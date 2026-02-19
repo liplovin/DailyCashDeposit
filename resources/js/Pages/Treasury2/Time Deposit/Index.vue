@@ -90,12 +90,11 @@ const totalEndingBalance = computed(() => {
 
 <template>
     <Treasury2Layout>
-        <div class="w-full px-8 py-12">
-            <!-- Header -->
+        <div class="w-full px-8 py-6">
+            <!-- Header - Informative Section -->
             <div class="mb-8">
-                <div class="flex items-center justify-between mb-6">
-                    <h1 class="text-3xl font-black text-gray-900">Time Deposit Management</h1>
-                </div>
+                <h1 class="text-4xl font-black text-gray-900 mb-2">Time Deposit Management</h1>
+                <p class="text-gray-600 text-sm font-medium">Track and manage all time deposit accounts with current balance and maturity information</p>
             </div>
 
             <!-- Search Bar -->

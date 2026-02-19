@@ -90,12 +90,11 @@ const handleDisbursement = (collateral) => {
 
 <template>
     <Treasury2Layout>
-        <div class="w-full px-8 py-12">
-            <!-- Header -->
+        <div class="w-full px-8 py-6">
+            <!-- Header - Informative Section -->
             <div class="mb-8">
-                <div class="flex items-center justify-between mb-6">
-                    <h1 class="text-3xl font-black text-gray-900">Collateral Management</h1>
-                </div>
+                <h1 class="text-4xl font-black text-gray-900 mb-2">Collateral Management</h1>
+                <p class="text-gray-600 text-sm font-medium">Monitor and manage all collateral accounts with real-time balance tracking</p>
             </div>
 
             <!-- Search Bar -->
