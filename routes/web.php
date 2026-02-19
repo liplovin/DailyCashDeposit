@@ -118,10 +118,13 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/time-deposit', function () {
             $timeDeposits = \App\Models\TimeDeposit::all();
-            return Inertia::render('Treasury2/Time Deposit/Index', [
+            return Inertia::render('Treasury2/TimeDeposit/Index', [
                 'timeDeposits' => $timeDeposits
             ]);
         })->name('time-deposit');
+
+        Route::post('/time-deposit/{id}/collection', [TimeDepositController::class, 'addCollection'])->name('time-deposit.add-collection');
+        Route::post('/time-deposit/{id}/disbursement', [TimeDepositController::class, 'addDisbursement'])->name('time-deposit.add-disbursement');
 
         Route::get('/government-securities', function () {
             $governmentSecurities = \App\Models\GovernmentSecurity::all();

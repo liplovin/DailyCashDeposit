@@ -11,7 +11,7 @@ class TimeDepositController extends Controller
     public function index()
     {
         $timeDeposits = TimeDeposit::all();
-        return Inertia::render('Treasury/Time Deposit/Index', [
+        return Inertia::render('Treasury2/TimeDeposit/Index', [
             'timeDeposits' => $timeDeposits
         ]);
     }
@@ -72,5 +72,43 @@ class TimeDepositController extends Controller
             return $year . '-' . $month . '-' . $day;
         }
         return $dateString;
+    }
+
+    public function addCollection(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'date' => 'required|date',
+        ]);
+
+        $timeDeposit = TimeDeposit::findOrFail($id);
+        $timeDeposit->collection += $validated['amount'];
+        $timeDeposit->collection_date = $validated['date'];
+        $timeDeposit->ending_balance = $timeDeposit->beginning_balance + $timeDeposit->collection - $timeDeposit->disbursement;
+        $timeDeposit->save();
+
+        return response()->json([
+            'message' => 'Collection added successfully',
+            'timeDeposit' => $timeDeposit
+        ]);
+    }
+
+    public function addDisbursement(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'date' => 'required|date',
+        ]);
+
+        $timeDeposit = TimeDeposit::findOrFail($id);
+        $timeDeposit->disbursement += $validated['amount'];
+        $timeDeposit->disbursement_date = $validated['date'];
+        $timeDeposit->ending_balance = $timeDeposit->beginning_balance + $timeDeposit->collection - $timeDeposit->disbursement;
+        $timeDeposit->save();
+
+        return response()->json([
+            'message' => 'Disbursement added successfully',
+            'timeDeposit' => $timeDeposit
+        ]);
     }
 }
