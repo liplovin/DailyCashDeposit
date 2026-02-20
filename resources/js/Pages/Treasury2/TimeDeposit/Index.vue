@@ -37,18 +37,10 @@ onMounted(() => {
     document.title = 'Time Deposit Management - Daily Deposit';
     timeDepositsData.value = props.timeDeposits;
     
-    // Read date from URL query parameters
-    const params = new URLSearchParams(window.location.search);
-    const dateFromUrl = params.get('date');
-    
-    if (dateFromUrl) {
-        filterDate.value = dateFromUrl;
-    } else {
-        // Set today's date in URL
-        const today = new Date().toISOString().split('T')[0];
-        filterDate.value = today;
-        updateUrlWithDate(today);
-    }
+    // Set today's date by default
+    const today = new Date().toISOString().split('T')[0];
+    filterDate.value = today;
+    updateUrlWithDate(today);
 });
 
 const formatCurrency = (value) => {

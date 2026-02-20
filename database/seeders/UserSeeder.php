@@ -31,8 +31,8 @@ class UserSeeder extends Seeder
 
         // Create treasury2 user
         User::factory()->create([
-            'name' => 'Treasury 2 User',
-            'email' => 'treasury2@intra.com',
+            'name' => 'Aira 2',
+            'email' => 'aira2@intra.com',
             'role' => 'treasury2',
         ]);
 

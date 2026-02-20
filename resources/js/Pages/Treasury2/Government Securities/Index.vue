@@ -37,18 +37,10 @@ onMounted(() => {
     document.title = 'Government Securities Management - Daily Deposit';
     securitiesData.value = props.governmentSecurities;
     
-    // Read date from URL query parameters
-    const params = new URLSearchParams(window.location.search);
-    const dateFromUrl = params.get('date');
-    
-    if (dateFromUrl) {
-        filterDate.value = dateFromUrl;
-    } else {
-        // Set today's date in URL
-        const today = new Date().toISOString().split('T')[0];
-        filterDate.value = today;
-        updateUrlWithDate(today);
-    }
+    // Set today's date by default
+    const today = new Date().toISOString().split('T')[0];
+    filterDate.value = today;
+    updateUrlWithDate(today);
 });
 
 const formatCurrency = (value) => {
