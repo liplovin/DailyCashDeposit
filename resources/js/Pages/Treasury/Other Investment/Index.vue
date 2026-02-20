@@ -3,13 +3,9 @@ import TreasuryLayout from '@/Layouts/TreasuryLayout.vue';
 import CreateOtherInvestmentModal from './Create.vue';
 import EditOtherInvestmentModal from './Edit.vue';
 import { Plus, Trash2, Edit2, Search } from 'lucide-vue-next';
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
-
-onMounted(() => {
-    document.title = 'Other Investments Management - Daily Deposit';
-});
 
 const props = defineProps({
     otherInvestments: {
@@ -19,23 +15,112 @@ const props = defineProps({
 });
 
 const searchQuery = ref('');
+const filterDate = ref(new Date().toISOString().split('T')[0]);
 const showModal = ref(false);
 const showEditModal = ref(false);
 const selectedOtherInvestment = ref(null);
-const draggedIndex = ref(null);
+
+onMounted(() => {
+    document.title = 'Other Investments Management - Daily Deposit';
+});
+
+const updateUrlWithDate = (date) => {
+    const params = new URLSearchParams(window.location.search);
+    params.set('date', date);
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+};
+
+watch(filterDate, (newDate) => {
+    updateUrlWithDate(newDate);
+});
+
+const formatCurrency = (value) => {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'PHP',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(value || 0);
+};
+
+const filteredOtherInvestments = computed(() => {
+    let filtered = props.otherInvestments;
+    
+    if (searchQuery.value.trim()) {
+        const query = searchQuery.value.toLowerCase();
+        filtered = filtered.filter(item => 
+            item.other_investment_name.toLowerCase().includes(query) ||
+            item.account_number.toLowerCase().includes(query)
+        );
+    }
+    
+    return filtered;
+});
+
+const getCollectionAmount = (item) => {
+    if (!filterDate.value) {
+        return item.collection || 0;
+    }
+    const collectionDate = item.collection_date ? new Date(item.collection_date).toISOString().split('T')[0] : null;
+    return collectionDate === filterDate.value ? (item.collection || 0) : 0;
+};
+
+const getDisbursementAmount = (item) => {
+    if (!filterDate.value) {
+        return item.disbursement || 0;
+    }
+    const disbursementDate = item.disbursement_date ? new Date(item.disbursement_date).toISOString().split('T')[0] : null;
+    return disbursementDate === filterDate.value ? (item.disbursement || 0) : 0;
+};
+
+const getRollingBeginningBalance = (item, selectedDate) => {
+    if (!selectedDate) {
+        return parseFloat(item.beginning_balance || 0);
+    }
+    
+    let balance = parseFloat(item.beginning_balance || 0);
+    
+    const collectionDate = item.collection_date ? new Date(item.collection_date).toISOString().split('T')[0] : null;
+    if (collectionDate && collectionDate < selectedDate) {
+        balance += parseFloat(item.collection || 0);
+    }
+    
+    const disbursementDate = item.disbursement_date ? new Date(item.disbursement_date).toISOString().split('T')[0] : null;
+    if (disbursementDate && disbursementDate < selectedDate) {
+        balance -= parseFloat(item.disbursement || 0);
+    }
+    
+    return balance;
+};
 
 const hasOtherInvestments = computed(() => filteredOtherInvestments.value && filteredOtherInvestments.value.length > 0);
 
-const filteredOtherInvestments = computed(() => {
-    if (!searchQuery.value.trim()) {
-        return props.otherInvestments;
-    }
-    
-    const query = searchQuery.value.toLowerCase();
-    return props.otherInvestments.filter(investment => 
-        investment.other_investment_name.toLowerCase().includes(query) ||
-        investment.account_number.toLowerCase().includes(query)
-    );
+const totalBeginningBalance = computed(() => {
+    return filteredOtherInvestments.value.reduce((sum, item) => {
+        return sum + getRollingBeginningBalance(item, filterDate.value);
+    }, 0);
+});
+
+const totalCollection = computed(() => {
+    return filteredOtherInvestments.value.reduce((sum, item) => {
+        return sum + getCollectionAmount(item);
+    }, 0);
+});
+
+const totalDisbursement = computed(() => {
+    return filteredOtherInvestments.value.reduce((sum, item) => {
+        return sum + getDisbursementAmount(item);
+    }, 0);
+});
+
+const totalEndingBalance = computed(() => {
+    return filteredOtherInvestments.value.reduce((sum, item) => {
+        const beginning = getRollingBeginningBalance(item, filterDate.value);
+        const collection = parseFloat(getCollectionAmount(item) || 0);
+        const disbursement = parseFloat(getDisbursementAmount(item) || 0);
+        const ending = beginning + collection - disbursement;
+        return sum + ending;
+    }, 0);
 });
 
 const openModal = () => {
@@ -58,38 +143,7 @@ const closeEditModal = () => {
     selectedOtherInvestment.value = null;
 };
 
-const totalBeginningBalance = computed(() => {
-    return filteredOtherInvestments.value.reduce((sum, investment) => {
-        return sum + parseFloat(investment.beginning_balance || 0);
-    }, 0);
-});
 
-const handleDragStart = (index, event) => {
-    draggedIndex.value = index;
-    event.dataTransfer.effectAllowed = 'move';
-    // Create a custom drag image
-    const dragImage = new Image();
-    dragImage.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect fill="%23FBBF24" width="40" height="40" rx="8"/><text x="20" y="24" fill="%23fff" font-size="20" text-anchor="middle" font-weight="bold" font-family="Arial">\u21d5</text></svg>';
-    event.dataTransfer.setDragImage(dragImage, 20, 20);
-};
-
-const handleDragOver = (event) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-};
-
-const handleDrop = (targetIndex) => {
-    if (draggedIndex.value !== null && draggedIndex.value !== targetIndex) {
-        const temp = props.otherInvestments[draggedIndex.value];
-        props.otherInvestments[draggedIndex.value] = props.otherInvestments[targetIndex];
-        props.otherInvestments[targetIndex] = temp;
-    }
-    draggedIndex.value = null;
-};
-
-const handleDragEnd = () => {
-    draggedIndex.value = null;
-};
 
 const formatMaturityDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -167,8 +221,8 @@ const deleteOtherInvestment = async (investment) => {
             <div class="mb-8">
                 <div class="flex items-center justify-between mb-6">
                     <div>
-                        <h1 class="text-3xl font-black text-gray-900">Other Investments Management</h1>
-                        <p class="text-gray-600 mt-1">Manage and track your other investments</p>
+                        <h1 class="text-4xl font-black text-gray-900 mb-2">Other Investments Management</h1>
+                        <p class="text-gray-600 text-sm font-medium">View all other investment records with real-time balances and transactions</p>
                     </div>
                     <button
                         @click="openModal"
@@ -178,16 +232,34 @@ const deleteOtherInvestment = async (investment) => {
                         <span>Create New</span>
                     </button>
                 </div>
+            </div>
 
-                <!-- Search Bar -->
-                <div class="relative">
-                    <Search class="absolute left-4 top-3 h-5 w-5 text-gray-400" />
-                    <input
-                        v-model="searchQuery"
-                        type="text"
-                        placeholder="Search by other investment name or account number..."
-                        class="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
-                    />
+            <!-- Search Bar and Date Filter -->
+            <div class="bg-yellow-50 rounded-xl border-2 border-yellow-200 p-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                    <!-- Search Bar -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Search</label>
+                        <div class="relative">
+                            <Search class="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
+                            <input
+                                v-model="searchQuery"
+                                type="text"
+                                placeholder="Search by other investment name or account number..."
+                                class="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Date Filter -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Select Date</label>
+                        <input
+                            v-model="filterDate"
+                            type="date"
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -232,10 +304,11 @@ const deleteOtherInvestment = async (investment) => {
                     <table class="w-full border-collapse">
                         <thead class="bg-gradient-to-r from-yellow-400 to-yellow-500">
                             <tr class="border-b-2 border-gray-300">
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300 cursor-move">⋮⋮ Other Investment Name</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Other Investment Name</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Account Number</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Ending Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white">Actions</th>
                             </tr>
                         </thead>
@@ -243,31 +316,23 @@ const deleteOtherInvestment = async (investment) => {
                             <tr 
                                 v-for="(investment, index) in filteredOtherInvestments" 
                                 :key="investment.id"
-                                draggable="true"
-                                @dragstart="handleDragStart(index, $event)"
-                                @dragover="handleDragOver"
-                                @drop="handleDrop(index)"
-                                @dragend="handleDragEnd"
                                 :class="[
-                                    'relative transition-all duration-300 ease-out cursor-move select-none',
-                                    'border-b border-gray-300',
-                                    draggedIndex === index ? 'dragging-row opacity-40 scale-95 bg-yellow-200' : index % 2 === 0 ? 'bg-white' : 'bg-gray-50',
-                                    draggedIndex !== null && draggedIndex !== index ? 'hover:ring-2 hover:ring-yellow-400 ring-inset' : 'hover:bg-yellow-100'
+                                    'border-b border-gray-200 hover:bg-yellow-50 transition-colors duration-150',
+                                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                                 ]"
                             >
-                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-300">
-                                    <div class="flex items-center">
-                                        <div class="w-2 h-2 bg-yellow-500 rounded-full mr-3"></div>
+                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2 h-2 bg-yellow-500 rounded-full"></span>
                                         {{ investment.other_investment_name }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-300">{{ investment.account_number }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-300">
-                                    ₱ {{ parseFloat(investment.beginning_balance).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-300">
+                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ investment.account_number }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-200">
                                     {{ formatMaturityDate(investment.maturity_date) }}
                                 </td>
+                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(investment, filterDate)) }}</td>
+                                <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(investment, filterDate) + parseFloat(getCollectionAmount(investment)) - parseFloat(getDisbursementAmount(investment))) }}</td>
                                 <td class="px-6 py-4 text-sm">
                                     <div class="flex items-center space-x-2">
                                         <button
@@ -288,21 +353,17 @@ const deleteOtherInvestment = async (investment) => {
                                 </td>
                             </tr>
                         </tbody>
-                        <tfoot>
-                            <tr class="bg-yellow-50 border-t-2 border-gray-300 font-bold">
-                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">SUB-TOTAL OTHER INVESTMENTS</td>
+                        <tfoot v-if="filteredOtherInvestments.length > 0">
+                            <tr class="bg-yellow-50 font-bold border-b-2 border-gray-300">
+                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">TOTAL</td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
-                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">
-                                    ₱ {{ totalBeginningBalance.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
-                                </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
+                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">{{ formatCurrency(totalBeginningBalance) }}</td>
+                                <td class="px-6 py-4 text-sm text-blue-600 border-r border-gray-300">{{ formatCurrency(totalEndingBalance) }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-900"></td>
                             </tr>
                         </tfoot>
                     </table>
-                </div>
-                <div class="bg-gray-50 px-6 py-4 border-t-2 border-gray-300">
-                    <p class="text-sm text-gray-600">Total: <span class="font-semibold text-gray-900">{{ filteredOtherInvestments.length }}</span> other investment(s)</p>
                 </div>
             </div>
 
@@ -316,38 +377,7 @@ const deleteOtherInvestment = async (investment) => {
 </template>
 
 <style scoped>
-@keyframes dragPulse {
-    0%, 100% {
-        box-shadow: inset 0 0 0 rgba(251, 191, 36, 0);
-    }
-    50% {
-        box-shadow: inset 0 0 8px rgba(251, 191, 36, 0.3);
-    }
-}
-
-@keyframes slideDown {
-    from {
-        transform: translateY(-8px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-tr {
-    animation: slideDown 0.3s ease-out;
-}
-
-.dragging-row {
-    animation: dragPulse 0.6s ease-in-out infinite;
-    box-shadow: 0 8px 16px rgba(251, 191, 36, 0.3);
-    border-radius: 4px;
-}
-
-tbody tr:hover td:first-child {
-    font-weight: 600;
-    color: #1f2937;
+table {
+    border-collapse: collapse;
 }
 </style>

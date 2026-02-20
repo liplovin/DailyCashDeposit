@@ -3,13 +3,9 @@ import TreasuryLayout from '@/Layouts/TreasuryLayout.vue';
 import CreateOperatingAccountModal from './Create.vue';
 import EditOperatingAccountModal from './Edit.vue';
 import { Plus, Trash2, Edit2, Search } from 'lucide-vue-next';
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
-
-onMounted(() => {
-    document.title = 'Operating Accounts Management - Daily Deposit';
-});
 
 const props = defineProps({
     operatingAccounts: {
@@ -18,25 +14,132 @@ const props = defineProps({
     }
 });
 
+const getTodayDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 const searchQuery = ref('');
+const filterDate = ref(getTodayDate());
 const showModal = ref(false);
 const showEditModal = ref(false);
 const selectedOperatingAccount = ref(null);
-const draggedIndex = ref(null);
 
-const hasOperatingAccounts = computed(() => filteredOperatingAccounts.value && filteredOperatingAccounts.value.length > 0);
+onMounted(() => {
+    document.title = 'Operating Accounts Management - Daily Deposit';
+});
+
+const updateUrlWithDate = (date) => {
+    const params = new URLSearchParams(window.location.search);
+    params.set('date', date);
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+};
+
+watch(filterDate, (newDate) => {
+    updateUrlWithDate(newDate);
+});
+
+const formatCurrency = (value) => {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'PHP',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(value || 0);
+};
 
 const filteredOperatingAccounts = computed(() => {
-    if (!searchQuery.value.trim()) {
-        return props.operatingAccounts;
+    let filtered = props.operatingAccounts;
+    
+    if (searchQuery.value.trim()) {
+        const query = searchQuery.value.toLowerCase();
+        filtered = filtered.filter(account => 
+            account.operating_account_name.toLowerCase().includes(query) ||
+            account.account_number.toLowerCase().includes(query)
+        );
     }
     
-    const query = searchQuery.value.toLowerCase();
-    return props.operatingAccounts.filter(account => 
-        account.operating_account_name.toLowerCase().includes(query) ||
-        account.account_number.toLowerCase().includes(query)
-    );
+    return filtered;
 });
+
+const getRollingBeginningBalance = (account, selectedDate) => {
+    if (!selectedDate) {
+        return parseFloat(account.beginning_balance || 0);
+    }
+    
+    let balance = parseFloat(account.beginning_balance || 0);
+    
+    if (account.collections) {
+        account.collections.forEach(col => {
+            if (col.status === 'processed') {
+                const collectionDate = new Date(col.created_at).toISOString().split('T')[0];
+                if (collectionDate < selectedDate) {
+                    balance += parseFloat(col.collection_amount || 0);
+                }
+            }
+        });
+    }
+    
+    if (account.disbursements) {
+        account.disbursements.forEach(dis => {
+            if (dis.status === 'processed') {
+                const disbursementDate = new Date(dis.created_at).toISOString().split('T')[0];
+                if (disbursementDate < selectedDate) {
+                    balance -= parseFloat(dis.amount || 0);
+                }
+            }
+        });
+    }
+    
+    return balance;
+};
+
+const getCollectionsByDate = (account) => {
+    if (!account.collections) return [];
+    
+    if (!filterDate.value) return account.collections;
+    
+    return account.collections.filter(col => {
+        const colDate = new Date(col.created_at);
+        const selected = new Date(filterDate.value);
+        
+        return colDate.getFullYear() === selected.getFullYear() &&
+               colDate.getMonth() === selected.getMonth() &&
+               colDate.getDate() === selected.getDate();
+    });
+};
+
+const getTotalCollectionByDate = (account) => {
+    return getCollectionsByDate(account).reduce((sum, col) => {
+        return sum + (col.status === 'processed' ? parseFloat(col.collection_amount || 0) : 0);
+    }, 0) || 0;
+};
+
+const getDisbursementsByDate = (account) => {
+    if (!account.disbursements) return [];
+    
+    if (!filterDate.value) return account.disbursements;
+    
+    return account.disbursements.filter(dis => {
+        const disDate = new Date(dis.created_at);
+        const selected = new Date(filterDate.value);
+        
+        return disDate.getFullYear() === selected.getFullYear() &&
+               disDate.getMonth() === selected.getMonth() &&
+               disDate.getDate() === selected.getDate();
+    });
+};
+
+const getTotalDisbursementByDate = (account) => {
+    return getDisbursementsByDate(account).reduce((sum, dis) => {
+        return sum + (dis.status === 'processed' ? parseFloat(dis.amount || 0) : 0);
+    }, 0) || 0;
+};
+
+const hasOperatingAccounts = computed(() => filteredOperatingAccounts.value && filteredOperatingAccounts.value.length > 0);
 
 const openModal = () => {
     selectedOperatingAccount.value = null;
@@ -60,36 +163,33 @@ const closeEditModal = () => {
 
 const totalBeginningBalance = computed(() => {
     return filteredOperatingAccounts.value.reduce((sum, account) => {
-        return sum + parseFloat(account.beginning_balance || 0);
+        return sum + getRollingBeginningBalance(account, filterDate.value);
     }, 0);
 });
 
-const handleDragStart = (index, event) => {
-    draggedIndex.value = index;
-    event.dataTransfer.effectAllowed = 'move';
-    // Create a custom drag image
-    const dragImage = new Image();
-    dragImage.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect fill="%23FBBF24" width="40" height="40" rx="8"/><text x="20" y="24" fill="%23fff" font-size="20" text-anchor="middle" font-weight="bold" font-family="Arial">\u21d5</text></svg>';
-    event.dataTransfer.setDragImage(dragImage, 20, 20);
-};
+const totalCollectionByDate = computed(() => {
+    return filteredOperatingAccounts.value.reduce((sum, account) => {
+        return sum + getTotalCollectionByDate(account);
+    }, 0);
+});
 
-const handleDragOver = (event) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-};
+const totalDisbursementByDate = computed(() => {
+    return filteredOperatingAccounts.value.reduce((sum, account) => {
+        return sum + getTotalDisbursementByDate(account);
+    }, 0);
+});
 
-const handleDrop = (targetIndex) => {
-    if (draggedIndex.value !== null && draggedIndex.value !== targetIndex) {
-        const temp = props.operatingAccounts[draggedIndex.value];
-        props.operatingAccounts[draggedIndex.value] = props.operatingAccounts[targetIndex];
-        props.operatingAccounts[targetIndex] = temp;
-    }
-    draggedIndex.value = null;
-};
+const totalEndingBalance = computed(() => {
+    return filteredOperatingAccounts.value.reduce((sum, account) => {
+        const beginning = getRollingBeginningBalance(account, filterDate.value);
+        const collection = getTotalCollectionByDate(account);
+        const disbursement = getTotalDisbursementByDate(account);
+        const ending = beginning + collection - disbursement;
+        return sum + ending;
+    }, 0);
+});
 
-const handleDragEnd = () => {
-    draggedIndex.value = null;
-};
+
 
 const deleteOperatingAccount = async (account) => {
     const result = await Swal.fire({
@@ -167,8 +267,8 @@ const formatMaturityDate = (dateString) => {
             <div class="mb-8">
                 <div class="flex items-center justify-between mb-6">
                     <div>
-                        <h1 class="text-3xl font-black text-gray-900">Operating Accounts Management</h1>
-                        <p class="text-gray-600 mt-1">Manage and track your operating accounts</p>
+                        <h1 class="text-4xl font-black text-gray-900 mb-2">Operating Accounts Management</h1>
+                        <p class="text-gray-600 text-sm font-medium">View all operating account records with real-time balances and transactions</p>
                     </div>
                     <button
                         @click="openModal"
@@ -178,16 +278,34 @@ const formatMaturityDate = (dateString) => {
                         <span>Create New</span>
                     </button>
                 </div>
+            </div>
 
-                <!-- Search Bar -->
-                <div class="relative">
-                    <Search class="absolute left-4 top-3 h-5 w-5 text-gray-400" />
-                    <input
-                        v-model="searchQuery"
-                        type="text"
-                        placeholder="Search by operating account name or account number..."
-                        class="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
-                    />
+            <!-- Search Bar and Date Filter -->
+            <div class="bg-yellow-50 rounded-xl border-2 border-yellow-200 p-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                    <!-- Search Bar -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Search</label>
+                        <div class="relative">
+                            <Search class="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
+                            <input
+                                v-model="searchQuery"
+                                type="text"
+                                placeholder="Search by operating account name or account number..."
+                                class="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Date Filter -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Select Date</label>
+                        <input
+                            v-model="filterDate"
+                            type="date"
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -232,10 +350,11 @@ const formatMaturityDate = (dateString) => {
                     <table class="w-full border-collapse">
                         <thead class="bg-gradient-to-r from-yellow-400 to-yellow-500">
                             <tr class="border-b-2 border-gray-300">
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300 cursor-move">⋮⋮ Operating Account Name</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Operating Account Name</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Account Number</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Ending Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white">Actions</th>
                             </tr>
                         </thead>
@@ -243,31 +362,21 @@ const formatMaturityDate = (dateString) => {
                             <tr 
                                 v-for="(account, index) in filteredOperatingAccounts" 
                                 :key="account.id"
-                                draggable="true"
-                                @dragstart="handleDragStart(index, $event)"
-                                @dragover="handleDragOver"
-                                @drop="handleDrop(index)"
-                                @dragend="handleDragEnd"
                                 :class="[
-                                    'relative transition-all duration-300 ease-out cursor-move select-none',
-                                    'border-b border-gray-300',
-                                    draggedIndex === index ? 'dragging-row opacity-40 scale-95 bg-yellow-200' : index % 2 === 0 ? 'bg-white' : 'bg-gray-50',
-                                    draggedIndex !== null && draggedIndex !== index ? 'hover:ring-2 hover:ring-yellow-400 ring-inset' : 'hover:bg-yellow-100'
+                                    'border-b border-gray-200 hover:bg-yellow-50 transition-colors duration-150',
+                                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                                 ]"
                             >
-                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-300">
-                                    <div class="flex items-center">
-                                        <div class="w-2 h-2 bg-yellow-500 rounded-full mr-3"></div>
+                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2 h-2 bg-yellow-500 rounded-full"></span>
                                         {{ account.operating_account_name }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-300">{{ account.account_number }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-300">
-                                    ₱ {{ parseFloat(account.beginning_balance).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-300">
-                                    {{ formatMaturityDate(account.maturity_date) }}
-                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-200">{{ account.account_number }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-200">{{ formatMaturityDate(account.maturity_date) }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(account, filterDate)) }}</td>
+                                <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(account, filterDate) + getTotalCollectionByDate(account) - getTotalDisbursementByDate(account)) }}</td>
                                 <td class="px-6 py-4 text-sm">
                                     <div class="flex items-center space-x-2">
                                         <button
@@ -288,21 +397,17 @@ const formatMaturityDate = (dateString) => {
                                 </td>
                             </tr>
                         </tbody>
-                        <tfoot>
-                            <tr class="bg-yellow-50 border-t-2 border-gray-300 font-bold">
-                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">SUB-TOTAL OPERATING ACCOUNTS</td>
+                        <tfoot v-if="filteredOperatingAccounts.length > 0">
+                            <tr class="bg-yellow-50 font-bold border-b-2 border-gray-300">
+                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">TOTAL</td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
-                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">
-                                    ₱ {{ totalBeginningBalance.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
-                                </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
+                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">{{ formatCurrency(totalBeginningBalance) }}</td>
+                                <td class="px-6 py-4 text-sm text-blue-600 border-r border-gray-300">{{ formatCurrency(totalEndingBalance) }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-900"></td>
                             </tr>
                         </tfoot>
                     </table>
-                </div>
-                <div class="bg-gray-50 px-6 py-4 border-t-2 border-gray-300">
-                    <p class="text-sm text-gray-600">Total: <span class="font-semibold text-gray-900">{{ filteredOperatingAccounts.length }}</span> operating account(s)</p>
                 </div>
             </div>
 
@@ -316,38 +421,7 @@ const formatMaturityDate = (dateString) => {
 </template>
 
 <style scoped>
-@keyframes dragPulse {
-    0%, 100% {
-        box-shadow: inset 0 0 0 rgba(251, 191, 36, 0);
-    }
-    50% {
-        box-shadow: inset 0 0 8px rgba(251, 191, 36, 0.3);
-    }
-}
-
-@keyframes slideDown {
-    from {
-        transform: translateY(-8px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-tr {
-    animation: slideDown 0.3s ease-out;
-}
-
-.dragging-row {
-    animation: dragPulse 0.6s ease-in-out infinite;
-    box-shadow: 0 8px 16px rgba(251, 191, 36, 0.3);
-    border-radius: 4px;
-}
-
-tbody tr:hover td:first-child {
-    font-weight: 600;
-    color: #1f2937;
+table {
+    border-collapse: collapse;
 }
 </style>

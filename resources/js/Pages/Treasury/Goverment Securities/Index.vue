@@ -19,12 +19,57 @@ const props = defineProps({
 });
 
 const searchQuery = ref('');
+const filterDate = ref(new Date().toISOString().split('T')[0]);
 const showModal = ref(false);
 const showEditModal = ref(false);
 const selectedGovernmentSecurity = ref(null);
-const draggedIndex = ref(null);
 
 const hasGovernmentSecurities = computed(() => filteredGovernmentSecurities.value && filteredGovernmentSecurities.value.length > 0);
+
+const formatCurrency = (value) => {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'PHP',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(value || 0);
+};
+
+const getCollectionAmount = (security) => {
+    if (!filterDate.value) {
+        return security.collection || 0;
+    }
+    const collectionDate = security.collection_date ? new Date(security.collection_date).toISOString().split('T')[0] : null;
+    return collectionDate === filterDate.value ? (security.collection || 0) : 0;
+};
+
+const getDisbursementAmount = (security) => {
+    if (!filterDate.value) {
+        return security.disbursement || 0;
+    }
+    const disbursementDate = security.disbursement_date ? new Date(security.disbursement_date).toISOString().split('T')[0] : null;
+    return disbursementDate === filterDate.value ? (security.disbursement || 0) : 0;
+};
+
+const getRollingBeginningBalance = (security, selectedDate) => {
+    if (!selectedDate) {
+        return parseFloat(security.beginning_balance || 0);
+    }
+    
+    let balance = parseFloat(security.beginning_balance || 0);
+    
+    const collectionDate = security.collection_date ? new Date(security.collection_date).toISOString().split('T')[0] : null;
+    if (collectionDate && collectionDate < selectedDate) {
+        balance += parseFloat(security.collection || 0);
+    }
+    
+    const disbursementDate = security.disbursement_date ? new Date(security.disbursement_date).toISOString().split('T')[0] : null;
+    if (disbursementDate && disbursementDate < selectedDate) {
+        balance -= parseFloat(security.disbursement || 0);
+    }
+    
+    return balance;
+};
 
 const filteredGovernmentSecurities = computed(() => {
     if (!searchQuery.value.trim()) {
@@ -60,7 +105,29 @@ const closeEditModal = () => {
 
 const totalBeginningBalance = computed(() => {
     return filteredGovernmentSecurities.value.reduce((sum, security) => {
-        return sum + parseFloat(security.beginning_balance || 0);
+        return sum + getRollingBeginningBalance(security, filterDate.value);
+    }, 0);
+});
+
+const totalCollection = computed(() => {
+    return filteredGovernmentSecurities.value.reduce((sum, security) => {
+        return sum + parseFloat(getCollectionAmount(security) || 0);
+    }, 0);
+});
+
+const totalDisbursement = computed(() => {
+    return filteredGovernmentSecurities.value.reduce((sum, security) => {
+        return sum + parseFloat(getDisbursementAmount(security) || 0);
+    }, 0);
+});
+
+const totalEndingBalance = computed(() => {
+    return filteredGovernmentSecurities.value.reduce((sum, security) => {
+        const beginning = getRollingBeginningBalance(security, filterDate.value);
+        const collection = parseFloat(getCollectionAmount(security) || 0);
+        const disbursement = parseFloat(getDisbursementAmount(security) || 0);
+        const ending = beginning + collection - disbursement;
+        return sum + ending;
     }, 0);
 });
 
@@ -167,8 +234,8 @@ const deleteGovernmentSecurity = async (security) => {
             <div class="mb-8">
                 <div class="flex items-center justify-between mb-6">
                     <div>
-                        <h1 class="text-3xl font-black text-gray-900">Government Securities Management</h1>
-                        <p class="text-gray-600 mt-1">Manage and track your government securities</p>
+                        <h1 class="text-4xl font-black text-gray-900 mb-2">Government Securities</h1>
+                        <p class="text-gray-600 text-sm font-medium">View government securities with real-time balance tracking</p>
                     </div>
                     <button
                         @click="openModal"
@@ -178,16 +245,34 @@ const deleteGovernmentSecurity = async (security) => {
                         <span>Create New</span>
                     </button>
                 </div>
+            </div>
 
-                <!-- Search Bar -->
-                <div class="relative">
-                    <Search class="absolute left-4 top-3 h-5 w-5 text-gray-400" />
-                    <input
-                        v-model="searchQuery"
-                        type="text"
-                        placeholder="Search by government security name or reference number..."
-                        class="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
-                    />
+            <!-- Search Bar and Date Filter -->
+            <div class="bg-yellow-50 rounded-xl border-2 border-yellow-200 p-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                    <!-- Search Bar -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Search Government Security</label>
+                        <div class="relative">
+                            <Search class="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
+                            <input
+                                v-model="searchQuery"
+                                type="text"
+                                placeholder="Search by government security name or reference number..."
+                                class="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Date Filter -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Select Date</label>
+                        <input
+                            v-model="filterDate"
+                            type="date"
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -232,10 +317,11 @@ const deleteGovernmentSecurity = async (security) => {
                     <table class="w-full border-collapse">
                         <thead class="bg-gradient-to-r from-yellow-400 to-yellow-500">
                             <tr class="border-b-2 border-gray-300">
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300 cursor-move">⋮⋮ Government Security Name</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Government Security Name</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Reference Number</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Ending Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white">Actions</th>
                             </tr>
                         </thead>
@@ -243,31 +329,23 @@ const deleteGovernmentSecurity = async (security) => {
                             <tr 
                                 v-for="(security, index) in filteredGovernmentSecurities" 
                                 :key="security.id"
-                                draggable="true"
-                                @dragstart="handleDragStart(index, $event)"
-                                @dragover="handleDragOver"
-                                @drop="handleDrop(index)"
-                                @dragend="handleDragEnd"
                                 :class="[
-                                    'relative transition-all duration-300 ease-out cursor-move select-none',
-                                    'border-b border-gray-300',
-                                    draggedIndex === index ? 'dragging-row opacity-40 scale-95 bg-yellow-200' : index % 2 === 0 ? 'bg-white' : 'bg-gray-50',
-                                    draggedIndex !== null && draggedIndex !== index ? 'hover:ring-2 hover:ring-yellow-400 ring-inset' : 'hover:bg-yellow-100'
+                                    'border-b border-gray-200 hover:bg-yellow-50 transition-colors duration-150',
+                                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                                 ]"
                             >
-                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-300">
-                                    <div class="flex items-center">
-                                        <div class="w-2 h-2 bg-yellow-500 rounded-full mr-3"></div>
+                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2 h-2 bg-yellow-500 rounded-full"></span>
                                         {{ security.government_security_name }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-300">{{ security.reference_number }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-300">
-                                    ₱ {{ parseFloat(security.beginning_balance).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-300">
+                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ security.reference_number }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-200">
                                     {{ formatMaturityDate(security.maturity_date) }}
                                 </td>
+                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(security, filterDate)) }}</td>
+                                <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(security, filterDate) + parseFloat(getCollectionAmount(security)) - parseFloat(getDisbursementAmount(security))) }}</td>
                                 <td class="px-6 py-4 text-sm">
                                     <div class="flex items-center space-x-2">
                                         <button
@@ -288,14 +366,13 @@ const deleteGovernmentSecurity = async (security) => {
                                 </td>
                             </tr>
                         </tbody>
-                        <tfoot>
-                            <tr class="bg-yellow-50 border-t-2 border-gray-300 font-bold">
-                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">SUB-TOTAL GOVERNMENT SECURITIES</td>
+                        <tfoot v-if="filteredGovernmentSecurities.length > 0">
+                            <tr class="bg-yellow-50 font-bold border-t-2 border-gray-300">
+                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">TOTAL</td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
-                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">
-                                    ₱ {{ totalBeginningBalance.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
-                                </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
+                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">{{ formatCurrency(totalBeginningBalance) }}</td>
+                                <td class="px-6 py-4 text-sm text-blue-600 border-r border-gray-300">{{ formatCurrency(totalEndingBalance) }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-900"></td>
                             </tr>
                         </tfoot>
@@ -314,40 +391,3 @@ const deleteGovernmentSecurity = async (security) => {
         </div>
     </TreasuryLayout>
 </template>
-
-<style scoped>
-@keyframes dragPulse {
-    0%, 100% {
-        box-shadow: inset 0 0 0 rgba(251, 191, 36, 0);
-    }
-    50% {
-        box-shadow: inset 0 0 8px rgba(251, 191, 36, 0.3);
-    }
-}
-
-@keyframes slideDown {
-    from {
-        transform: translateY(-8px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-tr {
-    animation: slideDown 0.3s ease-out;
-}
-
-.dragging-row {
-    animation: dragPulse 0.6s ease-in-out infinite;
-    box-shadow: 0 8px 16px rgba(251, 191, 36, 0.3);
-    border-radius: 4px;
-}
-
-tbody tr:hover td:first-child {
-    font-weight: 600;
-    color: #1f2937;
-}
-</style>
