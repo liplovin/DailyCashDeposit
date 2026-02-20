@@ -175,6 +175,31 @@ Route::middleware('auth')->group(function () {
         Route::post('/investment/{id}/disbursement', [InvestmentController::class, 'addDisbursement'])->name('investment.add-disbursement');
     });
 
+    // Treasury3 Routes - For 'treasury3' role only
+    Route::prefix('treasury3')->name('treasury3.')->middleware('role:treasury3')->group(function () {
+        Route::get('/operating-account', function () {
+            $operatingAccounts = \App\Models\OperatingAccount::with('collections')->get();
+            return Inertia::render('Treasury3/OperatingAccount/Index', [
+                'operatingAccounts' => $operatingAccounts,
+            ]);
+        })->name('operating-account');
+
+        Route::post('/operating-account/{id}/collection', [OperatingAccountController::class, 'addCollection'])->name('operating-account.add-collection');
+
+        Route::post('/collection/{id}', [OperatingAccountController::class, 'updateCollection'])->name('collection.update');
+        
+        Route::delete('/collection/{id}', [OperatingAccountController::class, 'deleteCollection'])->name('collection.delete');
+        
+        Route::post('/collections/process', [OperatingAccountController::class, 'processCollections'])->name('collections.process');
+
+        Route::get('/processed-collection', function () {
+            $operatingAccounts = \App\Models\OperatingAccount::with('collections')->get();
+            return Inertia::render('Treasury3/ProcessedCollection/Index', [
+                'operatingAccounts' => $operatingAccounts,
+            ]);
+        })->name('processed-collection');
+    });
+
     // Admin Routes - For 'admin' role only
     Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
         Route::get('/users', [UserController::class, 'index'])->name('users');

@@ -52,7 +52,7 @@ const handleDeleteCollection = async (collectionId, collectionIndex) => {
     if (result.isConfirmed) {
         isDeleting.value = true;
         try {
-            const response = await fetch(`/treasury/collections/${collectionId}`, {
+            const response = await fetch(`/treasury3/collection/${collectionId}`, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',

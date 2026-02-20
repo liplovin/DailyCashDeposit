@@ -66,7 +66,7 @@ const handleProcessCollection = async () => {
     if (result.isConfirmed) {
         try {
             const collectionIds = pendingCollections.map(c => c.id);
-            const response = await fetch('/treasury/collections/process', {
+            const response = await fetch('/treasury3/collections/process', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -148,7 +148,8 @@ const groupedCollections = computed(() => {
         }
     });
     
-    return Object.values(groups);
+    // Sort by created_at in descending order (latest first)
+    return Object.values(groups).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 });
 
 const getTotalAmount = (collections) => {

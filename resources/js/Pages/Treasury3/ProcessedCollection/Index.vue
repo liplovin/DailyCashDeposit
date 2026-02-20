@@ -57,7 +57,8 @@ const groupedCollections = computed(() => {
         }
     });
     
-    return Object.values(groups);
+    // Sort by created_at in descending order (latest first)
+    return Object.values(groups).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 });
 
 const getTotalAmount = (collections) => {
@@ -94,6 +95,28 @@ const filteredCollections = computed(() => {
     }
     
     return filtered;
+});
+
+const groupedByOperatingAccount = computed(() => {
+    const grouped = {};
+    
+    filteredCollections.value.forEach(group => {
+        const accountId = group.accountId;
+        const accountName = group.accountName;
+        
+        if (!grouped[accountId]) {
+            grouped[accountId] = {
+                accountName,
+                groups: [],
+                total: 0
+            };
+        }
+        
+        grouped[accountId].groups.push(group);
+        grouped[accountId].total += getTotalAmount(group.collections);
+    });
+    
+    return grouped;
 });
 
 const formatDateWithTime = (dateString) => {
@@ -181,40 +204,53 @@ const formatDateWithTime = (dateString) => {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr 
-                                v-for="group in filteredCollections" 
-                                :key="`${group.accountId}-${group.timestamp}`"
-                                :class="[
-                                    'relative transition-all duration-300 ease-out select-none',
-                                    'border-b border-gray-300 hover:bg-green-100'
-                                ]"
-                            >
-                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-300">
-                                    <div class="flex items-center">
-                                        <div class="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                                        {{ group.accountName }}
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-700 text-center border-r border-gray-300">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                                        {{ group.collections.length }} item{{ group.collections.length !== 1 ? 's' : '' }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-900 font-bold text-right border-r border-gray-300">
-                                    ₱ {{ getTotalAmount(group.collections).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-300">
-                                    {{ formatDateWithTime(group.createdAt) }}
-                                </td>
-                                <td class="px-6 py-4 text-sm text-center">
-                                    <button
-                                        @click="handleShowDetails(group.collections, group.accountName)"
-                                        class="inline-flex items-center px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 font-semibold text-sm transition-colors"
-                                    >
-                                        Show Details
-                                    </button>
-                                </td>
-                            </tr>
+                            <template v-for="(accountData, accountId) in groupedByOperatingAccount" :key="accountId">
+                                <tr 
+                                    v-for="group in accountData.groups" 
+                                    :key="`${group.accountId}-${group.timestamp}`"
+                                    :class="[
+                                        'relative transition-all duration-300 ease-out select-none',
+                                        'border-b border-gray-300 hover:bg-green-100'
+                                    ]"
+                                >
+                                    <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-300">
+                                        <div class="flex items-center">
+                                            <div class="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
+                                            {{ group.accountName }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-700 text-center border-r border-gray-300">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                                            {{ group.collections.length }} item{{ group.collections.length !== 1 ? 's' : '' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-900 font-bold text-right border-r border-gray-300">
+                                        ₱ {{ getTotalAmount(group.collections).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-300">
+                                        {{ formatDateWithTime(group.createdAt) }}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-center">
+                                        <button
+                                            @click="handleShowDetails(group.collections, group.accountName)"
+                                            class="inline-flex items-center px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 font-semibold text-sm transition-colors"
+                                        >
+                                            Show Details
+                                        </button>
+                                    </td>
+                                </tr>
+                                <!-- Subtotal row for operating account -->
+                                <tr class="bg-green-50 border-b-2 border-green-300">
+                                    <td class="px-6 py-4 text-sm font-bold text-gray-900 border-r border-gray-300">
+                                        {{ accountData.accountName }} Subtotal
+                                    </td>
+                                    <td class="px-6 py-4 text-sm font-bold text-gray-900 border-r border-gray-300"></td>
+                                    <td class="px-6 py-4 text-sm font-bold text-green-700 text-right border-r border-gray-300">
+                                        ₱ {{ accountData.total.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                                    </td>
+                                    <td colspan="2" class="px-6 py-4"></td>
+                                </tr>
+                            </template>
                         </tbody>
                         <tfoot class="bg-green-100 border-t-2 border-gray-300">
                             <tr>

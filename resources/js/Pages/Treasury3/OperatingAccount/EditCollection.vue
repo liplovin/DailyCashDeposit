@@ -187,7 +187,7 @@ const saveEdit = async () => {
     }
     
     try {
-        const response = await fetch(`/treasury/collections/${props.collection.id}`, {
+        const response = await fetch(`/treasury3/collection/${props.collection.id}`, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',

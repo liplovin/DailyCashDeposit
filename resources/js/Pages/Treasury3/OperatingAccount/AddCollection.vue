@@ -242,8 +242,14 @@ const handleSubmit = () => {
     form.value.collections.forEach((collection, index) => {
         const cleanAmount = collection.collection_amount.toString().replace(/,/g, '');
         formData.append(`collections[${index}][collection_amount]`, cleanAmount);
-        formData.append(`collections[${index}][deposit_slip]`, collection.deposit_slip);
-        formData.append(`collections[${index}][check]`, collection.check);
+        
+        // Only append files if they exist
+        if (collection.deposit_slip) {
+            formData.append(`collections[${index}][deposit_slip]`, collection.deposit_slip);
+        }
+        if (collection.check) {
+            formData.append(`collections[${index}][check]`, collection.check);
+        }
     });
     
     const page = usePage();
@@ -260,7 +266,7 @@ const handleSubmit = () => {
         return;
     }
     
-    axios.post(`/treasury/operating-accounts/${selectedAccount.value.id}/collection`, formData, {
+    axios.post(`/treasury3/operating-account/${selectedAccount.value.id}/collection`, formData, {
         headers: {
             'X-CSRF-TOKEN': csrfToken
         }
@@ -276,7 +282,7 @@ const handleSubmit = () => {
                 timerProgressBar: true
             }).then(() => {
                 closeModal();
-                router.visit('/treasury/operating-accounts');
+                router.visit('/treasury3/operating-account');
             });
         } else {
             Swal.fire({

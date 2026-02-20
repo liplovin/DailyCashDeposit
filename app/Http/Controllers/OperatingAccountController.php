@@ -390,4 +390,70 @@ class OperatingAccountController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Add collection for Treasury3 daily tracking
+     */
+    public function addCollection(Request $request, $id)
+    {
+        try {
+            $operatingAccount = OperatingAccount::findOrFail($id);
+            
+            $validated = $request->validate([
+                'collections' => 'required|array',
+                'collections.*.collection_amount' => 'required|numeric|min:0',
+                'collections.*.deposit_slip' => 'nullable|file|mimes:jpeg,jpg,png,gif,pdf|max:5120',
+                'collections.*.check' => 'nullable|file|mimes:jpeg,jpg,png,gif,pdf|max:5120',
+            ]);
+
+            $collections = [];
+            $totalAmount = 0;
+
+            foreach ($validated['collections'] as $index => $collectionData) {
+                $amount = (float) str_replace(',', '', $collectionData['collection_amount']);
+                $totalAmount += $amount;
+
+                $collection = new Collection([
+                    'operating_account_id' => $id,
+                    'collection_date' => now(),
+                    'collection_amount' => $amount,
+                    'status' => 'pending',
+                ]);
+
+                // Store deposit slip if provided
+                if ($request->hasFile("collections.$index.deposit_slip")) {
+                    $file = $request->file("collections.$index.deposit_slip");
+                    if ($file->isValid()) {
+                        $filePath = $file->store('deposit-slips/' . $id, 'public');
+                        $collection->deposit_slip = $filePath;
+                    }
+                }
+
+                // Store check if provided
+                if ($request->hasFile("collections.$index.check")) {
+                    $file = $request->file("collections.$index.check");
+                    if ($file->isValid()) {
+                        $filePath = $file->store('checks/' . $id, 'public');
+                        $collection->check = $filePath;
+                    }
+                }
+
+                $collection->save();
+                $collections[] = $collection;
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Collections added successfully.',
+                'collections' => $collections,
+                'total_amount' => $totalAmount,
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error adding collections: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

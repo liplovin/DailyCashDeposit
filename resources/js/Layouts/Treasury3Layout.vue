@@ -27,8 +27,8 @@ const currentRoute = computed(() => page.url);
 const isRouteActive = (routeName) => {
     const routeList = {
         'dashboard': '/dashboard',
-        'operating-accounts': '/treasury/operating-accounts',
-        'processed-collection': '/treasury/processed-collection'
+        'operating-accounts': '/treasury3/operating-account',
+        'processed-collection': '/treasury3/processed-collection'
     };
     
     const routePath = routeList[routeName];
@@ -55,8 +55,8 @@ const handleMenuClick = (item) => {
     } else if (item.route) {
         const routeUrls = {
             'dashboard': '/dashboard',
-            'operating-accounts': '/treasury/operating-accounts',
-            'processed-collection': '/treasury/processed-collection'
+            'operating-accounts': '/treasury3/operating-account',
+            'processed-collection': '/treasury3/processed-collection'
         };
         router.get(routeUrls[item.route]);
     }
