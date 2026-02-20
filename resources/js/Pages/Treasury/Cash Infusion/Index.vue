@@ -133,6 +133,29 @@ const closeEditModal = () => {
 
 
 
+const getDaysRemaining = (dateString) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    
+    const diffTime = date - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays;
+};
+
+const isMaturityActionVisible = (dateString) => {
+    const daysRemaining = getDaysRemaining(dateString);
+    return daysRemaining !== null && daysRemaining <= 30;
+};
+
+const isOverdueOrDueToday = (dateString) => {
+    const daysRemaining = getDaysRemaining(dateString);
+    return daysRemaining !== null && daysRemaining <= 0;
+};
+
 const formatMaturityDate = (dateString) => {
     if (!dateString) return '';
     
@@ -155,6 +178,94 @@ const formatMaturityDate = (dateString) => {
     }
     
     return formattedDate;
+};
+
+const renewCashInfusion = async (infusion) => {
+    const result = await Swal.fire({
+        title: 'Renew Cash Infusion?',
+        html: `
+            <div class="text-left">
+                <p class="mb-3"><strong>Cash Infusion:</strong> ${infusion.cash_infusion_name}</p>
+                <p class="mb-3"><strong>Account:</strong> ${infusion.account_number}</p>
+                <p class="text-green-600 text-sm"><strong>✓ This will renew the cash infusion.</strong></p>
+            </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#10B981',
+        cancelButtonColor: '#6B7280',
+        confirmButtonText: 'Yes, Renew',
+        cancelButtonText: 'Cancel',
+        allowOutsideClick: false,
+        allowEscapeKey: false
+    });
+
+    if (result.isConfirmed) {
+        router.post(`/treasury/cash-infusion/${infusion.id}/renew`, {}, {
+            onSuccess: () => {
+                Swal.fire({
+                    title: 'Renewed!',
+                    text: 'Cash Infusion has been renewed successfully.',
+                    icon: 'success',
+                    confirmButtonColor: '#F59E0B',
+                    timer: 2000,
+                    timerProgressBar: true
+                });
+            },
+            onError: () => {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to renew cash infusion. Please try again.',
+                    icon: 'error',
+                    confirmButtonColor: '#F59E0B'
+                });
+            }
+        });
+    }
+};
+
+const withdrawCashInfusion = async (infusion) => {
+    const result = await Swal.fire({
+        title: 'Withdraw Cash Infusion?',
+        html: `
+            <div class="text-left">
+                <p class="mb-3"><strong>Cash Infusion:</strong> ${infusion.cash_infusion_name}</p>
+                <p class="mb-3"><strong>Account:</strong> ${infusion.account_number}</p>
+                <p class="text-orange-600 text-sm"><strong>✓ This will withdraw the cash infusion amount.</strong></p>
+            </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#F97316',
+        cancelButtonColor: '#6B7280',
+        confirmButtonText: 'Yes, Withdraw',
+        cancelButtonText: 'Cancel',
+        allowOutsideClick: false,
+        allowEscapeKey: false
+    });
+
+    if (result.isConfirmed) {
+        router.post(`/treasury/cash-infusion/${infusion.id}/withdraw`, {}, {
+            onSuccess: () => {
+                Swal.fire({
+                    title: 'Withdrawn!',
+                    text: 'Cash Infusion has been withdrawn successfully.',
+                    icon: 'success',
+                    confirmButtonColor: '#F59E0B',
+                    timer: 2000,
+                    timerProgressBar: true
+                });
+            },
+            onError: () => {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to withdraw cash infusion. Please try again.',
+                    icon: 'error',
+                    confirmButtonColor: '#F59E0B'
+                });
+            }
+        });
+    }
 };
 
 const deleteCashInfusion = async (infusion) => {
@@ -297,6 +408,7 @@ const deleteCashInfusion = async (infusion) => {
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Ending Balance</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Action</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white">Actions</th>
                             </tr>
                         </thead>
@@ -306,7 +418,7 @@ const deleteCashInfusion = async (infusion) => {
                                 :key="infusion.id"
                                 :class="[
                                     'border-b border-gray-200 hover:bg-yellow-50 transition-colors duration-150',
-                                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                                    isOverdueOrDueToday(infusion.maturity_date) ? 'blink-red' : (index % 2 === 0 ? 'bg-white' : 'bg-gray-50')
                                 ]"
                             >
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">
@@ -321,6 +433,25 @@ const deleteCashInfusion = async (infusion) => {
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(infusion, filterDate)) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(infusion, filterDate) + parseFloat(getCollectionAmount(infusion)) - parseFloat(getDisbursementAmount(infusion))) }}</td>
+                                <td class="px-6 py-4 text-sm border-r border-gray-200">
+                                    <div v-if="isMaturityActionVisible(infusion.maturity_date)" class="flex items-center space-x-2">
+                                        <button
+                                            @click="renewCashInfusion(infusion)"
+                                            class="px-3 py-1.5 bg-green-500 text-white text-xs font-semibold rounded-lg hover:bg-green-600 transition-all duration-200"
+                                            title="Renew"
+                                        >
+                                            Renew
+                                        </button>
+                                        <button
+                                            @click="withdrawCashInfusion(infusion)"
+                                            class="px-3 py-1.5 bg-orange-500 text-white text-xs font-semibold rounded-lg hover:bg-orange-600 transition-all duration-200"
+                                            title="Withdraw"
+                                        >
+                                            Withdraw
+                                        </button>
+                                    </div>
+                                    <div v-else class="text-xs text-gray-500">—</div>
+                                </td>
                                 <td class="px-6 py-4 text-sm">
                                     <div class="flex items-center space-x-2">
                                         <button
@@ -348,6 +479,7 @@ const deleteCashInfusion = async (infusion) => {
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">{{ formatCurrency(totalBeginningBalance) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 border-r border-gray-300">{{ formatCurrency(totalEndingBalance) }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900"></td>
                             </tr>
                         </tfoot>
@@ -365,6 +497,20 @@ const deleteCashInfusion = async (infusion) => {
 </template>
 
 <style scoped>
+@keyframes blinkRed {
+    0%, 100% {
+        background-color: rgb(254, 226, 226);
+    }
+    50% {
+        background-color: rgb(239, 68, 68);
+        color: white;
+    }
+}
+
+.blink-red {
+    animation: blinkRed 1s infinite;
+}
+
 table {
     border-collapse: collapse;
 }

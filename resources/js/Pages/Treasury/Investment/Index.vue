@@ -123,6 +123,141 @@ const totalEndingBalance = computed(() => {
     }, 0);
 });
 
+const getDaysRemaining = (dateString) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    
+    const diffTime = date - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays;
+};
+
+const isMaturityActionVisible = (dateString) => {
+    const daysRemaining = getDaysRemaining(dateString);
+    return daysRemaining !== null && daysRemaining <= 30;
+};
+
+const isOverdueOrDueToday = (dateString) => {
+    const daysRemaining = getDaysRemaining(dateString);
+    return daysRemaining !== null && daysRemaining <= 0;
+};
+
+const formatMaturityDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    
+    const diffTime = date - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    const formattedDate = new Intl.DateTimeFormat('en-US', options).format(date);
+    
+    if (diffDays < 0) {
+        return `${formattedDate} (Overdue by ${Math.abs(diffDays)} days)`;
+    } else if (diffDays === 0) {
+        return `${formattedDate} (Due Today)`;
+    } else if (diffDays <= 30) {
+        return `${formattedDate} (${diffDays} days remaining)`;
+    }
+    
+    return formattedDate;
+};
+
+const renewInvestment = async (investment) => {
+    const result = await Swal.fire({
+        title: 'Renew Investment?',
+        html: `
+            <div class="text-left">
+                <p class="mb-3"><strong>Investment:</strong> ${investment.investment_name}</p>
+                <p class="mb-3"><strong>Reference:</strong> ${investment.reference_number}</p>
+                <p class="text-green-600 text-sm"><strong>✓ This will renew the investment.</strong></p>
+            </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#10B981',
+        cancelButtonColor: '#6B7280',
+        confirmButtonText: 'Yes, Renew',
+        cancelButtonText: 'Cancel',
+        allowOutsideClick: false,
+        allowEscapeKey: false
+    });
+
+    if (result.isConfirmed) {
+        router.post(`/treasury/investment/${investment.id}/renew`, {}, {
+            onSuccess: () => {
+                Swal.fire({
+                    title: 'Renewed!',
+                    text: 'Investment has been renewed successfully.',
+                    icon: 'success',
+                    confirmButtonColor: '#F59E0B',
+                    timer: 2000,
+                    timerProgressBar: true
+                });
+            },
+            onError: () => {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to renew investment. Please try again.',
+                    icon: 'error',
+                    confirmButtonColor: '#F59E0B'
+                });
+            }
+        });
+    }
+};
+
+const withdrawInvestment = async (investment) => {
+    const result = await Swal.fire({
+        title: 'Withdraw Investment?',
+        html: `
+            <div class="text-left">
+                <p class="mb-3"><strong>Investment:</strong> ${investment.investment_name}</p>
+                <p class="mb-3"><strong>Reference:</strong> ${investment.reference_number}</p>
+                <p class="text-orange-600 text-sm"><strong>✓ This will withdraw the investment amount.</strong></p>
+            </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#F97316',
+        cancelButtonColor: '#6B7280',
+        confirmButtonText: 'Yes, Withdraw',
+        cancelButtonText: 'Cancel',
+        allowOutsideClick: false,
+        allowEscapeKey: false
+    });
+
+    if (result.isConfirmed) {
+        router.post(`/treasury/investment/${investment.id}/withdraw`, {}, {
+            onSuccess: () => {
+                Swal.fire({
+                    title: 'Withdrawn!',
+                    text: 'Investment has been withdrawn successfully.',
+                    icon: 'success',
+                    confirmButtonColor: '#F59E0B',
+                    timer: 2000,
+                    timerProgressBar: true
+                });
+            },
+            onError: () => {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to withdraw investment. Please try again.',
+                    icon: 'error',
+                    confirmButtonColor: '#F59E0B'
+                });
+            }
+        });
+    }
+};
+
 const deleteInvestment = async (investment) => {
     const result = await Swal.fire({
         title: 'Delete Investment?',
@@ -229,6 +364,7 @@ const deleteInvestment = async (investment) => {
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Ending Balance</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Action</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white">Actions</th>
                             </tr>
                         </thead>
@@ -243,7 +379,7 @@ const deleteInvestment = async (investment) => {
                                 :key="item.id"
                                 :class="[
                                     'border-b border-gray-200 hover:bg-yellow-50 transition-colors duration-150',
-                                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                                    isOverdueOrDueToday(item.maturity_date) ? 'blink-red' : (index % 2 === 0 ? 'bg-white' : 'bg-gray-50')
                                 ]"
                             >
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">
@@ -258,6 +394,25 @@ const deleteInvestment = async (investment) => {
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(item, filterDate)) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(item, filterDate) + parseFloat(getCollectionAmount(item)) - parseFloat(getDisbursementAmount(item))) }}</td>
+                                <td class="px-6 py-4 text-sm border-r border-gray-200">
+                                    <div v-if="isMaturityActionVisible(item.maturity_date)" class="flex items-center space-x-2">
+                                        <button
+                                            @click="renewInvestment(item)"
+                                            class="px-3 py-1.5 bg-green-500 text-white text-xs font-semibold rounded-lg hover:bg-green-600 transition-all duration-200"
+                                            title="Renew"
+                                        >
+                                            Renew
+                                        </button>
+                                        <button
+                                            @click="withdrawInvestment(item)"
+                                            class="px-3 py-1.5 bg-orange-500 text-white text-xs font-semibold rounded-lg hover:bg-orange-600 transition-all duration-200"
+                                            title="Withdraw"
+                                        >
+                                            Withdraw
+                                        </button>
+                                    </div>
+                                    <div v-else class="text-xs text-gray-500">—</div>
+                                </td>
                                 <td class="px-6 py-4 text-sm">
                                     <div class="flex items-center space-x-2">
                                         <button
@@ -285,6 +440,7 @@ const deleteInvestment = async (investment) => {
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">{{ formatCurrency(totalBeginningBalance) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 border-r border-gray-300">{{ formatCurrency(totalEndingBalance) }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900"></td>
                             </tr>
                         </tfoot>
@@ -302,6 +458,20 @@ const deleteInvestment = async (investment) => {
 </template>
 
 <style scoped>
+@keyframes blinkRed {
+    0%, 100% {
+        background-color: rgb(254, 226, 226);
+    }
+    50% {
+        background-color: rgb(239, 68, 68);
+        color: white;
+    }
+}
+
+.blink-red {
+    animation: blinkRed 1s infinite;
+}
+
 table {
     border-collapse: collapse;
 }
