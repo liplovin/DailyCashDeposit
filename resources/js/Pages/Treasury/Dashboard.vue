@@ -1,6 +1,6 @@
 ﻿<script setup>
 import TreasuryLayout from '@/Layouts/TreasuryLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { AlertCircle, Clock, TrendingUp, AlertTriangle } from 'lucide-vue-next';
 
@@ -65,6 +65,23 @@ const getItemName = (item) => {
 
 const getItemNumber = (item) => {
     return item.account_number || item.reference_number || '';
+};
+
+const navigateToItem = (item) => {
+    const routes = {
+        'Time Deposit': `/treasury/time-deposit`,
+        'Collateral': `/treasury/collateral`,
+        'Government Security': `/treasury/government-securities`,
+        'Other Investment': `/treasury/other-investment`,
+        'Operating Account': `/treasury/operating-accounts`,
+        'Dollar': `/treasury/dollar`,
+        'Corporate Bond': `/treasury/corporate-bonds`,
+        'Cash Infusion': `/treasury/cash-infusion`,
+        'Investment': `/treasury/investment`
+    };
+    const route = routes[item.type];
+    const itemName = getItemName(item);
+    if (route) router.visit(route + `?search=${encodeURIComponent(itemName)}`);
 };
 </script>
 
@@ -140,7 +157,7 @@ const getItemNumber = (item) => {
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="item in overdueItems" :key="`${item.type}-${item.id}`" class="border-b border-red-100 hover:bg-red-50">
+                                <tr v-for="item in overdueItems" :key="`${item.type}-${item.id}`" class="border-b border-red-100 hover:bg-red-50 cursor-pointer" @click="navigateToItem(item)">
                                     <td class="px-6 py-3 text-sm text-gray-900">
                                         <div class="font-semibold">{{ getItemName(item) }}</div>
                                         <div class="text-xs text-gray-600">{{ getItemNumber(item) }}</div>
@@ -171,7 +188,7 @@ const getItemNumber = (item) => {
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="item in dueTodayItems" :key="`${item.type}-${item.id}`" class="border-b border-orange-100 hover:bg-orange-50">
+                                <tr v-for="item in dueTodayItems" :key="`${item.type}-${item.id}`" class="border-b border-orange-100 hover:bg-orange-50 cursor-pointer" @click="navigateToItem(item)">
                                     <td class="px-6 py-3 text-sm text-gray-900">
                                         <div class="font-semibold">{{ getItemName(item) }}</div>
                                         <div class="text-xs text-gray-600">{{ getItemNumber(item) }}</div>
@@ -202,7 +219,7 @@ const getItemNumber = (item) => {
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="item in dueWithin7Days" :key="`${item.type}-${item.id}`" class="border-b border-yellow-100 hover:bg-yellow-50">
+                                <tr v-for="item in dueWithin7Days" :key="`${item.type}-${item.id}`" class="border-b border-yellow-100 hover:bg-yellow-50 cursor-pointer" @click="navigateToItem(item)">
                                     <td class="px-6 py-3 text-sm text-gray-900">
                                         <div class="font-semibold">{{ getItemName(item) }}</div>
                                         <div class="text-xs text-gray-600">{{ getItemNumber(item) }}</div>
@@ -233,7 +250,7 @@ const getItemNumber = (item) => {
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="item in dueWithin30Days" :key="`${item.type}-${item.id}`" class="border-b border-blue-100 hover:bg-blue-50">
+                                <tr v-for="item in dueWithin30Days" :key="`${item.type}-${item.id}`" class="border-b border-blue-100 hover:bg-blue-50 cursor-pointer" @click="navigateToItem(item)">
                                     <td class="px-6 py-3 text-sm text-gray-900">
                                         <div class="font-semibold">{{ getItemName(item) }}</div>
                                         <div class="text-xs text-gray-600">{{ getItemNumber(item) }}</div>

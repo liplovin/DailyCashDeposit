@@ -30,6 +30,13 @@ const selectedOperatingAccount = ref(null);
 
 onMounted(() => {
     document.title = 'Operating Accounts Management - Daily Deposit';
+    
+    // Auto-search from dashboard route parameter
+    const params = new URLSearchParams(window.location.search);
+    const searchParam = params.get('search');
+    if (searchParam) {
+        searchQuery.value = searchParam;
+    }
 });
 
 const updateUrlWithDate = (date) => {

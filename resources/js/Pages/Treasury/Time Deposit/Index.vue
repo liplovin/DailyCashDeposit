@@ -9,6 +9,13 @@ import Swal from 'sweetalert2';
 
 onMounted(() => {
     document.title = 'Time Deposit Management - Daily Deposit';
+    
+    // Auto-search from dashboard route parameter
+    const params = new URLSearchParams(window.location.search);
+    const searchParam = params.get('search');
+    if (searchParam) {
+        searchQuery.value = searchParam;
+    }
 });
 
 const props = defineProps({
