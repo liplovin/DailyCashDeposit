@@ -31,6 +31,16 @@ const formatCurrency = (value) => {
     }).format(value || 0);
 };
 
+const formatCurrencyByModule = (value, moduleKey) => {
+    const currency = moduleKey === 'dollar' ? 'USD' : 'PHP';
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(value || 0);
+};
+
 const formatDate = (dateString) => {
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     return new Intl.DateTimeFormat('en-US', options).format(new Date(dateString));
@@ -144,6 +154,22 @@ const totalDisbursement = computed(() => {
     return isNaN(total) ? 0 : total;
 });
 
+const dollarCollection = computed(() => {
+    return dashboardData.value.dollar?.collection || 0;
+});
+
+const dollarDisbursement = computed(() => {
+    return dashboardData.value.dollar?.disbursement || 0;
+});
+
+const phpCollection = computed(() => {
+    return totalCollection.value - dollarCollection.value;
+});
+
+const phpDisbursement = computed(() => {
+    return totalDisbursement.value - dollarDisbursement.value;
+});
+
 const netFlow = computed(() => {
     const flow = totalCollection.value - totalDisbursement.value;
     return isNaN(flow) ? 0 : flow;
@@ -196,38 +222,45 @@ const stats = [
             </div>
 
             <!-- Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Total Collection Card -->
-                <div class="bg-gradient-to-br from-green-500 to-green-700 rounded-xl shadow-lg p-8 text-white border-2 border-green-400">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-bold">Total Collections</h3>
-                        <TrendingUp class="h-8 w-8 text-green-100" />
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- PHP Total Collection Card -->
+                <div class="bg-gradient-to-br from-green-500 to-green-700 rounded-xl shadow-lg p-6 text-white border-2 border-green-400">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-bold">PHP Collections</h3>
+                        <TrendingUp class="h-6 w-6 text-green-100" />
                     </div>
-                    <p class="text-4xl font-bold mb-2">{{ formatCurrency(totalCollection) }}</p>
-                    <p class="text-green-100 text-sm">From all modules today</p>
+                    <p class="text-3xl font-bold">{{ formatCurrency(phpCollection) }}</p>
+                    <p class="text-green-100 text-xs mt-2">PHP modules only</p>
                 </div>
 
-                <!-- Total Disbursement Card -->
-                <div class="bg-gradient-to-br from-red-500 to-red-700 rounded-xl shadow-lg p-8 text-white border-2 border-red-400">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-bold">Total Disbursements</h3>
-                        <TrendingDown class="h-8 w-8 text-red-100" />
+                <!-- Dollar Total Collection Card -->
+                <div class="bg-gradient-to-br from-yellow-500 to-yellow-700 rounded-xl shadow-lg p-6 text-white border-2 border-yellow-400">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-bold">USD Collections</h3>
+                        <TrendingUp class="h-6 w-6 text-yellow-100" />
                     </div>
-                    <p class="text-4xl font-bold mb-2">{{ formatCurrency(totalDisbursement) }}</p>
-                    <p class="text-red-100 text-sm">From all modules today</p>
+                    <p class="text-3xl font-bold">{{ formatCurrencyByModule(dollarCollection, 'dollar') }}</p>
+                    <p class="text-yellow-100 text-xs mt-2">Dollar module only</p>
                 </div>
 
-                <!-- Net Flow Card -->
-                <div :class="['bg-gradient-to-br rounded-xl shadow-lg p-8 text-white border-2', netFlow >= 0 ? 'from-slate-500 to-slate-700 border-slate-400' : 'from-orange-500 to-orange-700 border-orange-400']">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-bold">Net Flow</h3>
-                        <div :class="['h-8 w-8', netFlow >= 0 ? 'text-slate-100' : 'text-orange-100']">
-                            <TrendingUp v-if="netFlow >= 0" class="h-8 w-8" />
-                            <TrendingDown v-else class="h-8 w-8" />
-                        </div>
+                <!-- PHP Total Disbursement Card -->
+                <div class="bg-gradient-to-br from-red-500 to-red-700 rounded-xl shadow-lg p-6 text-white border-2 border-red-400">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-bold">PHP Disbursements</h3>
+                        <TrendingDown class="h-6 w-6 text-red-100" />
                     </div>
-                    <p class="text-4xl font-bold mb-2">{{ formatCurrency(netFlow) }}</p>
-                    <p class="text-opacity-90 text-sm">{{ netFlow >= 0 ? 'Positive flow' : 'Negative flow' }}</p>
+                    <p class="text-3xl font-bold">{{ formatCurrency(phpDisbursement) }}</p>
+                    <p class="text-red-100 text-xs mt-2">PHP modules only</p>
+                </div>
+
+                <!-- Dollar Total Disbursement Card -->
+                <div class="bg-gradient-to-br from-orange-500 to-orange-700 rounded-xl shadow-lg p-6 text-white border-2 border-orange-400">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-bold">USD Disbursements</h3>
+                        <TrendingDown class="h-6 w-6 text-orange-100" />
+                    </div>
+                    <p class="text-3xl font-bold">{{ formatCurrencyByModule(dollarDisbursement, 'dollar') }}</p>
+                    <p class="text-orange-100 text-xs mt-2">Dollar module only</p>
                 </div>
             </div>
 
@@ -256,11 +289,11 @@ const stats = [
                         <div class="space-y-3">
                             <div>
                                 <p class="text-sm text-white text-opacity-90 mb-1">Collection</p>
-                                <p class="text-2xl font-bold">{{ formatCurrency(dashboardData[module.key].collection) }}</p>
+                                <p class="text-2xl font-bold">{{ formatCurrencyByModule(dashboardData[module.key].collection, module.key) }}</p>
                             </div>
                             <div class="border-t border-white border-opacity-30 pt-3">
                                 <p class="text-sm text-white text-opacity-90 mb-1">Disbursement</p>
-                                <p class="text-2xl font-bold">{{ formatCurrency(dashboardData[module.key].disbursement) }}</p>
+                                <p class="text-2xl font-bold">{{ formatCurrencyByModule(dashboardData[module.key].disbursement, module.key) }}</p>
                             </div>
                         </div>
                     </div>
@@ -282,10 +315,10 @@ const stats = [
                         <tbody>
                             <tr v-for="module in modules" :key="module.key" class="border-b-2 border-gray-200 hover:bg-gray-50 transition-colors duration-150">
                                 <td class="px-6 py-4 text-sm font-semibold text-gray-900 border-r border-gray-200">{{ module.label }}</td>
-                                <td class="px-6 py-4 text-sm text-green-600 font-bold border-r border-gray-200">{{ formatCurrency(dashboardData[module.key].collection) }}</td>
-                                <td class="px-6 py-4 text-sm text-red-600 font-bold border-r border-gray-200">{{ formatCurrency(dashboardData[module.key].disbursement) }}</td>
+                                <td class="px-6 py-4 text-sm text-green-600 font-bold border-r border-gray-200">{{ formatCurrencyByModule(dashboardData[module.key].collection, module.key) }}</td>
+                                <td class="px-6 py-4 text-sm text-red-600 font-bold border-r border-gray-200">{{ formatCurrencyByModule(dashboardData[module.key].disbursement, module.key) }}</td>
                                 <td class="px-6 py-4 text-sm font-bold" :class="(dashboardData[module.key].collection - dashboardData[module.key].disbursement) >= 0 ? 'text-blue-600' : 'text-orange-600'">
-                                    {{ formatCurrency(dashboardData[module.key].collection - dashboardData[module.key].disbursement) }}
+                                    {{ formatCurrencyByModule(dashboardData[module.key].collection - dashboardData[module.key].disbursement, module.key) }}
                                 </td>
                             </tr>
                             <tr class="bg-slate-100 font-bold border-b-2 border-gray-300">

@@ -1,6 +1,6 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import { Search } from 'lucide-vue-next';
+import { Search, TrendingUp } from 'lucide-vue-next';
 import { ref, computed, onMounted } from 'vue';
 
 const props = defineProps({
@@ -13,10 +13,26 @@ const props = defineProps({
 const dollarsData = ref(props.dollars);
 const searchQuery = ref('');
 const filterDate = ref(new Date().toISOString().split('T')[0]);
+const exchangeRate = ref(null);
+const exchangeLoading = ref(true);
 
 onMounted(() => {
     document.title = 'Dollar - Daily Deposit';
     dollarsData.value = props.dollars;
+    
+    // Fetch USD to PHP exchange rate
+    fetch('https://api.exchangerate-api.com/v4/latest/USD')
+        .then(response => response.json())
+        .then(data => {
+            exchangeRate.value = data.rates.PHP;
+        })
+        .catch(error => {
+            console.error('Failed to fetch exchange rate:', error);
+            exchangeRate.value = null;
+        })
+        .finally(() => {
+            exchangeLoading.value = false;
+        });
 });
 
 const formatCurrency = (value) => {
@@ -109,9 +125,28 @@ const totalEndingBalance = computed(() => {
     <AdminLayout>
         <div class="w-full px-8 py-6">
             <!-- Header - Informative Section -->
-            <div class="mb-8">
-                <h1 class="text-4xl font-black text-gray-900 mb-2">Dollar Accounts</h1>
-                <p class="text-gray-600 text-sm font-medium">Track USD currency holdings with real-time balance information in US dollars</p>
+            <div class="mb-8 flex items-center justify-between gap-8">
+                <div class="flex-1">
+                    <h1 class="text-4xl font-black text-gray-900 mb-2">Dollar Accounts</h1>
+                    <p class="text-gray-600 text-sm font-medium">Track USD currency holdings with real-time balance information in US dollars</p>
+                </div>
+                
+                <!-- USD to PHP Exchange Rate Card (Top Right) -->
+                <div class="bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-xl shadow-lg p-6 text-gray-900 w-80 border border-yellow-300 flex-shrink-0">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-xs font-bold mb-3 opacity-75 uppercase tracking-wide">USD to PHP Rate</p>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-4xl font-black">{{ exchangeLoading ? '...' : (exchangeRate?.toFixed(2) || 'N/A') }}</span>
+                                <span class="text-lg font-bold">₱</span>
+                            </div>
+                            <p class="text-xs font-medium mt-2 opacity-70">Per 1 Dollar</p>
+                        </div>
+                        <div class="opacity-30 ml-2">
+                            <TrendingUp class="h-8 w-8" />
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Filter & Search Section -->
