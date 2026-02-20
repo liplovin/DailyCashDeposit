@@ -191,13 +191,13 @@ const totalBeginningBalance = computed(() => {
 
 const totalCollection = computed(() => {
     return filteredDollars.value.reduce((sum, dollar) => {
-        return sum + getCollectionAmount(dollar);
+        return sum + (parseFloat(getCollectionAmount(dollar)) || 0);
     }, 0);
 });
 
 const totalDisbursement = computed(() => {
     return filteredDollars.value.reduce((sum, dollar) => {
-        return sum + getDisbursementAmount(dollar);
+        return sum + (parseFloat(getDisbursementAmount(dollar)) || 0);
     }, 0);
 });
 

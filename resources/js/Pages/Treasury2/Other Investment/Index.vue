@@ -201,13 +201,13 @@ const totalBeginningBalance = computed(() => {
 
 const totalCollection = computed(() => {
     return filteredInvestments.value.reduce((sum, investment) => {
-        return sum + getCollectionAmount(investment);
+        return sum + (parseFloat(getCollectionAmount(investment)) || 0);
     }, 0);
 });
 
 const totalDisbursement = computed(() => {
     return filteredInvestments.value.reduce((sum, investment) => {
-        return sum + getDisbursementAmount(investment);
+        return sum + (parseFloat(getDisbursementAmount(investment)) || 0);
     }, 0);
 });
 

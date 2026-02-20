@@ -135,13 +135,13 @@ const totalBeginningBalance = computed(() => {
 
 const totalCollection = computed(() => {
     return filteredCashInfusions.value.reduce((sum, infusion) => {
-        return sum + getCollectionAmount(infusion);
+        return sum + (parseFloat(getCollectionAmount(infusion)) || 0);
     }, 0);
 });
 
 const totalDisbursement = computed(() => {
     return filteredCashInfusions.value.reduce((sum, infusion) => {
-        return sum + getDisbursementAmount(infusion);
+        return sum + (parseFloat(getDisbursementAmount(infusion)) || 0);
     }, 0);
 });
 
