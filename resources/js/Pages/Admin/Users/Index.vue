@@ -83,6 +83,24 @@ const getRoleColor = (role) => {
     return colors[role] || '#6B7280';
 };
 
+const isUserOnline = (lastActivityAt) => {
+    if (!lastActivityAt) return false;
+    const lastActivity = new Date(lastActivityAt);
+    const now = new Date();
+    const minutesAgo = (now - lastActivity) / (1000 * 60);
+    return minutesAgo < 5; // User is online if active within last 5 minutes
+};
+
+const getStatusBadgeClass = (lastActivityAt) => {
+    return isUserOnline(lastActivityAt) 
+        ? 'bg-green-100 text-green-800' 
+        : 'bg-gray-100 text-gray-800';
+};
+
+const getStatusText = (lastActivityAt) => {
+    return isUserOnline(lastActivityAt) ? 'Online' : 'Offline';
+};
+
 const deleteUser = async (user) => {
     const result = await Swal.fire({
         title: 'Delete User?',
@@ -203,6 +221,7 @@ const deleteUser = async (user) => {
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Name</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Email</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Role</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Status</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Created</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white">Actions</th>
                             </tr>
@@ -229,6 +248,14 @@ const deleteUser = async (user) => {
                                     <span :class="['px-3 py-1 rounded-full text-xs font-semibold', getRoleBadgeClass(user.role)]">
                                         {{ user.role }}
                                     </span>
+                                </td>
+                                <td class="px-6 py-4 text-sm border-r border-gray-300">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-2 h-2 rounded-full" :class="isUserOnline(user.last_activity_at) ? 'bg-green-500' : 'bg-gray-400'"></div>
+                                        <span :class="['px-3 py-1 rounded-full text-xs font-semibold', getStatusBadgeClass(user.last_activity_at)]">
+                                            {{ getStatusText(user.last_activity_at) }}
+                                        </span>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-300">
                                     {{ new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) }}

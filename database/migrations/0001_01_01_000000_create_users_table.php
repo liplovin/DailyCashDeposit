@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -18,6 +19,7 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->enum('role', ['admin', 'treasury', 'treasury2', 'treasury3', 'accounting', 'accounting2'])->default('accounting');
+            $table->timestamp('last_activity_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
