@@ -213,13 +213,20 @@ Route::middleware('auth')->group(function () {
             return Inertia::render('Admin/Reports/Index');
         })->name('reports');
 
-        // Treasury Module Routes - Coming Soon
+        // Collateral Viewing
         Route::get('/collateral', function () {
-            return Inertia::render('Admin/Collateral/Index');
+            $collaterals = \App\Models\Collateral::all();
+            return Inertia::render('Admin/Collateral/Index', [
+                'collaterals' => $collaterals
+            ]);
         })->name('collateral');
 
+        // Time Deposit Viewing
         Route::get('/time-deposit', function () {
-            return Inertia::render('Admin/Time Deposit/Index');
+            $timeDeposits = \App\Models\TimeDeposit::all();
+            return Inertia::render('Admin/Time Deposit/Index', [
+                'timeDeposits' => $timeDeposits
+            ]);
         })->name('time-deposit');
 
         Route::get('/operating-accounts/view-collection', function () {
@@ -247,28 +254,50 @@ Route::middleware('auth')->group(function () {
             ]);
         })->name('operating-accounts');
 
+        // Government Securities Viewing
         Route::get('/government-securities', function () {
-            return Inertia::render('Admin/Government Securities/Index');
+            $governmentSecurities = \App\Models\GovernmentSecurity::all();
+            return Inertia::render('Admin/Government Securities/Index', [
+                'governmentSecurities' => $governmentSecurities
+            ]);
         })->name('government-securities');
 
+        // Other Investment Viewing
         Route::get('/other-investment', function () {
-            return Inertia::render('Admin/Other Investment/Index');
+            $otherInvestments = \App\Models\OtherInvestment::all();
+            return Inertia::render('Admin/Other Investment/Index', [
+                'otherInvestments' => $otherInvestments
+            ]);
         })->name('other-investment');
 
+        // Dollar Viewing
         Route::get('/dollar', function () {
-            return Inertia::render('Admin/Dollar/Index');
+            $dollars = \App\Models\Dollar::all();
+            return Inertia::render('Admin/Dollar/Index', [
+                'dollars' => $dollars
+            ]);
         })->name('dollar');
 
+        // Corporate Bonds Viewing
         Route::get('/corporate-bonds', function () {
-            return Inertia::render('Admin/Corporate Bonds/Index');
+            $corporateBonds = \App\Models\CorporateBond::all();
+            return Inertia::render('Admin/Corporate Bonds/Index', [
+                'corporateBonds' => $corporateBonds
+            ]);
         })->name('corporate-bonds');
 
         Route::get('/cash-infusion', function () {
-            return Inertia::render('Admin/Cash Infusion/Index');
+            $cashInfusions = \App\Models\CashInfusion::all();
+            return Inertia::render('Admin/Cash Infusion/Index', [
+                'cashInfusions' => $cashInfusions
+            ]);
         })->name('cash-infusion');
 
         Route::get('/investment', function () {
-            return Inertia::render('Admin/Investment/Index');
+            $investments = \App\Models\Investment::all();
+            return Inertia::render('Admin/Investment/Index', [
+                'investments' => $investments
+            ]);
         })->name('investment');
     });
 
