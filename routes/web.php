@@ -87,6 +87,32 @@ Route::get('/dashboard', function () {
         'accounting2' => 'Accounting2/Dashboard',
         default => 'Admin/Dashboard'
     };
+    
+    // For treasury role, pass all treasury data
+    if ($user->role === 'treasury') {
+        $collaterals = Collateral::all();
+        $otherInvestments = OtherInvestment::all();
+        $dollars = Dollar::all();
+        $governmentSecurities = GovernmentSecurity::all();
+        $timeDeposits = TimeDeposit::all();
+        $cashInfusions = CashInfusion::all();
+        $corporateBonds = CorporateBond::all();
+        $investments = Investment::all();
+        $operatingAccounts = OperatingAccount::with(['collections', 'disbursements'])->get();
+        
+        return Inertia::render($component, [
+            'collaterals' => $collaterals,
+            'otherInvestments' => $otherInvestments,
+            'dollars' => $dollars,
+            'governmentSecurities' => $governmentSecurities,
+            'timeDeposits' => $timeDeposits,
+            'cashInfusions' => $cashInfusions,
+            'corporateBonds' => $corporateBonds,
+            'investments' => $investments,
+            'operatingAccounts' => $operatingAccounts
+        ]);
+    }
+    
     return Inertia::render($component);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
