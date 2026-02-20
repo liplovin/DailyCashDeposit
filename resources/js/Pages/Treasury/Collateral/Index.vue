@@ -339,8 +339,19 @@ const withdrawCollateral = async (collateral) => {
         <div class="w-full px-8">
             <!-- Header Section -->
             <div class="mb-8">
-                <h1 class="text-4xl font-black text-gray-900 mb-2">Collateral Accounts</h1>
-                <p class="text-gray-600 text-sm font-medium">View all collateral accounts with real-time balance tracking</p>
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 class="text-4xl font-black text-gray-900 mb-2">Collateral Accounts</h1>
+                        <p class="text-gray-600 text-sm font-medium">View all collateral accounts with real-time balance tracking</p>
+                    </div>
+                    <button
+                        @click="openModal"
+                        class="flex items-center space-x-2 px-6 py-2.5 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-all duration-200 font-semibold shadow-md hover:shadow-lg"
+                    >
+                        <Plus class="h-5 w-5" />
+                        <span>Create New</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Search Bar and Date Filter -->
