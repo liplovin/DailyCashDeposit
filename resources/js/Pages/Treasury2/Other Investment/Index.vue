@@ -2,7 +2,7 @@
 import Treasury2Layout from '@/Layouts/Treasury2Layout.vue';
 import EditCollection from './EditCollection.vue';
 import EditDisbursement from './EditDisbursement.vue';
-import { Plus, Search, Pencil } from 'lucide-vue-next';
+import { Plus, Search, Pencil, ChevronDown } from 'lucide-vue-next';
 import { ref, computed, onMounted, watch } from 'vue';
 import Swal from 'sweetalert2';
 import AddCollection from './AddCollection.vue';
@@ -23,6 +23,7 @@ const showAddDisbursementModal = ref(false);
 const isEditCollectionOpen = ref(false);
 const isEditDisbursementOpen = ref(false);
 const selectedInvestment = ref(null);
+const openActionMenu = ref(null);
 const otherInvestments = ref([]);
 
 // Function to update URL with date parameter
@@ -118,6 +119,10 @@ const handleEditCollection = (investment) => {
 const handleEditDisbursement = (investment) => {
     selectedInvestment.value = investment;
     isEditDisbursementOpen.value = true;
+};
+
+const toggleActionMenu = (investmentId) => {
+    openActionMenu.value = openActionMenu.value === investmentId ? null : investmentId;
 };
 
 const handleEditCollectionSubmit = async (collectionData) => {
@@ -305,37 +310,69 @@ const totalEndingBalance = computed(() => {
                                 <td class="px-6 py-4 text-sm text-red-600 font-semibold border-r border-gray-200">{{ formatCurrency(getDisbursementAmount(investment)) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(investment) + getCollectionAmount(investment) - getDisbursementAmount(investment)) }}</td>
 
-                                <td class="px-6 py-4 text-sm space-x-2 flex flex-wrap gap-2">
-                                    <button
-                                        @click="handleCollection(investment)"
-                                        class="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white rounded hover:bg-green-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
-                                    >
-                                        <Plus class="h-4 w-4" />
-                                        <span>Collection</span>
-                                    </button>
-                                    <button
-                                        v-if="getCollectionAmount(investment) > 0"
-                                        @click="handleEditCollection(investment)"
-                                        class="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
-                                    >
-                                        <Pencil class="h-4 w-4" />
-                                        <span>Edit</span>
-                                    </button>
-                                    <button
-                                        @click="handleDisbursement(investment)"
-                                        class="flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
-                                    >
-                                        <Plus class="h-4 w-4" />
-                                        <span>Disbursement</span>
-                                    </button>
-                                    <button
-                                        v-if="getDisbursementAmount(investment) > 0"
-                                        @click="handleEditDisbursement(investment)"
-                                        class="flex items-center gap-1 px-3 py-1.5 bg-orange-500 text-white rounded hover:bg-orange-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
-                                    >
-                                        <Pencil class="h-4 w-4" />
-                                        <span>Edit</span>
-                                    </button>
+                                <td class="px-6 py-4 text-sm border-r border-gray-200">
+                                    <div class="relative inline-block">
+                                        <button
+                                            @click="toggleActionMenu(investment.id)"
+                                            class="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-sm rounded-lg transition-all duration-200 border border-gray-300"
+                                        >
+                                            <span>Actions</span>
+                                            <ChevronDown :class="['h-4 w-4 transition-transform', openActionMenu === investment.id ? 'rotate-180' : '']" />
+                                        </button>
+
+                                        <!-- Dropdown Menu -->
+                                        <div v-if="openActionMenu === investment.id" class="absolute right-0 mt-2 w-80 bg-white border-2 border-gray-300 rounded-lg shadow-xl z-50 py-2">
+                                            <!-- Collection -->
+                                            <button
+                                                @click="handleCollection(investment); openActionMenu = null;"
+                                                class="w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-green-50 transition-colors duration-150 border-b border-gray-200"
+                                            >
+                                                <Plus class="h-5 w-5 text-green-600" />
+                                                <div>
+                                                    <p class="font-semibold text-gray-900 text-sm">Add Collection</p>
+                                                    <p class="text-xs text-gray-600">Record new collection</p>
+                                                </div>
+                                            </button>
+
+                                            <!-- Edit Collection -->
+                                            <button
+                                                v-if="getCollectionAmount(investment) > 0"
+                                                @click="handleEditCollection(investment); openActionMenu = null;"
+                                                class="w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-blue-50 transition-colors duration-150 border-b border-gray-200"
+                                            >
+                                                <Pencil class="h-5 w-5 text-blue-600" />
+                                                <div>
+                                                    <p class="font-semibold text-gray-900 text-sm">Edit Collection</p>
+                                                    <p class="text-xs text-gray-600">Modify existing collection</p>
+                                                </div>
+                                            </button>
+
+                                            <!-- Disbursement -->
+                                            <button
+                                                @click="handleDisbursement(investment); openActionMenu = null;"
+                                                class="w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-red-50 transition-colors duration-150 border-b border-gray-200"
+                                            >
+                                                <Plus class="h-5 w-5 text-red-600" />
+                                                <div>
+                                                    <p class="font-semibold text-gray-900 text-sm">Add Disbursement</p>
+                                                    <p class="text-xs text-gray-600">Record new disbursement</p>
+                                                </div>
+                                            </button>
+
+                                            <!-- Edit Disbursement -->
+                                            <button
+                                                v-if="getDisbursementAmount(investment) > 0"
+                                                @click="handleEditDisbursement(investment); openActionMenu = null;"
+                                                class="w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-orange-50 transition-colors duration-150"
+                                            >
+                                                <Pencil class="h-5 w-5 text-orange-600" />
+                                                <div>
+                                                    <p class="font-semibold text-gray-900 text-sm">Edit Disbursement</p>
+                                                    <p class="text-xs text-gray-600">Modify existing disbursement</p>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>
