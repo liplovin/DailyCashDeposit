@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import { X } from 'lucide-vue-next';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 const props = defineProps({
     isOpen: {
@@ -22,7 +23,6 @@ const emit = defineEmits(['close', 'submit']);
 
 const amount = ref('');
 const isSubmitting = ref(false);
-const error = ref('');
 
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', {
@@ -72,12 +72,11 @@ const formattedAmount = computed(() => {
 
 const handleSubmit = async () => {
     if (!amount.value || parseFloat(amount.value) <= 0) {
-        error.value = 'Please enter a valid amount';
+        Swal.fire('Validation Error', 'Please enter a valid amount', 'warning');
         return;
     }
 
     isSubmitting.value = true;
-    error.value = '';
     
     try {
         const response = await axios.post(`/treasury2/other-investment/${props.otherInvestment?.id}/collection`, {
@@ -85,15 +84,16 @@ const handleSubmit = async () => {
             date: props.filterDate || new Date().toISOString().split('T')[0]
         });
 
-        emit('submit', {
-            otherInvestment_id: props.otherInvestment?.id,
-            amount: parseFloat(amount.value),
-            date: props.filterDate || new Date().toISOString().split('T')[0]
+        Swal.fire({
+            title: 'Success!',
+            text: `Collection added: ₱${parseFloat(amount.value).toFixed(2)}`,
+            icon: 'success',
+            confirmButtonColor: '#10b981'
+        }).then(() => {
+            window.location.reload();
         });
-        amount.value = '';
-        emit('close');
     } catch (err) {
-        error.value = err.response?.data?.message || 'An error occurred while adding collection';
+        Swal.fire('Error!', err.response?.data?.message || 'Failed to add collection', 'error');
     } finally {
         isSubmitting.value = false;
     }
@@ -101,7 +101,6 @@ const handleSubmit = async () => {
 
 const handleClose = () => {
     amount.value = '';
-    error.value = '';
     emit('close');
 };
 </script>
@@ -126,11 +125,6 @@ const handleClose = () => {
 
             <!-- Body -->
             <div class="px-6 py-6 space-y-5">
-                <!-- Error Message -->
-                <div v-if="error" class="bg-red-50 border-l-4 border-red-500 rounded-lg p-4">
-                    <p class="text-sm text-red-700 font-medium">{{ error }}</p>
-                </div>
-
                 <!-- Investment Info Card -->
                 <div class="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-xl p-5">
                     <p class="text-xs text-green-600 font-bold uppercase tracking-widest mb-2">Account Information</p>

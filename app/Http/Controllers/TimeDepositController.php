@@ -111,4 +111,42 @@ class TimeDepositController extends Controller
             'timeDeposit' => $timeDeposit
         ]);
     }
+
+    public function updateCollection(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0',
+            'date' => 'required|date',
+        ]);
+
+        $timeDeposit = TimeDeposit::findOrFail($id);
+        $timeDeposit->collection = $validated['amount'];
+        $timeDeposit->collection_date = $validated['date'];
+        $timeDeposit->ending_balance = $timeDeposit->beginning_balance + $timeDeposit->collection - $timeDeposit->disbursement;
+        $timeDeposit->save();
+
+        return response()->json([
+            'message' => 'Collection updated successfully',
+            'timeDeposit' => $timeDeposit
+        ]);
+    }
+
+    public function updateDisbursement(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0',
+            'date' => 'required|date',
+        ]);
+
+        $timeDeposit = TimeDeposit::findOrFail($id);
+        $timeDeposit->disbursement = $validated['amount'];
+        $timeDeposit->disbursement_date = $validated['date'];
+        $timeDeposit->ending_balance = $timeDeposit->beginning_balance + $timeDeposit->collection - $timeDeposit->disbursement;
+        $timeDeposit->save();
+
+        return response()->json([
+            'message' => 'Disbursement updated successfully',
+            'timeDeposit' => $timeDeposit
+        ]);
+    }
 }

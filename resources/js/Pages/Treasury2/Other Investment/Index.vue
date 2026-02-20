@@ -1,6 +1,8 @@
 <script setup>
 import Treasury2Layout from '@/Layouts/Treasury2Layout.vue';
-import { Plus, Search } from 'lucide-vue-next';
+import EditCollection from './EditCollection.vue';
+import EditDisbursement from './EditDisbursement.vue';
+import { Plus, Search, Pencil } from 'lucide-vue-next';
 import { ref, computed, onMounted, watch } from 'vue';
 import Swal from 'sweetalert2';
 import AddCollection from './AddCollection.vue';
@@ -18,6 +20,8 @@ const searchQuery = ref('');
 const filterDate = ref('');
 const showAddCollectionModal = ref(false);
 const showAddDisbursementModal = ref(false);
+const isEditCollectionOpen = ref(false);
+const isEditDisbursementOpen = ref(false);
 const selectedInvestment = ref(null);
 const otherInvestments = ref([]);
 
@@ -104,6 +108,40 @@ const handleCollection = (investment) => {
 const handleDisbursement = (investment) => {
     selectedInvestment.value = investment;
     showAddDisbursementModal.value = true;
+};
+
+const handleEditCollection = (investment) => {
+    selectedInvestment.value = investment;
+    isEditCollectionOpen.value = true;
+};
+
+const handleEditDisbursement = (investment) => {
+    selectedInvestment.value = investment;
+    isEditDisbursementOpen.value = true;
+};
+
+const handleEditCollectionSubmit = async (collectionData) => {
+    try {
+        await axios.put(`/treasury2/other-investment/${collectionData.module_id}/collection`, {
+            amount: collectionData.amount
+        });
+        isEditCollectionOpen.value = false;
+        window.location.reload();
+    } catch (err) {
+        Swal.fire('Error', 'Failed to update collection', 'error');
+    }
+};
+
+const handleEditDisbursementSubmit = async (disbursementData) => {
+    try {
+        await axios.put(`/treasury2/other-investment/${disbursementData.module_id}/disbursement`, {
+            amount: disbursementData.amount
+        });
+        isEditDisbursementOpen.value = false;
+        window.location.reload();
+    } catch (err) {
+        Swal.fire('Error', 'Failed to update disbursement', 'error');
+    }
 };
 
 const handleModalSubmit = async () => {
@@ -267,7 +305,7 @@ const totalEndingBalance = computed(() => {
                                 <td class="px-6 py-4 text-sm text-red-600 font-semibold border-r border-gray-200">{{ formatCurrency(getDisbursementAmount(investment)) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(investment) + getCollectionAmount(investment) - getDisbursementAmount(investment)) }}</td>
 
-                                <td class="px-6 py-4 text-sm space-x-2 flex">
+                                <td class="px-6 py-4 text-sm space-x-2 flex flex-wrap gap-2">
                                     <button
                                         @click="handleCollection(investment)"
                                         class="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white rounded hover:bg-green-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
@@ -276,11 +314,27 @@ const totalEndingBalance = computed(() => {
                                         <span>Collection</span>
                                     </button>
                                     <button
+                                        v-if="getCollectionAmount(investment) > 0"
+                                        @click="handleEditCollection(investment)"
+                                        class="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
+                                    >
+                                        <Pencil class="h-4 w-4" />
+                                        <span>Edit</span>
+                                    </button>
+                                    <button
                                         @click="handleDisbursement(investment)"
                                         class="flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
                                     >
                                         <Plus class="h-4 w-4" />
                                         <span>Disbursement</span>
+                                    </button>
+                                    <button
+                                        v-if="getDisbursementAmount(investment) > 0"
+                                        @click="handleEditDisbursement(investment)"
+                                        class="flex items-center gap-1 px-3 py-1.5 bg-orange-500 text-white rounded hover:bg-orange-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
+                                    >
+                                        <Pencil class="h-4 w-4" />
+                                        <span>Edit</span>
                                     </button>
                                 </td>
                             </tr>
@@ -301,6 +355,38 @@ const totalEndingBalance = computed(() => {
             </div>
         </div>
     </Treasury2Layout>
+
+    <!-- Add Collection Modal -->
+    <AddCollection 
+        :is-open="showAddCollectionModal" 
+        :other-investment="selectedInvestment"
+        @close="showAddCollectionModal = false"
+        @submit="handleModalSubmit"
+    />
+
+    <!-- Add Disbursement Modal -->
+    <AddDisbursement 
+        :is-open="showAddDisbursementModal" 
+        :other-investment="selectedInvestment"
+        @close="showAddDisbursementModal = false"
+        @submit="handleModalSubmit"
+    />
+
+    <!-- Edit Collection Modal -->
+    <EditCollection 
+        :is-open="isEditCollectionOpen" 
+        :other-investment="selectedInvestment"
+        @close="isEditCollectionOpen = false"
+        @submit="handleEditCollectionSubmit"
+    />
+
+    <!-- Edit Disbursement Modal -->
+    <EditDisbursement 
+        :is-open="isEditDisbursementOpen" 
+        :other-investment="selectedInvestment"
+        @close="isEditDisbursementOpen = false"
+        @submit="handleEditDisbursementSubmit"
+    />
 </template>
 
 <style scoped>

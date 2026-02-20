@@ -115,6 +115,8 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/collateral/{id}/collection', [CollateralController::class, 'addCollection'])->name('collateral.add-collection');
         Route::post('/collateral/{id}/disbursement', [CollateralController::class, 'addDisbursement'])->name('collateral.add-disbursement');
+        Route::put('/collateral/{id}/collection', [CollateralController::class, 'updateCollection'])->name('collateral.update-collection');
+        Route::put('/collateral/{id}/disbursement', [CollateralController::class, 'updateDisbursement'])->name('collateral.update-disbursement');
 
         Route::get('/time-deposit', function () {
             $timeDeposits = \App\Models\TimeDeposit::all();
@@ -125,6 +127,8 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/time-deposit/{id}/collection', [TimeDepositController::class, 'addCollection'])->name('time-deposit.add-collection');
         Route::post('/time-deposit/{id}/disbursement', [TimeDepositController::class, 'addDisbursement'])->name('time-deposit.add-disbursement');
+        Route::put('/time-deposit/{id}/collection', [TimeDepositController::class, 'updateCollection'])->name('time-deposit.update-collection');
+        Route::put('/time-deposit/{id}/disbursement', [TimeDepositController::class, 'updateDisbursement'])->name('time-deposit.update-disbursement');
 
         Route::get('/government-securities', function () {
             $governmentSecurities = \App\Models\GovernmentSecurity::all();
@@ -133,6 +137,8 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/government-security/{id}/collection', [GovernmentSecurityController::class, 'addCollection'])->name('government-security.add-collection');
         Route::post('/government-security/{id}/disbursement', [GovernmentSecurityController::class, 'addDisbursement'])->name('government-security.add-disbursement');
+        Route::put('/government-security/{id}/collection', [GovernmentSecurityController::class, 'updateCollection'])->name('government-security.update-collection');
+        Route::put('/government-security/{id}/disbursement', [GovernmentSecurityController::class, 'updateDisbursement'])->name('government-security.update-disbursement');
 
         Route::get('/other-investment', function () {
             $otherInvestments = \App\Models\OtherInvestment::all();
@@ -141,6 +147,8 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/other-investment/{id}/collection', [OtherInvestmentController::class, 'addCollection'])->name('other-investment.add-collection');
         Route::post('/other-investment/{id}/disbursement', [OtherInvestmentController::class, 'addDisbursement'])->name('other-investment.add-disbursement');
+        Route::put('/other-investment/{id}/collection', [OtherInvestmentController::class, 'updateCollection'])->name('other-investment.update-collection');
+        Route::put('/other-investment/{id}/disbursement', [OtherInvestmentController::class, 'updateDisbursement'])->name('other-investment.update-disbursement');
 
         Route::get('/dollar', function () {
             $dollars = \App\Models\Dollar::all();
@@ -149,6 +157,8 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/dollar/{id}/collection', [DollarController::class, 'addCollection'])->name('dollar.add-collection');
         Route::post('/dollar/{id}/disbursement', [DollarController::class, 'addDisbursement'])->name('dollar.add-disbursement');
+        Route::put('/dollar/{id}/collection', [DollarController::class, 'updateCollection'])->name('dollar.update-collection');
+        Route::put('/dollar/{id}/disbursement', [DollarController::class, 'updateDisbursement'])->name('dollar.update-disbursement');
 
         Route::get('/corporate-bonds', function () {
             $corporateBonds = \App\Models\CorporateBond::all();
@@ -157,6 +167,8 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/corporate-bonds/{id}/collection', [CorporateBondController::class, 'addCollection'])->name('corporate-bonds.add-collection');
         Route::post('/corporate-bonds/{id}/disbursement', [CorporateBondController::class, 'addDisbursement'])->name('corporate-bonds.add-disbursement');
+        Route::put('/corporate-bonds/{id}/collection', [CorporateBondController::class, 'updateCollection'])->name('corporate-bonds.update-collection');
+        Route::put('/corporate-bonds/{id}/disbursement', [CorporateBondController::class, 'updateDisbursement'])->name('corporate-bonds.update-disbursement');
 
         Route::get('/cash-infusion', function () {
             $cashInfusions = \App\Models\CashInfusion::all();
@@ -165,6 +177,8 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/cash-infusion/{id}/collection', [CashInfusionController::class, 'addCollection'])->name('cash-infusion.add-collection');
         Route::post('/cash-infusion/{id}/disbursement', [CashInfusionController::class, 'addDisbursement'])->name('cash-infusion.add-disbursement');
+        Route::put('/cash-infusion/{id}/collection', [CashInfusionController::class, 'updateCollection'])->name('cash-infusion.update-collection');
+        Route::put('/cash-infusion/{id}/disbursement', [CashInfusionController::class, 'updateDisbursement'])->name('cash-infusion.update-disbursement');
 
         Route::get('/investment', function () {
             $investments = \App\Models\Investment::all();
@@ -173,6 +187,8 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/investment/{id}/collection', [InvestmentController::class, 'addCollection'])->name('investment.add-collection');
         Route::post('/investment/{id}/disbursement', [InvestmentController::class, 'addDisbursement'])->name('investment.add-disbursement');
+        Route::put('/investment/{id}/collection', [InvestmentController::class, 'updateCollection'])->name('investment.update-collection');
+        Route::put('/investment/{id}/disbursement', [InvestmentController::class, 'updateDisbursement'])->name('investment.update-disbursement');
     });
 
     // Treasury3 Routes - For 'treasury3' role only

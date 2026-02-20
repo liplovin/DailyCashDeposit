@@ -105,4 +105,38 @@ class CashInfusionController extends Controller
             'cashInfusion' => $cashInfusion
         ]);
     }
+
+    public function updateCollection(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0',
+        ]);
+
+        $cashInfusion = CashInfusion::findOrFail($id);
+        $cashInfusion->collection = $validated['amount'];
+        $cashInfusion->ending_balance = $cashInfusion->beginning_balance + $cashInfusion->collection - $cashInfusion->disbursement;
+        $cashInfusion->save();
+
+        return response()->json([
+            'message' => 'Collection updated successfully',
+            'cashInfusion' => $cashInfusion
+        ]);
+    }
+
+    public function updateDisbursement(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0',
+        ]);
+
+        $cashInfusion = CashInfusion::findOrFail($id);
+        $cashInfusion->disbursement = $validated['amount'];
+        $cashInfusion->ending_balance = $cashInfusion->beginning_balance + $cashInfusion->collection - $cashInfusion->disbursement;
+        $cashInfusion->save();
+
+        return response()->json([
+            'message' => 'Disbursement updated successfully',
+            'cashInfusion' => $cashInfusion
+        ]);
+    }
 }

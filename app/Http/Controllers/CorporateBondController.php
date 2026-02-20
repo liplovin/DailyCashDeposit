@@ -105,4 +105,38 @@ class CorporateBondController extends Controller
             'corporateBond' => $corporateBond
         ]);
     }
+
+    public function updateCollection(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0',
+        ]);
+
+        $corporateBond = CorporateBond::findOrFail($id);
+        $corporateBond->collection = $validated['amount'];
+        $corporateBond->ending_balance = $corporateBond->beginning_balance + $corporateBond->collection - $corporateBond->disbursement;
+        $corporateBond->save();
+
+        return response()->json([
+            'message' => 'Collection updated successfully',
+            'corporateBond' => $corporateBond
+        ]);
+    }
+
+    public function updateDisbursement(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0',
+        ]);
+
+        $corporateBond = CorporateBond::findOrFail($id);
+        $corporateBond->disbursement = $validated['amount'];
+        $corporateBond->ending_balance = $corporateBond->beginning_balance + $corporateBond->collection - $corporateBond->disbursement;
+        $corporateBond->save();
+
+        return response()->json([
+            'message' => 'Disbursement updated successfully',
+            'corporateBond' => $corporateBond
+        ]);
+    }
 }

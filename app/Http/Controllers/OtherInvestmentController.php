@@ -32,16 +32,12 @@ class OtherInvestmentController extends Controller
 
             $otherInvestment = OtherInvestment::findOrFail($id);
 
-            // Update collection fields
-            $otherInvestment->collection = $validated['amount'];
+            // Add to collection fields (not replace)
+            $otherInvestment->collection += $validated['amount'];
             $otherInvestment->collection_date = $validated['date'];
 
             // Calculate ending balance
-            $balance = $otherInvestment->beginning_balance + $validated['amount'];
-            if ($otherInvestment->disbursement) {
-                $balance -= $otherInvestment->disbursement;
-            }
-            $otherInvestment->ending_balance = $balance;
+            $otherInvestment->ending_balance = $otherInvestment->beginning_balance + $otherInvestment->collection - $otherInvestment->disbursement;
 
             $otherInvestment->save();
 
@@ -67,17 +63,12 @@ class OtherInvestmentController extends Controller
 
             $otherInvestment = OtherInvestment::findOrFail($id);
 
-            // Update disbursement fields
-            $otherInvestment->disbursement = $validated['amount'];
+            // Add to disbursement fields (not replace)
+            $otherInvestment->disbursement += $validated['amount'];
             $otherInvestment->disbursement_date = $validated['date'];
 
             // Calculate ending balance
-            $balance = $otherInvestment->beginning_balance;
-            if ($otherInvestment->collection) {
-                $balance += $otherInvestment->collection;
-            }
-            $balance -= $validated['amount'];
-            $otherInvestment->ending_balance = $balance;
+            $otherInvestment->ending_balance = $otherInvestment->beginning_balance + $otherInvestment->collection - $otherInvestment->disbursement;
 
             $otherInvestment->save();
 
@@ -155,5 +146,45 @@ class OtherInvestmentController extends Controller
         $otherInvestment->delete();
 
         return redirect('/treasury/other-investment')->with('success', 'Other Investment deleted successfully.');
+    }
+
+    /**
+     * Update collection amount
+     */
+    public function updateCollection(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0',
+        ]);
+
+        $otherInvestment = OtherInvestment::findOrFail($id);
+        $otherInvestment->collection = $validated['amount'];
+        $otherInvestment->ending_balance = $otherInvestment->beginning_balance + $otherInvestment->collection - $otherInvestment->disbursement;
+        $otherInvestment->save();
+
+        return response()->json([
+            'message' => 'Collection updated successfully',
+            'otherInvestment' => $otherInvestment
+        ]);
+    }
+
+    /**
+     * Update disbursement amount
+     */
+    public function updateDisbursement(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0',
+        ]);
+
+        $otherInvestment = OtherInvestment::findOrFail($id);
+        $otherInvestment->disbursement = $validated['amount'];
+        $otherInvestment->ending_balance = $otherInvestment->beginning_balance + $otherInvestment->collection - $otherInvestment->disbursement;
+        $otherInvestment->save();
+
+        return response()->json([
+            'message' => 'Disbursement updated successfully',
+            'otherInvestment' => $otherInvestment
+        ]);
     }
 }

@@ -2,7 +2,9 @@
 import Treasury2Layout from '@/Layouts/Treasury2Layout.vue';
 import AddCollection from './AddCollection.vue';
 import AddDisbursement from './AddDisbursement.vue';
-import { Plus, Search } from 'lucide-vue-next';
+import EditCollection from './EditCollection.vue';
+import EditDisbursement from './EditDisbursement.vue';
+import { Plus, Search, Pencil } from 'lucide-vue-next';
 import { ref, computed, onMounted, watch } from 'vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -19,6 +21,8 @@ const searchQuery = ref('');
 const filterDate = ref(new Date().toISOString().split('T')[0]);
 const isAddCollectionOpen = ref(false);
 const isAddDisbursementOpen = ref(false);
+const isEditCollectionOpen = ref(false);
+const isEditDisbursementOpen = ref(false);
 const selectedSecurity = ref(null);
 
 // Function to update URL with date parameter
@@ -212,6 +216,84 @@ const handleDisbursementSubmit = async (disbursementData) => {
     isAddDisbursementOpen.value = false;
     selectedSecurity.value = null;
 };
+
+const handleEditCollection = (security) => {
+    selectedSecurity.value = security;
+    isEditCollectionOpen.value = true;
+};
+
+const handleEditDisbursement = (security) => {
+    selectedSecurity.value = security;
+    isEditDisbursementOpen.value = true;
+};
+
+const handleEditCollectionSubmit = async (collectionData) => {
+    try {
+        await axios.put(`/treasury2/government-security/${collectionData.government_security_id}/collection`, {
+            amount: collectionData.amount,
+            date: filterDate.value || new Date().toISOString().split('T')[0]
+        });
+        const index = securitiesData.value.findIndex(s => s.id === collectionData.government_security_id);
+        if (index !== -1) {
+            securitiesData.value[index].collection = collectionData.amount;
+            securitiesData.value[index].ending_balance = 
+                securitiesData.value[index].beginning_balance + 
+                securitiesData.value[index].collection - 
+                securitiesData.value[index].disbursement;
+        }
+        Swal.fire({
+            title: 'Success!',
+            text: `Collection updated to ₱${collectionData.amount.toFixed(2)}`,
+            icon: 'success',
+            confirmButtonColor: '#3B82F6'
+        }).then(() => {
+            window.location.reload();
+        });
+    } catch (error) {
+        Swal.fire({
+            title: 'Error!',
+            text: error.response?.data?.message || 'Failed to update collection',
+            icon: 'error',
+            confirmButtonColor: '#EF4444'
+        });
+    }
+    isEditCollectionOpen.value = false;
+    selectedSecurity.value = null;
+};
+
+const handleEditDisbursementSubmit = async (disbursementData) => {
+    try {
+        await axios.put(`/treasury2/government-security/${disbursementData.government_security_id}/disbursement`, {
+            amount: disbursementData.amount,
+            date: filterDate.value || new Date().toISOString().split('T')[0]
+        });
+        const index = securitiesData.value.findIndex(s => s.id === disbursementData.government_security_id);
+        if (index !== -1) {
+            securitiesData.value[index].disbursement = disbursementData.amount;
+            securitiesData.value[index].ending_balance = 
+                securitiesData.value[index].beginning_balance + 
+                securitiesData.value[index].collection - 
+                securitiesData.value[index].disbursement;
+        }
+        Swal.fire({
+            title: 'Success!',
+            text: `Disbursement updated to ₱${disbursementData.amount.toFixed(2)}`,
+            icon: 'success',
+            confirmButtonColor: '#EF4444'
+        }).then(() => {
+            window.location.reload();
+        });
+    } catch (error) {
+        Swal.fire({
+            title: 'Error!',
+            text: error.response?.data?.message || 'Failed to update disbursement',
+            icon: 'error',
+            confirmButtonColor: '#EF4444'
+        });
+    }
+    isEditDisbursementOpen.value = false;
+    selectedSecurity.value = null;
+};
 </script>
 
 <template>
@@ -264,13 +346,12 @@ const handleDisbursementSubmit = async (disbursementData) => {
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Collection</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Disbursement</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Ending Balance</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="filteredSecurities.length === 0" class="border-b border-gray-200">
-                                <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                                <td colspan="6" class="px-6 py-8 text-center text-gray-500">
                                     No government securities found.
                                 </td>
                             </tr>
@@ -293,7 +374,7 @@ const handleDisbursementSubmit = async (disbursementData) => {
                                 <td class="px-6 py-4 text-sm text-green-600 font-semibold border-r border-gray-200">{{ formatCurrency(getCollectionAmount(security)) }}</td>
                                 <td class="px-6 py-4 text-sm text-red-600 font-semibold border-r border-gray-200">{{ formatCurrency(getDisbursementAmount(security)) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(security, filterDate) + parseFloat(getCollectionAmount(security)) - parseFloat(getDisbursementAmount(security))) }}</td>
-                                <td class="px-6 py-4 text-sm space-x-2 flex">
+                                <td class="px-6 py-4 text-sm space-x-2 flex flex-wrap gap-2">
                                     <button
                                         @click="handleCollection(security)"
                                         class="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white rounded hover:bg-green-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
@@ -302,11 +383,27 @@ const handleDisbursementSubmit = async (disbursementData) => {
                                         <span>Collection</span>
                                     </button>
                                     <button
+                                        v-if="getCollectionAmount(security) > 0"
+                                        @click="handleEditCollection(security)"
+                                        class="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
+                                    >
+                                        <Pencil class="h-4 w-4" />
+                                        <span>Edit</span>
+                                    </button>
+                                    <button
                                         @click="handleDisbursement(security)"
                                         class="flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
                                     >
                                         <Plus class="h-4 w-4" />
                                         <span>Disbursement</span>
+                                    </button>
+                                    <button
+                                        v-if="getDisbursementAmount(security) > 0"
+                                        @click="handleEditDisbursement(security)"
+                                        class="flex items-center gap-1 px-3 py-1.5 bg-orange-500 text-white rounded hover:bg-orange-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
+                                    >
+                                        <Pencil class="h-4 w-4" />
+                                        <span>Edit</span>
                                     </button>
                                 </td>
                             </tr>
@@ -344,6 +441,22 @@ const handleDisbursementSubmit = async (disbursementData) => {
         :filter-date="filterDate"
         @close="isAddDisbursementOpen = false"
         @submit="handleDisbursementSubmit"
+    />
+
+    <!-- Edit Collection Modal -->
+    <EditCollection 
+        :is-open="isEditCollectionOpen" 
+        :government-security="selectedSecurity"
+        @close="isEditCollectionOpen = false"
+        @submit="handleEditCollectionSubmit"
+    />
+
+    <!-- Edit Disbursement Modal -->
+    <EditDisbursement 
+        :is-open="isEditDisbursementOpen" 
+        :government-security="selectedSecurity"
+        @close="isEditDisbursementOpen = false"
+        @submit="handleEditDisbursementSubmit"
     />
 </template>
 

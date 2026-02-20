@@ -2,7 +2,9 @@
 import Treasury2Layout from '@/Layouts/Treasury2Layout.vue';
 import AddCollection from './AddCollection.vue';
 import AddDisbursement from './AddDisbursement.vue';
-import { Search, Plus } from 'lucide-vue-next';
+import EditCollection from './EditCollection.vue';
+import EditDisbursement from './EditDisbursement.vue';
+import { Search, Plus, Pencil } from 'lucide-vue-next';
 import { ref, computed, onMounted, watch } from 'vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -31,6 +33,8 @@ const searchQuery = ref('');
 const filterDate = ref(new Date().toISOString().split('T')[0]);
 const isAddCollectionOpen = ref(false);
 const isAddDisbursementOpen = ref(false);
+const isEditCollectionOpen = ref(false);
+const isEditDisbursementOpen = ref(false);
 const selectedCollateral = ref(null);
 
 // Function to update URL with date parameter
@@ -217,6 +221,92 @@ const handleDisbursement = (collateral) => {
     selectedCollateral.value = collateral;
     isAddDisbursementOpen.value = true;
 };
+
+const handleEditCollection = (collateral) => {
+    selectedCollateral.value = collateral;
+    isEditCollectionOpen.value = true;
+};
+
+const handleEditDisbursement = (collateral) => {
+    selectedCollateral.value = collateral;
+    isEditDisbursementOpen.value = true;
+};
+
+const handleEditCollectionSubmit = async (collectionData) => {
+    try {
+        // Make API call to update collection
+        await axios.put(`/treasury2/collateral/${collectionData.collateral_id}/collection`, {
+            amount: collectionData.amount,
+            date: filterDate.value || new Date().toISOString().split('T')[0]
+        });
+
+        // Find and update the collateral in the local data
+        const index = collateralsData.value.findIndex(c => c.id === collectionData.collateral_id);
+        if (index !== -1) {
+            collateralsData.value[index].collection = collectionData.amount;
+            collateralsData.value[index].ending_balance = 
+                collateralsData.value[index].beginning_balance + 
+                collateralsData.value[index].collection - 
+                collateralsData.value[index].disbursement;
+        }
+        
+        Swal.fire({
+            title: 'Success!',
+            text: `Collection updated to ₱${collectionData.amount.toFixed(2)} for ${selectedCollateral.value.collateral}`,
+            icon: 'success',
+            confirmButtonColor: '#3B82F6'
+        }).then(() => {
+            window.location.reload();
+        });
+    } catch (error) {
+        Swal.fire({
+            title: 'Error!',
+            text: error.response?.data?.message || 'Failed to update collection data',
+            icon: 'error',
+            confirmButtonColor: '#EF4444'
+        });
+    }
+    isEditCollectionOpen.value = false;
+    selectedCollateral.value = null;
+};
+
+const handleEditDisbursementSubmit = async (disbursementData) => {
+    try {
+        // Make API call to update disbursement
+        await axios.put(`/treasury2/collateral/${disbursementData.collateral_id}/disbursement`, {
+            amount: disbursementData.amount,
+            date: filterDate.value || new Date().toISOString().split('T')[0]
+        });
+
+        // Find and update the collateral in the local data
+        const index = collateralsData.value.findIndex(c => c.id === disbursementData.collateral_id);
+        if (index !== -1) {
+            collateralsData.value[index].disbursement = disbursementData.amount;
+            collateralsData.value[index].ending_balance = 
+                collateralsData.value[index].beginning_balance + 
+                collateralsData.value[index].collection - 
+                collateralsData.value[index].disbursement;
+        }
+        
+        Swal.fire({
+            title: 'Success!',
+            text: `Disbursement updated to ₱${disbursementData.amount.toFixed(2)} for ${selectedCollateral.value.collateral}`,
+            icon: 'success',
+            confirmButtonColor: '#EF4444'
+        }).then(() => {
+            window.location.reload();
+        });
+    } catch (error) {
+        Swal.fire({
+            title: 'Error!',
+            text: error.response?.data?.message || 'Failed to update disbursement data',
+            icon: 'error',
+            confirmButtonColor: '#EF4444'
+        });
+    }
+    isEditDisbursementOpen.value = false;
+    selectedCollateral.value = null;
+};
 </script>
 
 <template>
@@ -297,7 +387,7 @@ const handleDisbursement = (collateral) => {
                                 <td class="px-6 py-4 text-sm text-green-600 font-semibold border-r border-gray-200">{{ formatCurrency(getCollectionAmount(collateral)) }}</td>
                                 <td class="px-6 py-4 text-sm text-red-600 font-semibold border-r border-gray-200">{{ formatCurrency(getDisbursementAmount(collateral)) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(collateral, filterDate) + parseFloat(getCollectionAmount(collateral)) - parseFloat(getDisbursementAmount(collateral))) }}</td>
-                                <td class="px-6 py-4 text-sm space-x-2 flex">
+                                <td class="px-6 py-4 text-sm space-x-2 flex flex-wrap gap-2">
                                     <button
                                         @click="handleCollection(collateral)"
                                         class="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white rounded hover:bg-green-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
@@ -306,11 +396,27 @@ const handleDisbursement = (collateral) => {
                                         <span>Collection</span>
                                     </button>
                                     <button
+                                        v-if="getCollectionAmount(collateral) > 0"
+                                        @click="handleEditCollection(collateral)"
+                                        class="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
+                                    >
+                                        <Pencil class="h-4 w-4" />
+                                        <span>Edit</span>
+                                    </button>
+                                    <button
                                         @click="handleDisbursement(collateral)"
                                         class="flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
                                     >
                                         <Plus class="h-4 w-4" />
                                         <span>Disbursement</span>
+                                    </button>
+                                    <button
+                                        v-if="getDisbursementAmount(collateral) > 0"
+                                        @click="handleEditDisbursement(collateral)"
+                                        class="flex items-center gap-1 px-3 py-1.5 bg-orange-500 text-white rounded hover:bg-orange-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
+                                    >
+                                        <Pencil class="h-4 w-4" />
+                                        <span>Edit</span>
                                     </button>
                                 </td>
                             </tr>
@@ -341,6 +447,14 @@ const handleDisbursement = (collateral) => {
         @submit="handleCollectionSubmit"
     />
 
+    <!-- Edit Collection Modal -->
+    <EditCollection 
+        :is-open="isEditCollectionOpen" 
+        :collateral="selectedCollateral"
+        @close="isEditCollectionOpen = false"
+        @submit="handleEditCollectionSubmit"
+    />
+
     <!-- Add Disbursement Modal -->
     <AddDisbursement 
         :is-open="isAddDisbursementOpen" 
@@ -348,6 +462,14 @@ const handleDisbursement = (collateral) => {
         :filter-date="filterDate"
         @close="isAddDisbursementOpen = false"
         @submit="handleDisbursementSubmit"
+    />
+
+    <!-- Edit Disbursement Modal -->
+    <EditDisbursement 
+        :is-open="isEditDisbursementOpen" 
+        :collateral="selectedCollateral"
+        @close="isEditDisbursementOpen = false"
+        @submit="handleEditDisbursementSubmit"
     />
 </template>
 

@@ -124,6 +124,46 @@ class DollarController extends Controller
         return redirect('/treasury/dollar')->with('success', 'Dollar deleted successfully.');
     }
 
+    /**
+     * Update collection amount
+     */
+    public function updateCollection(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0',
+        ]);
+
+        $dollar = Dollar::findOrFail($id);
+        $dollar->collection = $validated['amount'];
+        $dollar->ending_balance = $dollar->beginning_balance + $dollar->collection - $dollar->disbursement;
+        $dollar->save();
+
+        return response()->json([
+            'message' => 'Collection updated successfully',
+            'dollar' => $dollar
+        ]);
+    }
+
+    /**
+     * Update disbursement amount
+     */
+    public function updateDisbursement(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0',
+        ]);
+
+        $dollar = Dollar::findOrFail($id);
+        $dollar->disbursement = $validated['amount'];
+        $dollar->ending_balance = $dollar->beginning_balance + $dollar->collection - $dollar->disbursement;
+        $dollar->save();
+
+        return response()->json([
+            'message' => 'Disbursement updated successfully',
+            'dollar' => $dollar
+        ]);
+    }
+
     private function convertDateFormat($dateString)
     {
         $parts = explode('/', $dateString);

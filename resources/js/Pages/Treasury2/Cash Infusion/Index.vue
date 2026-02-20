@@ -2,7 +2,9 @@
 import Treasury2Layout from '@/Layouts/Treasury2Layout.vue';
 import AddCollection from './AddCollection.vue';
 import AddDisbursement from './AddDisbursement.vue';
-import { Search, Plus } from 'lucide-vue-next';
+import EditCollection from './EditCollection.vue';
+import EditDisbursement from './EditDisbursement.vue';
+import { Search, Plus, Pencil } from 'lucide-vue-next';
 import { ref, computed, onMounted, watch } from 'vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -31,6 +33,8 @@ const searchQuery = ref('');
 const filterDate = ref(new Date().toISOString().split('T')[0]);
 const isAddCollectionOpen = ref(false);
 const isAddDisbursementOpen = ref(false);
+const isEditCollectionOpen = ref(false);
+const isEditDisbursementOpen = ref(false);
 const selectedCashInfusion = ref(null);
 
 // Function to update URL with date parameter
@@ -217,6 +221,40 @@ const handleDisbursement = (infusion) => {
     selectedCashInfusion.value = infusion;
     isAddDisbursementOpen.value = true;
 };
+
+const handleEditCollection = (infusion) => {
+    selectedCashInfusion.value = infusion;
+    isEditCollectionOpen.value = true;
+};
+
+const handleEditDisbursement = (infusion) => {
+    selectedCashInfusion.value = infusion;
+    isEditDisbursementOpen.value = true;
+};
+
+const handleEditCollectionSubmit = async (collectionData) => {
+    try {
+        await axios.put(`/treasury2/cash-infusion/${collectionData.module_id}/collection`, {
+            amount: collectionData.amount
+        });
+        isEditCollectionOpen.value = false;
+        window.location.reload();
+    } catch (err) {
+        Swal.fire('Error', 'Failed to update collection', 'error');
+    }
+};
+
+const handleEditDisbursementSubmit = async (disbursementData) => {
+    try {
+        await axios.put(`/treasury2/cash-infusion/${disbursementData.module_id}/disbursement`, {
+            amount: disbursementData.amount
+        });
+        isEditDisbursementOpen.value = false;
+        window.location.reload();
+    } catch (err) {
+        Swal.fire('Error', 'Failed to update disbursement', 'error');
+    }
+};
 </script>
 
 <template>
@@ -297,7 +335,7 @@ const handleDisbursement = (infusion) => {
                                 <td class="px-6 py-4 text-sm text-green-600 font-semibold border-r border-gray-200">{{ formatCurrency(getCollectionAmount(infusion)) }}</td>
                                 <td class="px-6 py-4 text-sm text-red-600 font-semibold border-r border-gray-200">{{ formatCurrency(getDisbursementAmount(infusion)) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(infusion, filterDate) + parseFloat(getCollectionAmount(infusion)) - parseFloat(getDisbursementAmount(infusion))) }}</td>
-                                <td class="px-6 py-4 text-sm space-x-2 flex">
+                                <td class="px-6 py-4 text-sm space-x-2 flex flex-wrap gap-2">
                                     <button
                                         @click="handleCollection(infusion)"
                                         class="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white rounded hover:bg-green-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
@@ -306,11 +344,27 @@ const handleDisbursement = (infusion) => {
                                         <span>Collection</span>
                                     </button>
                                     <button
+                                        v-if="getCollectionAmount(infusion) > 0"
+                                        @click="handleEditCollection(infusion)"
+                                        class="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
+                                    >
+                                        <Pencil class="h-4 w-4" />
+                                        <span>Edit</span>
+                                    </button>
+                                    <button
                                         @click="handleDisbursement(infusion)"
                                         class="flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
                                     >
                                         <Plus class="h-4 w-4" />
                                         <span>Disbursement</span>
+                                    </button>
+                                    <button
+                                        v-if="getDisbursementAmount(infusion) > 0"
+                                        @click="handleEditDisbursement(infusion)"
+                                        class="flex items-center gap-1 px-3 py-1.5 bg-orange-500 text-white rounded hover:bg-orange-600 transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow-md"
+                                    >
+                                        <Pencil class="h-4 w-4" />
+                                        <span>Edit</span>
                                     </button>
                                 </td>
                             </tr>
@@ -348,6 +402,22 @@ const handleDisbursement = (infusion) => {
         :filter-date="filterDate"
         @close="isAddDisbursementOpen = false"
         @submit="handleDisbursementSubmit"
+    />
+
+    <!-- Edit Collection Modal -->
+    <EditCollection 
+        :is-open="isEditCollectionOpen" 
+        :cash-infusion="selectedCashInfusion"
+        @close="isEditCollectionOpen = false"
+        @submit="handleEditCollectionSubmit"
+    />
+
+    <!-- Edit Disbursement Modal -->
+    <EditDisbursement 
+        :is-open="isEditDisbursementOpen" 
+        :cash-infusion="selectedCashInfusion"
+        @close="isEditDisbursementOpen = false"
+        @submit="handleEditDisbursementSubmit"
     />
 </template>
 

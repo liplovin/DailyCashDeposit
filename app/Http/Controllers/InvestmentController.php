@@ -99,4 +99,38 @@ class InvestmentController extends Controller
             'investment' => $investment
         ]);
     }
+
+    public function updateCollection(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0',
+        ]);
+
+        $investment = Investment::findOrFail($id);
+        $investment->collection = $validated['amount'];
+        $investment->ending_balance = $investment->beginning_balance + $investment->collection - $investment->disbursement;
+        $investment->save();
+
+        return response()->json([
+            'message' => 'Collection updated successfully',
+            'investment' => $investment
+        ]);
+    }
+
+    public function updateDisbursement(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0',
+        ]);
+
+        $investment = Investment::findOrFail($id);
+        $investment->disbursement = $validated['amount'];
+        $investment->ending_balance = $investment->beginning_balance + $investment->collection - $investment->disbursement;
+        $investment->save();
+
+        return response()->json([
+            'message' => 'Disbursement updated successfully',
+            'investment' => $investment
+        ]);
+    }
 }

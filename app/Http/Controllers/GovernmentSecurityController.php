@@ -111,4 +111,38 @@ class GovernmentSecurityController extends Controller
             'governmentSecurity' => $governmentSecurity
         ]);
     }
+
+    public function updateCollection(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0',
+        ]);
+
+        $governmentSecurity = GovernmentSecurity::findOrFail($id);
+        $governmentSecurity->collection = $validated['amount'];
+        $governmentSecurity->ending_balance = $governmentSecurity->beginning_balance + $governmentSecurity->collection - $governmentSecurity->disbursement;
+        $governmentSecurity->save();
+
+        return response()->json([
+            'message' => 'Collection updated successfully',
+            'governmentSecurity' => $governmentSecurity
+        ]);
+    }
+
+    public function updateDisbursement(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0',
+        ]);
+
+        $governmentSecurity = GovernmentSecurity::findOrFail($id);
+        $governmentSecurity->disbursement = $validated['amount'];
+        $governmentSecurity->ending_balance = $governmentSecurity->beginning_balance + $governmentSecurity->collection - $governmentSecurity->disbursement;
+        $governmentSecurity->save();
+
+        return response()->json([
+            'message' => 'Disbursement updated successfully',
+            'governmentSecurity' => $governmentSecurity
+        ]);
+    }
 }

@@ -98,6 +98,44 @@ class CollateralController extends Controller
         ]);
     }
 
+    public function updateCollection(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0',
+            'date' => 'required|date',
+        ]);
+
+        $collateral = Collateral::findOrFail($id);
+        $collateral->collection = $validated['amount'];
+        $collateral->collection_date = $validated['date'];
+        $collateral->ending_balance = $collateral->beginning_balance + $collateral->collection - $collateral->disbursement;
+        $collateral->save();
+
+        return response()->json([
+            'message' => 'Collection updated successfully',
+            'collateral' => $collateral
+        ]);
+    }
+
+    public function updateDisbursement(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0',
+            'date' => 'required|date',
+        ]);
+
+        $collateral = Collateral::findOrFail($id);
+        $collateral->disbursement = $validated['amount'];
+        $collateral->disbursement_date = $validated['date'];
+        $collateral->ending_balance = $collateral->beginning_balance + $collateral->collection - $collateral->disbursement;
+        $collateral->save();
+
+        return response()->json([
+            'message' => 'Disbursement updated successfully',
+            'collateral' => $collateral
+        ]);
+    }
+
     private function convertDateFormat($dateString)
     {
         // Convert mm/dd/yyyy to Y-m-d
