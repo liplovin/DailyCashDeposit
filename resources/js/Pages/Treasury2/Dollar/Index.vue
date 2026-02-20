@@ -79,6 +79,12 @@ const getDisbursementAmount = (dollar) => {
     return disbursementDate === filterDate.value ? (dollar.disbursement || 0) : 0;
 };
 
+// Check if the filtered date is today
+const isToday = () => {
+    const today = new Date().toISOString().split('T')[0];
+    return filterDate.value === today;
+};
+
 // Calculate rolling beginning balance
 const getRollingBeginningBalance = (dollar) => {
     if (!filterDate.value) {
@@ -296,7 +302,7 @@ const totalEndingBalance = computed(() => {
                                 <td class="px-6 py-4 text-sm text-red-600 font-semibold border-r border-gray-200">{{ formatCurrency(getDisbursementAmount(dollar)) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(dollar.ending_balance) }}</td>
                                 <td class="px-6 py-4 text-sm border-r border-gray-200">
-                                    <div class="relative inline-block">
+                                    <div v-if="isToday()" class="relative inline-block">
                                         <button
                                             @click="toggleActionMenu(dollar.id)"
                                             class="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-sm rounded-lg transition-all duration-200 border border-gray-300"

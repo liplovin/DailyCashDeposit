@@ -96,6 +96,12 @@ const getDisbursementAmount = (collateral) => {
     return disbursementDate === filterDate.value ? (collateral.disbursement || 0) : 0;
 };
 
+// Check if the filtered date is today
+const isToday = () => {
+    const today = new Date().toISOString().split('T')[0];
+    return filterDate.value === today;
+};
+
 // Get rolling beginning balance for the selected date
 // This is the previous day's ending balance (or original if first day)
 const getRollingBeginningBalance = (collateral, selectedDate) => {
@@ -393,7 +399,7 @@ const handleEditDisbursementSubmit = async (disbursementData) => {
                                 <td class="px-6 py-4 text-sm text-red-600 font-semibold border-r border-gray-200">{{ formatCurrency(getDisbursementAmount(collateral)) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(collateral, filterDate) + parseFloat(getCollectionAmount(collateral)) - parseFloat(getDisbursementAmount(collateral))) }}</td>
                                 <td class="px-6 py-4 text-sm border-r border-gray-200">
-                                    <div class="relative inline-block">
+                                    <div v-if="isToday()" class="relative inline-block">
                                         <button
                                             @click="toggleActionMenu(collateral.id)"
                                             class="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-sm rounded-lg transition-all duration-200 border border-gray-300"
@@ -454,6 +460,9 @@ const handleEditDisbursementSubmit = async (disbursementData) => {
                                                 </div>
                                             </button>
                                         </div>
+                                    </div>
+                                    <div v-else class="text-sm text-gray-500 italic">
+                                        —
                                     </div>
                                 </td>
                             </tr>
