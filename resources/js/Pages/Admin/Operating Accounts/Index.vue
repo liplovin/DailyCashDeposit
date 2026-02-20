@@ -46,6 +46,50 @@ const getTotalCollection = (account) => {
     }, 0) || 0;
 };
 
+// Calculate total disbursement for an account
+const getTotalDisbursement = (account) => {
+    return account.disbursements?.reduce((sum, dis) => {
+        return sum + (dis.status === 'processed' ? parseFloat(dis.amount || 0) : 0);
+    }, 0) || 0;
+};
+
+// Get rolling beginning balance for the selected date
+// This is the previous day's ending balance (or original if first day)
+const getRollingBeginningBalance = (account, selectedDate) => {
+    if (!selectedDate) {
+        return parseFloat(account.beginning_balance || 0);
+    }
+    
+    // Start with the original beginning balance
+    let balance = parseFloat(account.beginning_balance || 0);
+    
+    // Add all processed collection amounts from dates BEFORE the selected date
+    if (account.collections) {
+        account.collections.forEach(col => {
+            if (col.status === 'processed') {
+                const collectionDate = new Date(col.created_at).toISOString().split('T')[0];
+                if (collectionDate < selectedDate) {
+                    balance += parseFloat(col.collection_amount || 0);
+                }
+            }
+        });
+    }
+    
+    // Subtract all processed disbursement amounts from dates BEFORE the selected date
+    if (account.disbursements) {
+        account.disbursements.forEach(dis => {
+            if (dis.status === 'processed') {
+                const disbursementDate = new Date(dis.created_at).toISOString().split('T')[0];
+                if (disbursementDate < selectedDate) {
+                    balance -= parseFloat(dis.amount || 0);
+                }
+            }
+        });
+    }
+    
+    return balance;
+};
+
 // Calculate ending balance
 const getEndingBalance = (account) => {
     const collection = getTotalCollection(account);
@@ -86,10 +130,33 @@ const getTotalCollectionByDate = (account) => {
     }, 0) || 0;
 };
 
+// Get disbursements filtered by date
+const getDisbursementsByDate = (account) => {
+    if (!account.disbursements) return [];
+    
+    if (!selectedDate.value) return account.disbursements;
+    
+    return account.disbursements.filter(dis => {
+        const disDate = new Date(dis.created_at);
+        const selected = new Date(selectedDate.value);
+        
+        return disDate.getFullYear() === selected.getFullYear() &&
+               disDate.getMonth() === selected.getMonth() &&
+               disDate.getDate() === selected.getDate();
+    });
+};
+
+// Get total disbursement by date
+const getTotalDisbursementByDate = (account) => {
+    return getDisbursementsByDate(account).reduce((sum, dis) => {
+        return sum + (dis.status === 'processed' ? parseFloat(dis.amount || 0) : 0);
+    }, 0) || 0;
+};
+
 // Calculate totals for all accounts
 const totalBeginningBalance = computed(() => {
     return filteredAccounts.value.reduce((sum, account) => {
-        return sum + parseFloat(account.beginning_balance || 0);
+        return sum + getRollingBeginningBalance(account, selectedDate.value);
     }, 0);
 });
 
@@ -99,9 +166,19 @@ const totalCollectionByDate = computed(() => {
     }, 0);
 });
 
+const totalDisbursementByDate = computed(() => {
+    return filteredAccounts.value.reduce((sum, account) => {
+        return sum + getTotalDisbursementByDate(account);
+    }, 0);
+});
+
 const totalEndingBalance = computed(() => {
     return filteredAccounts.value.reduce((sum, account) => {
-        return sum + (parseFloat(account.beginning_balance || 0) + getTotalCollectionByDate(account));
+        const beginning = getRollingBeginningBalance(account, selectedDate.value);
+        const collection = getTotalCollectionByDate(account);
+        const disbursement = getTotalDisbursementByDate(account);
+        const ending = beginning + collection - disbursement;
+        return sum + ending;
     }, 0);
 });
 </script>
@@ -121,10 +198,10 @@ const totalEndingBalance = computed(() => {
                         <Eye class="h-5 w-5" />
                         View Collection
                     </Link>
-                    <button class="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-all shadow-lg">
+                    <Link href="/admin/operating-accounts/view-disbursement" class="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-all shadow-lg">
                         <Eye class="h-5 w-5" />
                         View Disbursement
-                    </button>
+                    </Link>
                 </div>
             </div>
 
@@ -195,16 +272,16 @@ const totalEndingBalance = computed(() => {
                                     {{ account.account_number }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border border-gray-200">
-                                    {{ formatCurrency(account.beginning_balance) }}
+                                    {{ formatCurrency(getRollingBeginningBalance(account, selectedDate)) }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-green-600 font-semibold border border-gray-200">
                                     {{ formatCurrency(getTotalCollectionByDate(account)) }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-red-600 font-semibold border border-gray-200">
-                                    0.00
+                                    {{ formatCurrency(getTotalDisbursementByDate(account)) }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border border-gray-200">
-                                    {{ formatCurrency(parseFloat(account.beginning_balance || 0) + getTotalCollectionByDate(account)) }}
+                                    {{ formatCurrency(getRollingBeginningBalance(account, selectedDate) + getTotalCollectionByDate(account) - getTotalDisbursementByDate(account)) }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-700 border border-gray-200">
                                     {{ formatDate(account.maturity_date) }}
@@ -221,8 +298,8 @@ const totalEndingBalance = computed(() => {
                                 <td class="px-6 py-4 text-sm text-green-600 border border-gray-200">
                                     {{ formatCurrency(totalCollectionByDate) }}
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-900 border border-gray-200">
-                                    0.00
+                                <td class="px-6 py-4 text-sm text-red-600 border border-gray-200">
+                                    {{ formatCurrency(totalDisbursementByDate) }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-blue-600 border border-gray-200">
                                     {{ formatCurrency(totalEndingBalance) }}

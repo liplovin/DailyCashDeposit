@@ -229,8 +229,19 @@ Route::middleware('auth')->group(function () {
             ]);
         })->name('operating-accounts.view-collection');
 
+        Route::get('/operating-accounts/view-disbursement', function () {
+            $operatingAccounts = \App\Models\OperatingAccount::all();
+            $disbursements = \App\Models\OperatingAccountDisbursement::with('operatingAccount')
+                ->where('status', 'processed')
+                ->get();
+            return Inertia::render('Admin/Operating Accounts/ViewDisbursementOperatingAccounts', [
+                'operatingAccounts' => $operatingAccounts,
+                'disbursements' => $disbursements,
+            ]);
+        })->name('operating-accounts.view-disbursement');
+
         Route::get('/operating-accounts', function () {
-            $operatingAccounts = \App\Models\OperatingAccount::with('collections')->get();
+            $operatingAccounts = \App\Models\OperatingAccount::with('collections', 'disbursements')->get();
             return Inertia::render('Admin/Operating Accounts/Index', [
                 'operatingAccounts' => $operatingAccounts,
             ]);
