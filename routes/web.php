@@ -19,6 +19,8 @@ use App\Models\Dollar;
 use App\Models\CorporateBond;
 use App\Models\CashInfusion;
 use App\Models\Investment;
+use App\Models\OperatingAccount;
+use App\Models\OperatingAccountDisbursement;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -53,8 +55,32 @@ Route::get('/dashboard', function () {
         ]);
     }
     
+    if ($user->role === 'admin') {
+        // Fetch all Treasury2 module data for Admin Dashboard
+        $collaterals = Collateral::all();
+        $otherInvestments = OtherInvestment::all();
+        $dollars = Dollar::all();
+        $governmentSecurities = GovernmentSecurity::all();
+        $timeDeposits = TimeDeposit::all();
+        $cashInfusions = CashInfusion::all();
+        $corporateBonds = CorporateBond::all();
+        $investments = Investment::all();
+        $operatingAccounts = OperatingAccount::with(['collections', 'disbursements'])->get();
+        
+        return Inertia::render('Admin/Dashboard', [
+            'collaterals' => $collaterals,
+            'otherInvestments' => $otherInvestments,
+            'dollars' => $dollars,
+            'governmentSecurities' => $governmentSecurities,
+            'timeDeposits' => $timeDeposits,
+            'cashInfusions' => $cashInfusions,
+            'corporateBonds' => $corporateBonds,
+            'investments' => $investments,
+            'operatingAccounts' => $operatingAccounts
+        ]);
+    }
+    
     $component = match($user->role) {
-        'admin' => 'Admin/Dashboard',
         'treasury' => 'Treasury/Dashboard',
         'treasury3' => 'Treasury3/Dashboard',
         'accounting' => 'Accounting/Dashboard',
