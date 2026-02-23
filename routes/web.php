@@ -146,6 +146,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/government-securities', [GovernmentSecurityController::class, 'store'])->name('government-securities.store');
         Route::put('/government-securities/{id}', [GovernmentSecurityController::class, 'update'])->name('government-securities.update');
         Route::delete('/government-securities/{id}', [GovernmentSecurityController::class, 'destroy'])->name('government-securities.destroy');
+        Route::post('/government-securities/{id}/renew', [GovernmentSecurityController::class, 'renew'])->name('government-securities.renew');
+        Route::post('/government-securities/{id}/withdraw', [GovernmentSecurityController::class, 'withdraw'])->name('government-securities.withdraw');
+        Route::post('/government-securities/{id}/add-balance', [GovernmentSecurityController::class, 'addBalance'])->name('government-securities.add-balance');
 
         // Operating Accounts Routes
         Route::get('/operating-accounts', [OperatingAccountController::class, 'index'])->name('operating-accounts');

@@ -2,7 +2,11 @@
 import TreasuryLayout from '@/Layouts/TreasuryLayout.vue';
 import CreateGovernmentSecurityModal from './Create.vue';
 import EditGovernmentSecurityModal from './Edit.vue';
-import { Plus, Trash2, Edit2, Search } from 'lucide-vue-next';
+import RenewGovernmentSecurityModal from './Renew.vue';
+import WithdrawGovernmentSecurityModal from './Withdraw.vue';
+import AddBalanceModal from './AddBalance.vue';
+import ViewGovernmentSecurityModal from './View.vue';
+import { Plus, Trash2, Edit2, Search, ChevronDown, Eye, EyeOff } from 'lucide-vue-next';
 import { computed, ref, onMounted } from 'vue';
 import { router } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
@@ -27,8 +31,13 @@ const props = defineProps({
 
 const searchQuery = ref('');
 const filterDate = ref(new Date().toISOString().split('T')[0]);
+const showWithdrawn = ref(false);
 const showModal = ref(false);
 const showEditModal = ref(false);
+const showRenewModal = ref(false);
+const showWithdrawModal = ref(false);
+const showAddBalanceModal = ref(false);
+const showViewModal = ref(false);
 const selectedGovernmentSecurity = ref(null);
 
 const hasGovernmentSecurities = computed(() => filteredGovernmentSecurities.value && filteredGovernmentSecurities.value.length > 0);
@@ -79,12 +88,21 @@ const getRollingBeginningBalance = (security, selectedDate) => {
 };
 
 const filteredGovernmentSecurities = computed(() => {
+    let securities = props.governmentSecurities;
+    
+    // Filter by withdrawn status - show ONLY withdrawn when toggled
+    if (showWithdrawn.value) {
+        securities = securities.filter(security => security.maturity_date === null);
+    } else {
+        securities = securities.filter(security => security.maturity_date !== null);
+    }
+    
     if (!searchQuery.value.trim()) {
-        return props.governmentSecurities;
+        return securities;
     }
     
     const query = searchQuery.value.toLowerCase();
-    return props.governmentSecurities.filter(security => 
+    return securities.filter(security => 
         security.government_security_name.toLowerCase().includes(query) ||
         security.reference_number.toLowerCase().includes(query)
     );
@@ -108,6 +126,47 @@ const openEditModal = (security) => {
 const closeEditModal = () => {
     showEditModal.value = false;
     selectedGovernmentSecurity.value = null;
+};
+
+const openRenewModal = (security) => {
+    selectedGovernmentSecurity.value = security;
+    showRenewModal.value = true;
+};
+
+const closeRenewModal = () => {
+    showRenewModal.value = false;
+    selectedGovernmentSecurity.value = null;
+};
+
+const openWithdrawModal = (security) => {
+    selectedGovernmentSecurity.value = security;
+    showWithdrawModal.value = true;
+};
+
+const closeWithdrawModal = () => {
+    showWithdrawModal.value = false;
+    selectedGovernmentSecurity.value = null;
+};
+
+const closeAddBalanceModal = () => {
+    showAddBalanceModal.value = false;
+    selectedGovernmentSecurity.value = null;
+};
+
+const addGovernmentSecurity = (security) => {
+    selectedGovernmentSecurity.value = security;
+    showAddBalanceModal.value = true;
+};
+
+const viewGovernmentSecurity = (security) => {
+    selectedGovernmentSecurity.value = security;
+    showViewModal.value = true;
+};
+
+const openDropdownId = ref(null);
+
+const toggleDropdown = (securityId) => {
+    openDropdownId.value = openDropdownId.value === securityId ? null : securityId;
 };
 
 const totalBeginningBalance = computed(() => {
@@ -189,7 +248,7 @@ const isOverdueOrDueToday = (dateString) => {
 };
 
 const formatMaturityDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return '✓ Withdrawn';
     const date = new Date(dateString);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -267,91 +326,11 @@ const deleteGovernmentSecurity = async (security) => {
 };
 
 const renewGovernmentSecurity = async (security) => {
-    const result = await Swal.fire({
-        title: 'Renew Government Security?',
-        html: `
-            <div class="text-left">
-                <p class="mb-3"><strong>Government Security:</strong> ${security.government_security_name}</p>
-                <p class="mb-3"><strong>Reference:</strong> ${security.reference_number}</p>
-                <p class="text-green-600 text-sm"><strong>✓ This will renew the government security account.</strong></p>
-            </div>
-        `,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#10B981',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Yes, Renew',
-        cancelButtonText: 'Cancel',
-        allowOutsideClick: false,
-        allowEscapeKey: false
-    });
-
-    if (result.isConfirmed) {
-        router.post(`/treasury/government-securities/${security.id}/renew`, {}, {
-            onSuccess: () => {
-                Swal.fire({
-                    title: 'Renewed!',
-                    text: 'Government Security has been renewed successfully.',
-                    icon: 'success',
-                    confirmButtonColor: '#F59E0B',
-                    timer: 2000,
-                    timerProgressBar: true
-                });
-            },
-            onError: () => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Failed to renew government security. Please try again.',
-                    icon: 'error',
-                    confirmButtonColor: '#F59E0B'
-                });
-            }
-        });
-    }
+    openRenewModal(security);
 };
 
 const withdrawGovernmentSecurity = async (security) => {
-    const result = await Swal.fire({
-        title: 'Withdraw Government Security?',
-        html: `
-            <div class="text-left">
-                <p class="mb-3"><strong>Government Security:</strong> ${security.government_security_name}</p>
-                <p class="mb-3"><strong>Reference:</strong> ${security.reference_number}</p>
-                <p class="text-orange-600 text-sm"><strong>✓ This will withdraw the government security amount.</strong></p>
-            </div>
-        `,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#F97316',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Yes, Withdraw',
-        cancelButtonText: 'Cancel',
-        allowOutsideClick: false,
-        allowEscapeKey: false
-    });
-
-    if (result.isConfirmed) {
-        router.post(`/treasury/government-securities/${security.id}/withdraw`, {}, {
-            onSuccess: () => {
-                Swal.fire({
-                    title: 'Withdrawn!',
-                    text: 'Government Security has been withdrawn successfully.',
-                    icon: 'success',
-                    confirmButtonColor: '#F59E0B',
-                    timer: 2000,
-                    timerProgressBar: true
-                });
-            },
-            onError: () => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Failed to withdraw government security. Please try again.',
-                    icon: 'error',
-                    confirmButtonColor: '#F59E0B'
-                });
-            }
-        });
-    }
+    openWithdrawModal(security);
 };
 </script>
 
@@ -377,7 +356,7 @@ const withdrawGovernmentSecurity = async (security) => {
 
             <!-- Search Bar and Date Filter -->
             <div class="bg-yellow-50 rounded-xl border-2 border-yellow-200 p-6 mb-8">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                     <!-- Search Bar -->
                     <div class="md:col-span-2">
                         <label class="block text-sm font-bold text-gray-800 mb-3">Search Government Security</label>
@@ -386,7 +365,7 @@ const withdrawGovernmentSecurity = async (security) => {
                             <input
                                 v-model="searchQuery"
                                 type="text"
-                                placeholder="Search by government security name or reference number..."
+                                placeholder="Search by name or reference..."
                                 class="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
                             />
                         </div>
@@ -400,6 +379,23 @@ const withdrawGovernmentSecurity = async (security) => {
                             type="date"
                             class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
                         />
+                    </div>
+
+                    <!-- Show Withdrawn Filter -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Filter</label>
+                        <button
+                            @click="showWithdrawn = !showWithdrawn"
+                            :class="[
+                                'w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-semibold transition-all duration-200 border-2',
+                                showWithdrawn
+                                    ? 'bg-green-100 border-green-400 text-green-700 shadow-md hover:bg-green-200'
+                                    : 'bg-white border-gray-300 text-gray-700 hover:border-yellow-400 hover:bg-yellow-50'
+                            ]"
+                        >
+                            <component :is="showWithdrawn ? EyeOff : Eye" class="h-5 w-5" />
+                            <span>{{ showWithdrawn ? 'Withdrawn Only' : 'Active' }}</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -470,29 +466,62 @@ const withdrawGovernmentSecurity = async (security) => {
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ security.reference_number }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-200">
+                                <td class="px-6 py-4 text-sm font-mono border-r border-gray-200" :class="security.maturity_date ? 'text-gray-700' : 'text-green-600 font-bold'">
                                     {{ formatMaturityDate(security.maturity_date) }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(security, filterDate)) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(security, filterDate) + parseFloat(getCollectionAmount(security)) - parseFloat(getDisbursementAmount(security))) }}</td>
                                 <td class="px-6 py-4 text-sm border-r border-gray-200">
-                                    <div v-if="isMaturityActionVisible(security.maturity_date)" class="flex items-center space-x-2">
+                                    <div class="relative">
                                         <button
-                                            @click="renewGovernmentSecurity(security)"
-                                            class="px-3 py-1.5 bg-green-500 text-white text-xs font-semibold rounded-lg hover:bg-green-600 transition-all duration-200"
-                                            title="Renew"
+                                            @click.stop="toggleDropdown(security.id)"
+                                            :class="[
+                                                'inline-flex items-center space-x-1 px-3 py-2 text-xs font-semibold rounded-lg transition-all duration-200',
+                                                openDropdownId === security.id 
+                                                    ? 'bg-yellow-600 text-white' 
+                                                    : 'bg-yellow-500 text-white hover:bg-yellow-600'
+                                            ]"
                                         >
-                                            Renew
+                                            <span>Actions</span>
+                                            <ChevronDown :class="['h-4 w-4', openDropdownId === security.id ? 'rotate-180' : '']" style="transition: transform 0.2s" />
                                         </button>
-                                        <button
-                                            @click="withdrawGovernmentSecurity(security)"
-                                            class="px-3 py-1.5 bg-orange-500 text-white text-xs font-semibold rounded-lg hover:bg-orange-600 transition-all duration-200"
-                                            title="Withdraw"
+                                        <div 
+                                            v-if="openDropdownId === security.id"
+                                            @click.stop
+                                            class="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48 overflow-hidden"
                                         >
-                                            Withdraw
-                                        </button>
+                                            <!-- Renew (Conditional - visible within 30 days of maturity) -->
+                                            <button
+                                                v-if="isMaturityActionVisible(security.maturity_date)"
+                                                @click="renewGovernmentSecurity(security); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                ✓ Renew
+                                            </button>
+                                            <!-- Withdraw (Always Visible) -->
+                                            <button
+                                                @click="withdrawGovernmentSecurity(security); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                ↓ Withdraw
+                                            </button>
+                                            <!-- Add (Hidden if withdrawn) -->
+                                            <button
+                                                v-if="security.maturity_date !== null"
+                                                @click="addGovernmentSecurity(security); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                + Add
+                                            </button>
+                                            <!-- View (Always Visible) -->
+                                            <button
+                                                @click="viewGovernmentSecurity(security); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                👁 View
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div v-else class="text-xs text-gray-500">—</div>
                                 </td>
                                 <td class="px-6 py-4 text-sm">
                                     <div v-if="isCreatedToday(security.created_at)" class="flex items-center space-x-2">
@@ -538,6 +567,22 @@ const withdrawGovernmentSecurity = async (security) => {
 
             <!-- Edit Modal -->
             <EditGovernmentSecurityModal :isOpen="showEditModal" :governmentSecurity="selectedGovernmentSecurity" :existingGovernmentSecurities="props.governmentSecurities" @close="closeEditModal" />
+
+            <!-- Renew Modal -->
+            <RenewGovernmentSecurityModal :isOpen="showRenewModal" :governmentSecurity="selectedGovernmentSecurity" @close="closeRenewModal" />
+
+            <!-- Withdraw Modal -->
+            <WithdrawGovernmentSecurityModal :isOpen="showWithdrawModal" :governmentSecurity="selectedGovernmentSecurity" @close="closeWithdrawModal" />
+
+            <!-- Add Balance Modal -->
+            <AddBalanceModal :isOpen="showAddBalanceModal" :governmentSecurity="selectedGovernmentSecurity" @close="closeAddBalanceModal" />
+
+            <!-- View History Modal -->
+            <ViewGovernmentSecurityModal 
+                v-if="showViewModal && selectedGovernmentSecurity"
+                :governmentSecurity="selectedGovernmentSecurity"
+                @close="showViewModal = false"
+            />
         </div>
     </TreasuryLayout>
 </template>

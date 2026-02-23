@@ -119,6 +119,8 @@ const handleSubmit = () => {
                     confirmButtonColor: '#F59E0B',
                     timer: 2000,
                     timerProgressBar: true
+                }).then(() => {
+                    window.location.reload();
                 });
                 closeModal();
             },
@@ -141,7 +143,6 @@ const handleSubmit = () => {
             },
             onFinish: () => {
                 isSubmitting.value = false;
-                window.location.reload();
             }
         }
     );

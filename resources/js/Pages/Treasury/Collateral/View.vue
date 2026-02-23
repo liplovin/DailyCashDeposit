@@ -1,6 +1,6 @@
 <template>
   <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-96 overflow-y-auto">
+    <div class="bg-white rounded-lg shadow-2xl w-full max-w-5xl max-h-[85vh] overflow-y-auto">
       <!-- Header -->
       <div class="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
         <h2 class="text-white text-lg font-semibold">Collateral History</h2>
@@ -113,42 +113,45 @@
         <!-- Withdrawal History Tab -->
         <div v-if="activeTab === 'withdrawals'">
           <div v-if="collateral.withdrawals && collateral.withdrawals.length > 0" class="space-y-4">
-            <!-- Timeline -->
-            <div class="relative">
-              <div class="space-y-6">
-                <div
-                  v-for="(withdrawal, index) in collateral.withdrawals"
-                  :key="`withdrawal-${withdrawal.id}`"
-                  class="relative flex items-start"
-                >
-                  <!-- Timeline dot and line -->
-                  <div class="absolute left-0 top-2 w-4 h-4 bg-orange-600 rounded-full border-4 border-white"></div>
-                  <div v-if="index < collateral.withdrawals.length - 1" class="absolute left-2 top-6 w-0.5 h-12 bg-orange-200"></div>
+            <div
+              v-for="withdrawal in collateral.withdrawals"
+              :key="`withdrawal-${withdrawal.id}`"
+              class="bg-orange-50 rounded-lg p-5 border border-orange-200 hover:shadow-md transition-shadow"
+            >
+              <!-- Header: Withdrawal Amount (Large) -->
+              <div class="mb-5 pb-4 border-b-2 border-orange-300">
+                <p class="text-xs text-gray-600 font-bold uppercase tracking-widest mb-2">Withdrawal Transaction</p>
+                <p class="text-4xl font-bold text-orange-700">₱ {{ formatCurrency(withdrawal.amount) }}</p>
+                <p class="text-xs text-gray-500 mt-2">Withdrawn on {{ formatDateTime(withdrawal.created_at) }}</p>
+              </div>
 
-                  <!-- Withdrawal details -->
-                  <div class="ml-8 flex-1 bg-orange-50 rounded-lg p-4 border border-orange-200">
-                    <div class="grid grid-cols-2 gap-4 mb-3">
-                      <div>
-                        <p class="text-xs text-gray-500 font-semibold">Withdrawal Amount</p>
-                        <p class="text-sm font-medium text-orange-600">₱ {{ formatCurrency(withdrawal.amount) }}</p>
-                      </div>
-                      <div>
-                        <p class="text-xs text-gray-500 font-semibold">Withdrawn on</p>
-                        <p class="text-sm font-medium text-gray-900">{{ formatDateTime(withdrawal.created_at) }}</p>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <p class="text-xs text-gray-500 font-semibold">Explanation</p>
-                      <p class="text-sm text-gray-700">{{ withdrawal.explanation }}</p>
-                    </div>
+              <!-- Balance Information Grid -->
+              <div class="grid grid-cols-3 gap-3 mb-5 pb-5 border-b border-orange-200">
+                <div class="bg-white rounded-lg p-4 border border-orange-100">
+                  <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Previous Balance</p>
+                  <p class="text-xl font-bold text-gray-800">₱ {{ formatCurrency(collateral.beginning_balance + withdrawal.amount) }}</p>
+                </div>
+                <div class="bg-orange-100 rounded-lg p-4 border border-orange-300 flex items-center justify-center">
+                  <div class="text-center">
+                    <p class="text-xs text-gray-600 font-bold uppercase tracking-widest mb-2">Withdrawn</p>
+                    <p class="text-xl font-bold text-orange-700">₱ {{ formatCurrency(withdrawal.amount) }}</p>
                   </div>
                 </div>
+                <div class="bg-green-50 rounded-lg p-4 border border-green-300">
+                  <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">New Balance</p>
+                  <p class="text-xl font-bold text-green-700">₱ {{ formatCurrency(collateral.beginning_balance) }}</p>
+                </div>
+              </div>
+
+              <!-- Reason/Explanation -->
+              <div class="bg-white rounded-lg p-4 border border-orange-100">
+                <p class="text-xs text-gray-600 font-bold uppercase tracking-widest mb-2">Reason / Explanation</p>
+                <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap break-words">{{ withdrawal.explanation?.trim() || '—' }}</p>
               </div>
             </div>
           </div>
           <!-- Empty state for withdrawals -->
-          <div v-else class="text-center py-8">
+          <div v-else class="text-center py-12">
             <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -159,42 +162,45 @@
         <!-- Balance History Tab -->
         <div v-if="activeTab === 'balances'">
           <div v-if="collateral.balances && collateral.balances.length > 0" class="space-y-4">
-            <!-- Timeline -->
-            <div class="relative">
-              <div class="space-y-6">
-                <div
-                  v-for="(balance, index) in collateral.balances"
-                  :key="`balance-${balance.id}`"
-                  class="relative flex items-start"
-                >
-                  <!-- Timeline dot and line -->
-                  <div class="absolute left-0 top-2 w-4 h-4 bg-green-600 rounded-full border-4 border-white"></div>
-                  <div v-if="index < collateral.balances.length - 1" class="absolute left-2 top-6 w-0.5 h-12 bg-green-200"></div>
+            <div
+              v-for="balance in collateral.balances"
+              :key="`balance-${balance.id}`"
+              class="bg-green-50 rounded-lg p-5 border border-green-200 hover:shadow-md transition-shadow"
+            >
+              <!-- Header: Amount Added (Large) -->
+              <div class="mb-5 pb-4 border-b-2 border-green-300">
+                <p class="text-xs text-gray-600 font-bold uppercase tracking-widest mb-2">Balance Addition</p>
+                <p class="text-4xl font-bold text-green-700">₱ {{ formatCurrency(balance.amount) }}</p>
+                <p class="text-xs text-gray-500 mt-2">Added on {{ formatDateTime(balance.created_at) }}</p>
+              </div>
 
-                  <!-- Balance details -->
-                  <div class="ml-8 flex-1 bg-green-50 rounded-lg p-4 border border-green-200">
-                    <div class="grid grid-cols-2 gap-4 mb-3">
-                      <div>
-                        <p class="text-xs text-gray-500 font-semibold">Amount Added</p>
-                        <p class="text-sm font-medium text-green-600">₱ {{ formatCurrency(balance.amount) }}</p>
-                      </div>
-                      <div>
-                        <p class="text-xs text-gray-500 font-semibold">Added on</p>
-                        <p class="text-sm font-medium text-gray-900">{{ formatDateTime(balance.created_at) }}</p>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <p class="text-xs text-gray-500 font-semibold">Reason</p>
-                      <p class="text-sm text-gray-700">{{ balance.explanation }}</p>
-                    </div>
+              <!-- Balance Information Grid -->
+              <div class="grid grid-cols-3 gap-3 mb-5 pb-5 border-b border-green-200">
+                <div class="bg-white rounded-lg p-4 border border-green-100">
+                  <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Previous Balance</p>
+                  <p class="text-xl font-bold text-gray-800">₱ {{ formatCurrency(collateral.beginning_balance - balance.amount) }}</p>
+                </div>
+                <div class="bg-green-100 rounded-lg p-4 border border-green-300 flex items-center justify-center">
+                  <div class="text-center">
+                    <p class="text-xs text-gray-600 font-bold uppercase tracking-widest mb-2">Added</p>
+                    <p class="text-xl font-bold text-green-700">₱ {{ formatCurrency(balance.amount) }}</p>
                   </div>
                 </div>
+                <div class="bg-blue-50 rounded-lg p-4 border border-blue-300">
+                  <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">New Balance</p>
+                  <p class="text-xl font-bold text-blue-700">₱ {{ formatCurrency(collateral.beginning_balance) }}</p>
+                </div>
+              </div>
+
+              <!-- Reason -->
+              <div class="bg-white rounded-lg p-4 border border-green-100">
+                <p class="text-xs text-gray-600 font-bold uppercase tracking-widest mb-2">Reason</p>
+                <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap break-words">{{ balance.explanation?.trim() || '—' }}</p>
               </div>
             </div>
           </div>
           <!-- Empty state for balances -->
-          <div v-else class="text-center py-8">
+          <div v-else class="text-center py-12">
             <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>

@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\GovernmentSecurity;
+use App\Models\GovernmentSecurityRenewal;
+use App\Models\GovernmentSecurityWithdrawal;
+use App\Models\GovernmentSecurityBalance;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -10,7 +13,7 @@ class GovernmentSecurityController extends Controller
 {
     public function index()
     {
-        $governmentSecurities = GovernmentSecurity::all();
+        $governmentSecurities = GovernmentSecurity::with('renewals', 'withdrawals', 'balances')->get();
         return Inertia::render('Treasury/Goverment Securities/Index', [
             'governmentSecurities' => $governmentSecurities
         ]);
@@ -144,5 +147,84 @@ class GovernmentSecurityController extends Controller
             'message' => 'Disbursement updated successfully',
             'governmentSecurity' => $governmentSecurity
         ]);
+    }
+
+    public function renew(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'new_maturity_date' => 'required|date|after:today',
+            'explanation' => 'nullable|string',
+        ]);
+
+        $governmentSecurity = GovernmentSecurity::findOrFail($id);
+
+        // Validate new date is after current maturity date
+        if ($governmentSecurity->maturity_date && strtotime($validated['new_maturity_date']) <= strtotime($governmentSecurity->maturity_date)) {
+            return redirect()->back()->withErrors(['new_maturity_date' => 'New maturity date must be after current maturity date']);
+        }
+
+        // Create renewal record
+        GovernmentSecurityRenewal::create([
+            'government_security_id' => $id,
+            'previous_maturity_date' => $governmentSecurity->maturity_date,
+            'new_maturity_date' => $validated['new_maturity_date'],
+            'explanation' => $validated['explanation']
+        ]);
+
+        // Update maturity date
+        $governmentSecurity->update(['maturity_date' => $validated['new_maturity_date']]);
+
+        return redirect()->back()->with('success', 'Government Security renewed successfully!');
+    }
+
+    public function withdraw(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'explanation' => 'nullable|string',
+        ]);
+
+        $governmentSecurity = GovernmentSecurity::findOrFail($id);
+        $currentBalance = $governmentSecurity->beginning_balance;
+
+        // Validate amount does not exceed balance
+        if ($validated['amount'] > $currentBalance) {
+            return redirect()->back()->withErrors(['amount' => 'Withdrawal amount cannot exceed available balance']);
+        }
+
+        // Create withdrawal record
+        GovernmentSecurityWithdrawal::create([
+            'government_security_id' => $id,
+            'amount' => $validated['amount'],
+            'explanation' => $validated['explanation']
+        ]);
+
+        // Check if this is a full withdrawal (with floating-point tolerance)
+        $remainingBalance = $currentBalance - $validated['amount'];
+        if (abs($remainingBalance) < 0.01) {
+            // Full withdrawal - set maturity_date to NULL
+            $governmentSecurity->update(['maturity_date' => null]);
+        }
+
+        return redirect()->back()->with('success', 'Withdrawal recorded successfully!');
+    }
+
+    public function addBalance(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'reason' => 'required|string',
+        ]);
+
+        $governmentSecurity = GovernmentSecurity::findOrFail($id);
+
+        // Create balance record
+        GovernmentSecurityBalance::create([
+            'government_security_id' => $id,
+            'amount' => $validated['amount'],
+            'reason' => $validated['reason']
+        ]);
+
+        return redirect()->back()->with('success', 'Balance added successfully!');
     }
 }

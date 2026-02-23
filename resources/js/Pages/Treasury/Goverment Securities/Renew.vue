@@ -1,85 +1,53 @@
 <script setup>
-import { ref, watch, computed } from 'vue';
-import { router } from '@inertiajs/vue3';
-import Swal from 'sweetalert2';
 import { X } from 'lucide-vue-next';
+import { router } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
+import Swal from 'sweetalert2';
 
 const props = defineProps({
-    timeDeposit: {
-        type: Object,
-        default: null
-    },
     isOpen: {
         type: Boolean,
         default: false
+    },
+    governmentSecurity: {
+        type: Object,
+        default: null
     }
 });
 
 const emit = defineEmits(['close']);
 
 const form = ref({
-    amount: '',
+    maturity_date: '',
     explanation: ''
 });
 
 const errors = ref({});
 const isSubmitting = ref(false);
 
-// Format amount with commas as user types
-const displayAmount = computed(() => {
-    if (!form.value.amount) return '';
-    const numValue = form.value.amount.toString().replace(/,/g, '');
-    return numValue ? parseFloat(numValue).toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : '';
-});
-
-const handleAmountInput = (event) => {
-    let value = event.target.value;
-    
-    // Remove all non-numeric characters except decimal point
-    const cleanedValue = value.replace(/[^\d.]/g, '');
-    
-    // Prevent multiple decimal points
-    const parts = cleanedValue.split('.');
-    let finalValue = parts[0];
-    if (parts.length > 1) {
-        finalValue += '.' + parts[1].substring(0, 2);
-    }
-    
-    form.value.amount = finalValue;
-};
-
-const handleAmountKeyPress = (event) => {
-    // Allow only numbers (0-9) and decimal point (.)
-    const allowedKeys = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', 'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'];
-    
-    if (!allowedKeys.includes(event.key) && !event.ctrlKey && !event.metaKey) {
-        event.preventDefault();
-    }
-};
-
-// Reset form when modal opens
-watch(() => props.isOpen, (newVal) => {
-    if (newVal) {
+// Watch for government security changes and populate form
+watch(() => props.governmentSecurity, (newSecurity) => {
+    if (newSecurity && props.isOpen) {
         form.value = {
-            amount: '',
+            maturity_date: formatDateForInput(newSecurity.maturity_date),
             explanation: ''
         };
         errors.value = {};
     }
-});
+}, { deep: true });
 
-const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'PHP',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    }).format(value || 0);
+const formatDateForInput = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 };
 
 const closeModal = () => {
     form.value = {
-        amount: '',
+        maturity_date: '',
         explanation: ''
     };
     errors.value = {};
@@ -90,31 +58,48 @@ const handleSubmit = () => {
     errors.value = {};
 
     // Validation
-    if (!form.value.amount || parseFloat(form.value.amount) <= 0) {
-        errors.value.amount = 'Please enter a valid amount greater than 0';
+    if (!form.value.maturity_date.trim()) {
+        errors.value.maturity_date = 'Maturity date is required';
     }
 
     if (!form.value.explanation.trim()) {
         errors.value.explanation = 'Explanation is required';
     }
 
-    if (Object.keys(errors.value).length > 0) {
-        return;
+    // Check if new date is in the future
+    if (form.value.maturity_date) {
+        const selectedDate = new Date(form.value.maturity_date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (selectedDate <= today) {
+            errors.value.maturity_date = 'New maturity date must be in the future';
+        }
     }
+
+    // Check if new date is after current maturity date
+    if (form.value.maturity_date && props.governmentSecurity?.maturity_date) {
+        const selectedDate = new Date(form.value.maturity_date);
+        const currentDate = new Date(props.governmentSecurity.maturity_date);
+        if (selectedDate <= currentDate) {
+            errors.value.maturity_date = 'New maturity date must be after current maturity date';
+        }
+    }
+
+    if (Object.keys(errors.value).length > 0) return;
 
     isSubmitting.value = true;
 
     router.post(
-        `/treasury/time-deposit/${props.timeDeposit.id}/add-balance`,
+        `/treasury/government-securities/${props.governmentSecurity.id}/renew`,
         {
-            amount: parseFloat(form.value.amount),
+            new_maturity_date: form.value.maturity_date,
             explanation: form.value.explanation
         },
         {
             onSuccess: () => {
                 Swal.fire({
-                    title: 'Success!',
-                    text: `Added ₱${parseFloat(form.value.amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} to beginning balance.`,
+                    title: 'Renewed!',
+                    text: 'Government Security has been renewed successfully.',
                     icon: 'success',
                     confirmButtonColor: '#F59E0B',
                     timer: 2000,
@@ -135,7 +120,7 @@ const handleSubmit = () => {
                 } else {
                     Swal.fire({
                         title: 'Error!',
-                        text: 'Failed to add balance. Please try again.',
+                        text: 'Failed to renew government security. Please try again.',
                         icon: 'error',
                         confirmButtonColor: '#F59E0B'
                     });
@@ -157,7 +142,7 @@ const handleSubmit = () => {
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                    <h2 class="text-xl font-bold text-gray-900">Add to Beginning Balance</h2>
+                    <h2 class="text-xl font-bold text-gray-900">Renew Government Security</h2>
                     <button
                         @click="closeModal"
                         class="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200"
@@ -168,56 +153,42 @@ const handleSubmit = () => {
 
                 <!-- Modal Content -->
                 <form @submit.prevent="handleSubmit" class="px-6 py-4 space-y-4">
-                    <!-- Time Deposit Info -->
-                    <div v-if="timeDeposit" class="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
+                    <!-- Security Info -->
+                    <div v-if="governmentSecurity" class="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
                         <p class="text-sm font-semibold text-gray-800">
-                            <span class="text-gray-600">Time Deposit:</span> {{ timeDeposit.time_deposit_name }}
+                            <span class="text-gray-600">Security:</span> {{ governmentSecurity.government_security_name }}
                         </p>
                         <p class="text-sm font-semibold text-gray-800 mt-1">
-                            <span class="text-gray-600">Account:</span> {{ timeDeposit.account_number }}
+                            <span class="text-gray-600">Reference:</span> {{ governmentSecurity.reference_number }}
                         </p>
                         <p class="text-sm font-semibold text-gray-800 mt-1">
-                            <span class="text-gray-600">Current Beginning Balance:</span> 
-                            <span class="text-blue-600">{{ formatCurrency(timeDeposit.beginning_balance) }}</span>
+                            <span class="text-gray-600">Current Maturity:</span> 
+                            {{ new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(governmentSecurity.maturity_date)) }}
                         </p>
                     </div>
 
-                    <!-- Amount Field -->
+                    <!-- New Maturity Date Field -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-900 mb-2">
-                            Amount to Add <span class="text-red-500">*</span>
+                            New Maturity Date <span class="text-red-500">*</span>
                         </label>
-                        <div class="relative">
-                            <span class="absolute left-4 top-2.5 text-gray-500 font-semibold">₱</span>
-                            <input
-                                type="text"
-                                @input="handleAmountInput"
-                                @keypress="handleAmountKeyPress"
-                                :value="displayAmount"
-                                placeholder="0.00"
-                                class="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 text-right"
-                                :class="{ 'border-red-500 focus:ring-red-500': errors.amount }"
-                            />
-                        </div>
-                        <p v-if="errors.amount" class="text-red-500 text-sm mt-1">{{ errors.amount }}</p>
-                    </div>
-
-                    <!-- New Balance Preview -->
-                    <div v-if="form.amount && parseFloat(form.amount) > 0" class="bg-green-50 rounded-lg p-3 border border-green-200">
-                        <p class="text-sm text-gray-600">New Beginning Balance:</p>
-                        <p class="text-lg font-semibold text-green-600">
-                            {{ formatCurrency(parseFloat(timeDeposit.beginning_balance || 0) + parseFloat(form.amount || 0)) }}
-                        </p>
+                        <input
+                            v-model="form.maturity_date"
+                            type="date"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900"
+                            :class="{ 'border-red-500 focus:ring-red-500': errors.maturity_date }"
+                        />
+                        <p v-if="errors.maturity_date" class="text-red-500 text-sm mt-1">{{ errors.maturity_date }}</p>
                     </div>
 
                     <!-- Explanation Field -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-900 mb-2">
-                            Reason <span class="text-red-500">*</span>
+                            Explanation / Notes <span class="text-red-500">*</span>
                         </label>
                         <textarea
                             v-model="form.explanation"
-                            placeholder="Enter reason for adding to balance..."
+                            placeholder="Enter reason or notes for renewal..."
                             rows="4"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400 resize-none"
                             :class="{ 'border-red-500 focus:ring-red-500': errors.explanation }"
@@ -237,9 +208,9 @@ const handleSubmit = () => {
                         <button
                             type="submit"
                             :disabled="isSubmitting"
-                            class="flex-1 px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            class="flex-1 px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
                         >
-                            {{ isSubmitting ? 'Adding...' : 'Add Balance' }}
+                            {{ isSubmitting ? 'Renewing...' : 'Renew' }}
                         </button>
                     </div>
                 </form>

@@ -3,7 +3,7 @@
     <div class="bg-white rounded-lg shadow-2xl w-full max-w-5xl max-h-[85vh] overflow-y-auto">
       <!-- Header -->
       <div class="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
-        <h2 class="text-white text-lg font-semibold">Time Deposit History</h2>
+        <h2 class="text-white text-lg font-semibold">Government Security History</h2>
         <button
           @click="$emit('close')"
           class="text-white hover:bg-blue-800 rounded-full p-1 transition-colors"
@@ -57,18 +57,18 @@
       <div class="p-6">
         <!-- Renewal History Tab -->
         <div v-if="activeTab === 'renewals'">
-          <div v-if="timeDeposit.renewals && timeDeposit.renewals.length > 0" class="space-y-4">
+          <div v-if="governmentSecurity.renewals && governmentSecurity.renewals.length > 0" class="space-y-4">
             <!-- Timeline -->
             <div class="relative">
               <div class="space-y-6">
                 <div
-                  v-for="(renewal, index) in timeDeposit.renewals"
+                  v-for="(renewal, index) in governmentSecurity.renewals"
                   :key="`renewal-${renewal.id}`"
                   class="relative flex items-start"
                 >
                   <!-- Timeline dot and line -->
                   <div class="absolute left-0 top-2 w-4 h-4 bg-blue-600 rounded-full border-4 border-white"></div>
-                  <div v-if="index < timeDeposit.renewals.length - 1" class="absolute left-2 top-6 w-0.5 h-12 bg-blue-200"></div>
+                  <div v-if="index < governmentSecurity.renewals.length - 1" class="absolute left-2 top-6 w-0.5 h-12 bg-blue-200"></div>
 
                   <!-- Renewal details -->
                   <div class="ml-8 flex-1 bg-gray-50 rounded-lg p-4 border border-gray-200">
@@ -112,9 +112,9 @@
 
         <!-- Withdrawal History Tab -->
         <div v-if="activeTab === 'withdrawals'">
-          <div v-if="timeDeposit.withdrawals && timeDeposit.withdrawals.length > 0" class="space-y-4">
+          <div v-if="governmentSecurity.withdrawals && governmentSecurity.withdrawals.length > 0" class="space-y-4">
             <div
-              v-for="withdrawal in timeDeposit.withdrawals"
+              v-for="withdrawal in governmentSecurity.withdrawals"
               :key="`withdrawal-${withdrawal.id}`"
               class="bg-orange-50 rounded-lg p-5 border border-orange-200 hover:shadow-md transition-shadow"
             >
@@ -129,7 +129,7 @@
               <div class="grid grid-cols-3 gap-3 mb-5 pb-5 border-b border-orange-200">
                 <div class="bg-white rounded-lg p-4 border border-orange-100">
                   <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Previous Balance</p>
-                  <p class="text-xl font-bold text-gray-800">₱ {{ formatCurrency(timeDeposit.beginning_balance + withdrawal.amount) }}</p>
+                  <p class="text-xl font-bold text-gray-800">₱ {{ formatCurrency(governmentSecurity.beginning_balance + withdrawal.amount) }}</p>
                 </div>
                 <div class="bg-orange-100 rounded-lg p-4 border border-orange-300 flex items-center justify-center">
                   <div class="text-center">
@@ -139,7 +139,7 @@
                 </div>
                 <div class="bg-green-50 rounded-lg p-4 border border-green-300">
                   <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">New Balance</p>
-                  <p class="text-xl font-bold text-green-700">₱ {{ formatCurrency(timeDeposit.beginning_balance) }}</p>
+                  <p class="text-xl font-bold text-green-700">₱ {{ formatCurrency(governmentSecurity.beginning_balance) }}</p>
                 </div>
               </div>
 
@@ -161,9 +161,9 @@
 
         <!-- Balance History Tab -->
         <div v-if="activeTab === 'balances'">
-          <div v-if="timeDeposit.balances && timeDeposit.balances.length > 0" class="space-y-4">
+          <div v-if="governmentSecurity.balances && governmentSecurity.balances.length > 0" class="space-y-4">
             <div
-              v-for="balance in timeDeposit.balances"
+              v-for="balance in governmentSecurity.balances"
               :key="`balance-${balance.id}`"
               class="bg-green-50 rounded-lg p-5 border border-green-200 hover:shadow-md transition-shadow"
             >
@@ -178,7 +178,7 @@
               <div class="grid grid-cols-3 gap-3 mb-5 pb-5 border-b border-green-200">
                 <div class="bg-white rounded-lg p-4 border border-green-100">
                   <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Previous Balance</p>
-                  <p class="text-xl font-bold text-gray-800">₱ {{ formatCurrency(timeDeposit.beginning_balance - balance.amount) }}</p>
+                  <p class="text-xl font-bold text-gray-800">₱ {{ formatCurrency(governmentSecurity.beginning_balance - balance.amount) }}</p>
                 </div>
                 <div class="bg-green-100 rounded-lg p-4 border border-green-300 flex items-center justify-center">
                   <div class="text-center">
@@ -188,14 +188,14 @@
                 </div>
                 <div class="bg-blue-50 rounded-lg p-4 border border-blue-300">
                   <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">New Balance</p>
-                  <p class="text-xl font-bold text-blue-700">₱ {{ formatCurrency(timeDeposit.beginning_balance) }}</p>
+                  <p class="text-xl font-bold text-blue-700">₱ {{ formatCurrency(governmentSecurity.beginning_balance) }}</p>
                 </div>
               </div>
 
               <!-- Reason -->
               <div class="bg-white rounded-lg p-4 border border-green-100">
                 <p class="text-xs text-gray-600 font-bold uppercase tracking-widest mb-2">Reason</p>
-                <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap break-words">{{ balance.explanation?.trim() || '—' }}</p>
+                <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap break-words">{{ balance.reason?.trim() || '—' }}</p>
               </div>
             </div>
           </div>
@@ -228,7 +228,7 @@ import { ref } from 'vue';
 const activeTab = ref('renewals');
 
 defineProps({
-  timeDeposit: {
+  governmentSecurity: {
     type: Object,
     required: true,
   },

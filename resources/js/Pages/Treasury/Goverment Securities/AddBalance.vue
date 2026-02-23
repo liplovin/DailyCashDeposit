@@ -5,7 +5,7 @@ import Swal from 'sweetalert2';
 import { X } from 'lucide-vue-next';
 
 const props = defineProps({
-    timeDeposit: {
+    governmentSecurity: {
         type: Object,
         default: null
     },
@@ -19,7 +19,7 @@ const emit = defineEmits(['close']);
 
 const form = ref({
     amount: '',
-    explanation: ''
+    reason: ''
 });
 
 const errors = ref({});
@@ -62,7 +62,7 @@ watch(() => props.isOpen, (newVal) => {
     if (newVal) {
         form.value = {
             amount: '',
-            explanation: ''
+            reason: ''
         };
         errors.value = {};
     }
@@ -80,7 +80,7 @@ const formatCurrency = (value) => {
 const closeModal = () => {
     form.value = {
         amount: '',
-        explanation: ''
+        reason: ''
     };
     errors.value = {};
     emit('close');
@@ -94,8 +94,8 @@ const handleSubmit = () => {
         errors.value.amount = 'Please enter a valid amount greater than 0';
     }
 
-    if (!form.value.explanation.trim()) {
-        errors.value.explanation = 'Explanation is required';
+    if (!form.value.reason.trim()) {
+        errors.value.reason = 'Reason is required';
     }
 
     if (Object.keys(errors.value).length > 0) {
@@ -105,16 +105,16 @@ const handleSubmit = () => {
     isSubmitting.value = true;
 
     router.post(
-        `/treasury/time-deposit/${props.timeDeposit.id}/add-balance`,
+        `/treasury/government-securities/${props.governmentSecurity.id}/add-balance`,
         {
             amount: parseFloat(form.value.amount),
-            explanation: form.value.explanation
+            reason: form.value.reason
         },
         {
             onSuccess: () => {
                 Swal.fire({
                     title: 'Success!',
-                    text: `Added ₱${parseFloat(form.value.amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} to beginning balance.`,
+                    text: `Added ₱${parseFloat(form.value.amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} to balance.`,
                     icon: 'success',
                     confirmButtonColor: '#F59E0B',
                     timer: 2000,
@@ -168,17 +168,17 @@ const handleSubmit = () => {
 
                 <!-- Modal Content -->
                 <form @submit.prevent="handleSubmit" class="px-6 py-4 space-y-4">
-                    <!-- Time Deposit Info -->
-                    <div v-if="timeDeposit" class="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
+                    <!-- Government Security Info -->
+                    <div v-if="governmentSecurity" class="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
                         <p class="text-sm font-semibold text-gray-800">
-                            <span class="text-gray-600">Time Deposit:</span> {{ timeDeposit.time_deposit_name }}
+                            <span class="text-gray-600">Security:</span> {{ governmentSecurity.government_security_name }}
                         </p>
                         <p class="text-sm font-semibold text-gray-800 mt-1">
-                            <span class="text-gray-600">Account:</span> {{ timeDeposit.account_number }}
+                            <span class="text-gray-600">Reference:</span> {{ governmentSecurity.reference_number }}
                         </p>
                         <p class="text-sm font-semibold text-gray-800 mt-1">
-                            <span class="text-gray-600">Current Beginning Balance:</span> 
-                            <span class="text-blue-600">{{ formatCurrency(timeDeposit.beginning_balance) }}</span>
+                            <span class="text-gray-600">Current Balance:</span> 
+                            <span class="text-blue-600">{{ formatCurrency(governmentSecurity.beginning_balance) }}</span>
                         </p>
                     </div>
 
@@ -188,7 +188,7 @@ const handleSubmit = () => {
                             Amount to Add <span class="text-red-500">*</span>
                         </label>
                         <div class="relative">
-                            <span class="absolute left-4 top-2.5 text-gray-500 font-semibold">₱</span>
+                            <span class="absolute left-4 top-2.5 text-gray-500 font-semibold pointer-events-none">₱</span>
                             <input
                                 type="text"
                                 @input="handleAmountInput"
@@ -206,23 +206,23 @@ const handleSubmit = () => {
                     <div v-if="form.amount && parseFloat(form.amount) > 0" class="bg-green-50 rounded-lg p-3 border border-green-200">
                         <p class="text-sm text-gray-600">New Beginning Balance:</p>
                         <p class="text-lg font-semibold text-green-600">
-                            {{ formatCurrency(parseFloat(timeDeposit.beginning_balance || 0) + parseFloat(form.amount || 0)) }}
+                            {{ formatCurrency(parseFloat(governmentSecurity.beginning_balance || 0) + parseFloat(form.amount || 0)) }}
                         </p>
                     </div>
 
-                    <!-- Explanation Field -->
+                    <!-- Reason Field -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-900 mb-2">
                             Reason <span class="text-red-500">*</span>
                         </label>
                         <textarea
-                            v-model="form.explanation"
+                            v-model="form.reason"
                             placeholder="Enter reason for adding to balance..."
                             rows="4"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400 resize-none"
-                            :class="{ 'border-red-500 focus:ring-red-500': errors.explanation }"
+                            :class="{ 'border-red-500 focus:ring-red-500': errors.reason }"
                         />
-                        <p v-if="errors.explanation" class="text-red-500 text-sm mt-1">{{ errors.explanation }}</p>
+                        <p v-if="errors.reason" class="text-red-500 text-sm mt-1">{{ errors.reason }}</p>
                     </div>
 
                     <!-- Modal Actions -->
