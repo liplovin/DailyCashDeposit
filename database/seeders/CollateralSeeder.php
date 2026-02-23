@@ -99,5 +99,36 @@ class CollateralSeeder extends Seeder
             'beginning_balance' => 12570000.00,
             'maturity_date' => '2026-03-30',
         ]);
+
+        // TEST RECORDS FOR ACTIONS COLUMN VISIBILITY
+        // Created TODAY - Should show Edit/Delete buttons
+        Collateral::create([
+            'collateral' => '[TEST] Today Creation',
+            'account_number' => 'TEST-COLLATERAL-TODAY',
+            'beginning_balance' => 5000000.00,
+            'maturity_date' => '2026-05-23',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Created YESTERDAY - Should hide Edit/Delete buttons
+        Collateral::create([
+            'collateral' => '[TEST] Yesterday Creation',
+            'account_number' => 'TEST-COLLATERAL-YESTERDAY',
+            'beginning_balance' => 3500000.00,
+            'maturity_date' => '2026-04-15',
+            'created_at' => now()->subDay(),
+            'updated_at' => now()->subDay(),
+        ]);
+
+        // Created 2 DAYS AGO - Should hide Edit/Delete buttons
+        Collateral::create([
+            'collateral' => '[TEST] 2 Days Old',
+            'account_number' => 'TEST-COLLATERAL-2DAYS',
+            'beginning_balance' => 2000000.00,
+            'maturity_date' => '2026-03-20',
+            'created_at' => now()->subDays(2),
+            'updated_at' => now()->subDays(2),
+        ]);
     }
 }

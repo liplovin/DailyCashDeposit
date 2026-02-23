@@ -64,5 +64,36 @@ class TimeDepositSeeder extends Seeder
             'beginning_balance' => 10000000.00,
             'maturity_date' => '2026-01-15',
         ]);
+
+        // TEST RECORDS FOR ACTIONS COLUMN VISIBILITY
+        // Created TODAY - Should show Edit/Delete buttons
+        TimeDeposit::create([
+            'time_deposit_name' => '[TEST] Today Creation',
+            'account_number' => 'TEST-TODAY-001',
+            'beginning_balance' => 5000000.00,
+            'maturity_date' => '2026-05-23',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Created YESTERDAY - Should hide Edit/Delete buttons
+        TimeDeposit::create([
+            'time_deposit_name' => '[TEST] Yesterday Creation',
+            'account_number' => 'TEST-YESTERDAY-001',
+            'beginning_balance' => 3500000.00,
+            'maturity_date' => '2026-04-15',
+            'created_at' => now()->subDay(),
+            'updated_at' => now()->subDay(),
+        ]);
+
+        // Created 2 DAYS AGO - Should hide Edit/Delete buttons
+        TimeDeposit::create([
+            'time_deposit_name' => '[TEST] 2 Days Old',
+            'account_number' => 'TEST-2DAYS-001',
+            'beginning_balance' => 2000000.00,
+            'maturity_date' => '2026-03-20',
+            'created_at' => now()->subDays(2),
+            'updated_at' => now()->subDays(2),
+        ]);
     }
 }

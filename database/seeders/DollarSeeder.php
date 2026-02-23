@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Models\CorporateBond;
+use App\Models\Dollar;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
-class CorporateBondSeeder extends Seeder
+class DollarSeeder extends Seeder
 {
     use WithoutModelEvents;
 
@@ -15,26 +15,11 @@ class CorporateBondSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create Corporate Bonds
-        CorporateBond::create([
-            'corporate_bond_name' => 'CHINA BANK - SMC Corp. Bond',
-            'account_number' => 'SMC DUE 2027',
-            'beginning_balance' => 15000000.00,
-            'maturity_date' => '2027-07-08',
-        ]);
-
-        CorporateBond::create([
-            'corporate_bond_name' => 'AMALGAMATED',
-            'account_number' => 'PH0000060634',
-            'beginning_balance' => 15000000.00,
-            'maturity_date' => '2028-06-26',
-        ]);
-
         // TEST RECORDS FOR ACTIONS COLUMN VISIBILITY
         // Created TODAY - Should show Edit/Delete buttons
-        CorporateBond::create([
-            'corporate_bond_name' => '[TEST] Today Creation',
-            'account_number' => 'TEST-CB-TODAY',
+        Dollar::create([
+            'dollar_name' => '[TEST] Today Creation',
+            'account_number' => 'TEST-DOLLAR-TODAY',
             'beginning_balance' => 5000000.00,
             'maturity_date' => '2026-05-23',
             'created_at' => now(),
@@ -42,9 +27,9 @@ class CorporateBondSeeder extends Seeder
         ]);
 
         // Created YESTERDAY - Should hide Edit/Delete buttons
-        CorporateBond::create([
-            'corporate_bond_name' => '[TEST] Yesterday Creation',
-            'account_number' => 'TEST-CB-YESTERDAY',
+        Dollar::create([
+            'dollar_name' => '[TEST] Yesterday Creation',
+            'account_number' => 'TEST-DOLLAR-YESTERDAY',
             'beginning_balance' => 3500000.00,
             'maturity_date' => '2026-04-15',
             'created_at' => now()->subDay(),
@@ -52,9 +37,9 @@ class CorporateBondSeeder extends Seeder
         ]);
 
         // Created 2 DAYS AGO - Should hide Edit/Delete buttons
-        CorporateBond::create([
-            'corporate_bond_name' => '[TEST] 2 Days Old',
-            'account_number' => 'TEST-CB-2DAYS',
+        Dollar::create([
+            'dollar_name' => '[TEST] 2 Days Old',
+            'account_number' => 'TEST-DOLLAR-2DAYS',
             'beginning_balance' => 2000000.00,
             'maturity_date' => '2026-03-20',
             'created_at' => now()->subDays(2),

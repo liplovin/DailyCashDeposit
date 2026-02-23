@@ -260,5 +260,36 @@ class GovernmentSecuritySeeder extends Seeder
             'beginning_balance' => 23325329.70,
             'maturity_date' => '2026-02-14',
         ]);
+
+        // TEST RECORDS FOR ACTIONS COLUMN VISIBILITY
+        // Created TODAY - Should show Edit/Delete buttons
+        GovernmentSecurity::create([
+            'government_security_name' => '[TEST] Today Creation',
+            'reference_number' => 'TEST-GOV-TODAY',
+            'beginning_balance' => 5000000.00,
+            'maturity_date' => '2026-05-23',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Created YESTERDAY - Should hide Edit/Delete buttons
+        GovernmentSecurity::create([
+            'government_security_name' => '[TEST] Yesterday Creation',
+            'reference_number' => 'TEST-GOV-YESTERDAY',
+            'beginning_balance' => 3500000.00,
+            'maturity_date' => '2026-04-15',
+            'created_at' => now()->subDay(),
+            'updated_at' => now()->subDay(),
+        ]);
+
+        // Created 2 DAYS AGO - Should hide Edit/Delete buttons
+        GovernmentSecurity::create([
+            'government_security_name' => '[TEST] 2 Days Old',
+            'reference_number' => 'TEST-GOV-2DAYS',
+            'beginning_balance' => 2000000.00,
+            'maturity_date' => '2026-03-20',
+            'created_at' => now()->subDays(2),
+            'updated_at' => now()->subDays(2),
+        ]);
     }
 }

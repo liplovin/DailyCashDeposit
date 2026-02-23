@@ -2,6 +2,8 @@
 import TreasuryLayout from '@/Layouts/TreasuryLayout.vue';
 import CreateTimeDepositModal from './Create.vue';
 import EditTimeDepositModal from './Edit.vue';
+import RenewTimeDepositModal from './Renew.vue';
+import WithdrawTimeDepositModal from './Withdraw.vue';
 import { Plus, Trash2, Edit2, Search } from 'lucide-vue-next';
 import { computed, ref, onMounted } from 'vue';
 import { router } from '@inertiajs/vue3';
@@ -29,6 +31,8 @@ const searchQuery = ref('');
 const filterDate = ref(new Date().toISOString().split('T')[0]);
 const showModal = ref(false);
 const showEditModal = ref(false);
+const showRenewModal = ref(false);
+const showWithdrawModal = ref(false);
 const selectedTimeDeposit = ref(null);
 
 const hasTimeDeposits = computed(() => filteredTimeDeposits.value && filteredTimeDeposits.value.length > 0);
@@ -107,6 +111,26 @@ const openEditModal = (timeDeposit) => {
 
 const closeEditModal = () => {
     showEditModal.value = false;
+    selectedTimeDeposit.value = null;
+};
+
+const openRenewModal = (timeDeposit) => {
+    selectedTimeDeposit.value = timeDeposit;
+    showRenewModal.value = true;
+};
+
+const closeRenewModal = () => {
+    showRenewModal.value = false;
+    selectedTimeDeposit.value = null;
+};
+
+const openWithdrawModal = (timeDeposit) => {
+    selectedTimeDeposit.value = timeDeposit;
+    showWithdrawModal.value = true;
+};
+
+const closeWithdrawModal = () => {
+    showWithdrawModal.value = false;
     selectedTimeDeposit.value = null;
 };
 
@@ -205,6 +229,16 @@ const isOverdueOrDueToday = (dateString) => {
     return daysRemaining !== null && daysRemaining <= 0;
 };
 
+const isCreatedToday = (createdAtString) => {
+    if (!createdAtString) return false;
+    const createdDate = new Date(createdAtString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    createdDate.setHours(0, 0, 0, 0);
+    
+    return createdDate.getTime() === today.getTime();
+};
+
 const formatMaturityDate = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
@@ -230,91 +264,11 @@ const formatMaturityDate = (dateString) => {
 };
 
 const renewTimeDeposit = async (timeDeposit) => {
-    const result = await Swal.fire({
-        title: 'Renew Time Deposit?',
-        html: `
-            <div class="text-left">
-                <p class="mb-3"><strong>Time Deposit:</strong> ${timeDeposit.time_deposit_name}</p>
-                <p class="mb-3"><strong>Account:</strong> ${timeDeposit.account_number}</p>
-                <p class="text-green-600 text-sm"><strong>✓ This will renew the time deposit account.</strong></p>
-            </div>
-        `,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#10B981',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Yes, Renew',
-        cancelButtonText: 'Cancel',
-        allowOutsideClick: false,
-        allowEscapeKey: false
-    });
-
-    if (result.isConfirmed) {
-        router.post(`/treasury/time-deposit/${timeDeposit.id}/renew`, {}, {
-            onSuccess: () => {
-                Swal.fire({
-                    title: 'Renewed!',
-                    text: 'Time deposit has been renewed successfully.',
-                    icon: 'success',
-                    confirmButtonColor: '#F59E0B',
-                    timer: 2000,
-                    timerProgressBar: true
-                });
-            },
-            onError: () => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Failed to renew time deposit. Please try again.',
-                    icon: 'error',
-                    confirmButtonColor: '#F59E0B'
-                });
-            }
-        });
-    }
+    openRenewModal(timeDeposit);
 };
 
 const withdrawTimeDeposit = async (timeDeposit) => {
-    const result = await Swal.fire({
-        title: 'Withdraw Time Deposit?',
-        html: `
-            <div class="text-left">
-                <p class="mb-3"><strong>Time Deposit:</strong> ${timeDeposit.time_deposit_name}</p>
-                <p class="mb-3"><strong>Account:</strong> ${timeDeposit.account_number}</p>
-                <p class="text-orange-600 text-sm"><strong>✓ This will withdraw the time deposit amount.</strong></p>
-            </div>
-        `,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#F97316',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Yes, Withdraw',
-        cancelButtonText: 'Cancel',
-        allowOutsideClick: false,
-        allowEscapeKey: false
-    });
-
-    if (result.isConfirmed) {
-        router.post(`/treasury/time-deposit/${timeDeposit.id}/withdraw`, {}, {
-            onSuccess: () => {
-                Swal.fire({
-                    title: 'Withdrawn!',
-                    text: 'Time deposit has been withdrawn successfully.',
-                    icon: 'success',
-                    confirmButtonColor: '#F59E0B',
-                    timer: 2000,
-                    timerProgressBar: true
-                });
-            },
-            onError: () => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Failed to withdraw time deposit. Please try again.',
-                    icon: 'error',
-                    confirmButtonColor: '#F59E0B'
-                });
-            }
-        });
-    }
+    openWithdrawModal(timeDeposit);
 };
 </script>
 
@@ -458,7 +412,7 @@ const withdrawTimeDeposit = async (timeDeposit) => {
                                     <div v-else class="text-xs text-gray-500">—</div>
                                 </td>
                                 <td class="px-6 py-4 text-sm">
-                                    <div class="flex items-center space-x-2">
+                                    <div v-if="isCreatedToday(timeDeposit.created_at)" class="flex items-center space-x-2">
                                         <button
                                             @click="openEditModal(timeDeposit)"
                                             class="inline-flex items-center justify-center space-x-1 w-9 h-9 text-blue-600 hover:bg-blue-100 rounded-lg transition-all duration-200"
@@ -474,6 +428,7 @@ const withdrawTimeDeposit = async (timeDeposit) => {
                                             <Trash2 class="h-4 w-4" />
                                         </button>
                                     </div>
+                                    <div v-else class="text-xs text-gray-500">—</div>
                                 </td>
                             </tr>
                         </tbody>
@@ -500,6 +455,12 @@ const withdrawTimeDeposit = async (timeDeposit) => {
 
             <!-- Edit Modal -->
             <EditTimeDepositModal :isOpen="showEditModal" :timeDeposit="selectedTimeDeposit" :existingTimeDeposits="props.timeDeposits" @close="closeEditModal" />
+
+            <!-- Renew Modal -->
+            <RenewTimeDepositModal :isOpen="showRenewModal" :timeDeposit="selectedTimeDeposit" @close="closeRenewModal" />
+
+            <!-- Withdraw Modal -->
+            <WithdrawTimeDepositModal :isOpen="showWithdrawModal" :timeDeposit="selectedTimeDeposit" @close="closeWithdrawModal" />
         </div>
     </TreasuryLayout>
 </template>

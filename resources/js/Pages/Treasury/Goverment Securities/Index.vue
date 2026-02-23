@@ -212,6 +212,16 @@ const formatMaturityDate = (dateString) => {
     return formattedDate;
 };
 
+const isCreatedToday = (createdAtString) => {
+    if (!createdAtString) return false;
+    const createdDate = new Date(createdAtString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    createdDate.setHours(0, 0, 0, 0);
+    
+    return createdDate.getTime() === today.getTime();
+};
+
 const deleteGovernmentSecurity = async (security) => {
     const result = await Swal.fire({
         title: 'Delete Government Security?',
@@ -485,7 +495,7 @@ const withdrawGovernmentSecurity = async (security) => {
                                     <div v-else class="text-xs text-gray-500">—</div>
                                 </td>
                                 <td class="px-6 py-4 text-sm">
-                                    <div class="flex items-center space-x-2">
+                                    <div v-if="isCreatedToday(security.created_at)" class="flex items-center space-x-2">
                                         <button
                                             @click="openEditModal(security)"
                                             class="inline-flex items-center justify-center space-x-1 w-9 h-9 text-blue-600 hover:bg-blue-100 rounded-lg transition-all duration-200"
@@ -501,6 +511,7 @@ const withdrawGovernmentSecurity = async (security) => {
                                             <Trash2 class="h-4 w-4" />
                                         </button>
                                     </div>
+                                    <div v-else class="text-xs text-gray-500">—</div>
                                 </td>
                             </tr>
                         </tbody>
