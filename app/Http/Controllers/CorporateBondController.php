@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\CorporateBond;
+use App\Models\CorporateBondRenewal;
+use App\Models\CorporateBondWithdrawal;
+use App\Models\CorporateBondBalance;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -10,7 +13,7 @@ class CorporateBondController extends Controller
 {
     public function index()
     {
-        $corporateBonds = CorporateBond::all();
+        $corporateBonds = CorporateBond::with('renewals', 'withdrawals', 'balances')->get();
         return Inertia::render('Treasury/Corporate Bonds/Index', [
             'corporateBonds' => $corporateBonds,
         ]);
@@ -138,5 +141,85 @@ class CorporateBondController extends Controller
             'message' => 'Disbursement updated successfully',
             'corporateBond' => $corporateBond
         ]);
+    }
+
+    public function renew(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'new_maturity_date' => 'required|date',
+            'explanation' => 'required|string|max:1000',
+        ]);
+
+        $corporateBond = CorporateBond::findOrFail($id);
+        $previousMaturityDate = $corporateBond->maturity_date;
+
+        // Create renewal record
+        CorporateBondRenewal::create([
+            'corporate_bond_id' => $corporateBond->id,
+            'previous_maturity_date' => $previousMaturityDate,
+            'new_maturity_date' => $validated['new_maturity_date'],
+            'explanation' => $validated['explanation'],
+        ]);
+
+        // Update maturity date
+        $corporateBond->update(['maturity_date' => $validated['new_maturity_date']]);
+
+        return redirect()->back()->with('success', 'Corporate bond renewed successfully!');
+    }
+
+    public function withdraw(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'explanation' => 'required|string|max:1000',
+        ]);
+
+        $corporateBond = CorporateBond::findOrFail($id);
+        $currentBalance = $corporateBond->beginning_balance;
+
+        if ($validated['amount'] > $currentBalance) {
+            return redirect()->back()->withErrors(['amount' => 'Withdrawal amount exceeds current balance']);
+        }
+
+        // Create withdrawal record
+        CorporateBondWithdrawal::create([
+            'corporate_bond_id' => $corporateBond->id,
+            'amount' => $validated['amount'],
+            'explanation' => $validated['explanation'],
+        ]);
+
+        // Update balance
+        $newBalance = $currentBalance - $validated['amount'];
+        $corporateBond->update(['beginning_balance' => $newBalance]);
+
+        // If fully withdrawn, mark as withdrawn (set maturity_date to null)
+        if ($newBalance <= 0) {
+            $corporateBond->update(['maturity_date' => null]);
+        }
+
+        return redirect()->back()->with('success', 'Corporate bond withdrawn successfully!');
+    }
+
+    public function addBalance(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'explanation' => 'required|string|max:1000',
+        ]);
+
+        $corporateBond = CorporateBond::findOrFail($id);
+
+        // Create balance addition record
+        CorporateBondBalance::create([
+            'corporate_bond_id' => $corporateBond->id,
+            'amount' => $validated['amount'],
+            'explanation' => $validated['explanation'],
+        ]);
+
+        // Update balance
+        $newBalance = $corporateBond->beginning_balance + $validated['amount'];
+        $corporateBond->update(['beginning_balance' => $newBalance]);
+
+        return redirect()->back()->with('success', 'Balance added successfully!');
     }
 }

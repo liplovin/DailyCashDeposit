@@ -9,7 +9,7 @@ const props = defineProps({
         type: Boolean,
         default: false
     },
-    dollar: {
+    corporateBond: {
         type: Object,
         default: null
     }
@@ -25,11 +25,11 @@ const form = ref({
 const errors = ref({});
 const isSubmitting = ref(false);
 
-// Watch for dollar changes and populate form
-watch(() => props.dollar, (newDollar) => {
-    if (newDollar && props.isOpen) {
+// Watch for corporate bond changes and populate form
+watch(() => props.corporateBond, (newCorporateBond) => {
+    if (newCorporateBond && props.isOpen) {
         form.value = {
-            maturity_date: formatDateForInput(newDollar.maturity_date),
+            maturity_date: formatDateForInput(newCorporateBond.maturity_date),
             explanation: ''
         };
         errors.value = {};
@@ -68,29 +68,34 @@ const handleSubmit = () => {
 
     // Check if new date is in the future
     if (form.value.maturity_date) {
-        const selectedDate = new Date(form.value.maturity_date);
+        const newDate = new Date(form.value.maturity_date);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        if (selectedDate <= today) {
+        newDate.setHours(0, 0, 0, 0);
+        
+        if (newDate <= today) {
             errors.value.maturity_date = 'New maturity date must be in the future';
         }
     }
 
     // Check if new date is after current maturity date
-    if (form.value.maturity_date && props.dollar?.maturity_date) {
-        const selectedDate = new Date(form.value.maturity_date);
-        const currentDate = new Date(props.dollar.maturity_date);
-        if (selectedDate <= currentDate) {
-            errors.value.maturity_date = 'New maturity date must be after current maturity date';
+    if (form.value.maturity_date && props.corporateBond?.maturity_date && !errors.value.maturity_date) {
+        const newDate = new Date(form.value.maturity_date);
+        const currentDate = new Date(props.corporateBond.maturity_date);
+        
+        if (newDate <= currentDate) {
+            errors.value.maturity_date = 'New maturity date must be after the current maturity date';
         }
     }
 
-    if (Object.keys(errors.value).length > 0) return;
+    if (Object.keys(errors.value).length > 0) {
+        return;
+    }
 
     isSubmitting.value = true;
 
     router.post(
-        `/treasury/dollar/${props.dollar.id}/renew`,
+        `/treasury/corporate-bond/${props.corporateBond.id}/renew`,
         {
             new_maturity_date: form.value.maturity_date,
             explanation: form.value.explanation
@@ -99,9 +104,9 @@ const handleSubmit = () => {
             onSuccess: () => {
                 Swal.fire({
                     title: 'Renewed!',
-                    text: 'Dollar investment has been renewed successfully.',
+                    text: 'Corporate bond has been renewed successfully.',
                     icon: 'success',
-                    confirmButtonColor: '#FBBF24',
+                    confirmButtonColor: '#F59E0B',
                     timer: 2000,
                     timerProgressBar: true
                 }).then(() => {
@@ -110,12 +115,21 @@ const handleSubmit = () => {
                 closeModal();
             },
             onError: (errors) => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: errors.message || 'Failed to renew investment',
-                    icon: 'error',
-                    confirmButtonColor: '#FBBF24'
-                });
+                if (errors.message) {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: errors.message,
+                        icon: 'error',
+                        confirmButtonColor: '#F59E0B'
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Failed to renew corporate bond. Please try again.',
+                        icon: 'error',
+                        confirmButtonColor: '#F59E0B'
+                    });
+                }
             },
             onFinish: () => {
                 isSubmitting.value = false;
@@ -133,7 +147,7 @@ const handleSubmit = () => {
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                    <h2 class="text-xl font-bold text-gray-900">Renew Dollar</h2>
+                    <h2 class="text-xl font-bold text-gray-900">Renew Corporate Bond</h2>
                     <button
                         @click="closeModal"
                         class="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200"
@@ -144,17 +158,17 @@ const handleSubmit = () => {
 
                 <!-- Modal Content -->
                 <form @submit.prevent="handleSubmit" class="px-6 py-4 space-y-4">
-                    <!-- Dollar Info -->
-                    <div v-if="dollar" class="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
+                    <!-- Corporate Bond Info -->
+                    <div v-if="corporateBond" class="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
                         <p class="text-sm font-semibold text-gray-800">
-                            <span class="text-gray-600">Dollar:</span> {{ dollar.dollar_name }}
+                            <span class="text-gray-600">Bond:</span> {{ corporateBond.corporate_bond_name }}
                         </p>
                         <p class="text-sm font-semibold text-gray-800 mt-1">
-                            <span class="text-gray-600">Account:</span> {{ dollar.account_number }}
+                            <span class="text-gray-600">Account:</span> {{ corporateBond.account_number }}
                         </p>
                         <p class="text-sm font-semibold text-gray-800 mt-1">
                             <span class="text-gray-600">Current Maturity:</span> 
-                            {{ new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(dollar.maturity_date)) }}
+                            {{ new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(corporateBond.maturity_date)) }}
                         </p>
                     </div>
 

@@ -27,4 +27,28 @@ class CorporateBond extends Model
         'disbursement' => 'decimal:2',
         'ending_balance' => 'decimal:2',
     ];
+
+    /**
+     * Get all renewals for this corporate bond
+     */
+    public function renewals()
+    {
+        return $this->hasMany(CorporateBondRenewal::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get all withdrawals for this corporate bond
+     */
+    public function withdrawals()
+    {
+        return $this->hasMany(CorporateBondWithdrawal::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get all balance additions for this corporate bond
+     */
+    public function balances()
+    {
+        return $this->hasMany(CorporateBondBalance::class)->orderBy('created_at', 'desc');
+    }
 }

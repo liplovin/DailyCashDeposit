@@ -181,6 +181,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/corporate-bonds', [CorporateBondController::class, 'store'])->name('corporate-bonds.store');
         Route::put('/corporate-bonds/{id}', [CorporateBondController::class, 'update'])->name('corporate-bonds.update');
         Route::delete('/corporate-bonds/{id}', [CorporateBondController::class, 'destroy'])->name('corporate-bonds.destroy');
+        Route::post('/corporate-bond/{id}/renew', [CorporateBondController::class, 'renew'])->name('corporate-bond.renew');
+        Route::post('/corporate-bond/{id}/withdraw', [CorporateBondController::class, 'withdraw'])->name('corporate-bond.withdraw');
+        Route::post('/corporate-bond/{id}/add-balance', [CorporateBondController::class, 'addBalance'])->name('corporate-bond.add-balance');
 
         Route::get('/cash-infusion', [CashInfusionController::class, 'index'])->name('cash-infusion');
         Route::post('/cash-infusion', [CashInfusionController::class, 'store'])->name('cash-infusion.store');

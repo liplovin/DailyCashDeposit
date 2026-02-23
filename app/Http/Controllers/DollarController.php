@@ -179,19 +179,27 @@ class DollarController extends Controller
     /**
      * Renew a dollar
      */
-    public function renew($id)
+    public function renew(Request $request, $id)
     {
         try {
+            $validated = $request->validate([
+                'new_maturity_date' => 'required|date|after:today',
+                'explanation' => 'required|string|max:1000',
+            ]);
+
             $dollar = Dollar::findOrFail($id);
+            $previousMaturityDate = $dollar->maturity_date;
 
             // Create renewal record
             $dollar->renewals()->create([
-                'new_maturity_date' => now()->addMonths(1)->toDateString()
+                'previous_maturity_date' => $previousMaturityDate,
+                'new_maturity_date' => $validated['new_maturity_date'],
+                'explanation' => $validated['explanation'],
             ]);
 
             // Update maturity date
             $dollar->update([
-                'maturity_date' => now()->addMonths(1)->toDateString()
+                'maturity_date' => $validated['new_maturity_date']
             ]);
 
             return redirect()->back()->with('success', 'Dollar renewed successfully.');
