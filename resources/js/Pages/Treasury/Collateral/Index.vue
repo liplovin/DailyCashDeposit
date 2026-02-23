@@ -2,7 +2,11 @@
 import TreasuryLayout from '@/Layouts/TreasuryLayout.vue';
 import CreateCollateralModal from './Create.vue';
 import EditCollateralModal from './Edit.vue';
-import { Plus, Trash2, Edit2, Search } from 'lucide-vue-next';
+import RenewCollateralModal from './Renew.vue';
+import WithdrawCollateralModal from './Withdraw.vue';
+import AddBalanceModal from './AddBalance.vue';
+import ViewCollateralModal from './View.vue';
+import { Plus, Trash2, Edit2, Search, ChevronDown, Eye, EyeOff } from 'lucide-vue-next';
 import { computed, ref, onMounted } from 'vue';
 import { router } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
@@ -27,8 +31,13 @@ const props = defineProps({
 
 const searchQuery = ref('');
 const filterDate = ref(new Date().toISOString().split('T')[0]);
+const showWithdrawn = ref(false);
 const showModal = ref(false);
 const showEditModal = ref(false);
+const showRenewModal = ref(false);
+const showWithdrawModal = ref(false);
+const showAddBalanceModal = ref(false);
+const showViewModal = ref(false);
 const selectedCollateral = ref(null);
 
 const hasCollaterals = computed(() => filteredCollaterals.value && filteredCollaterals.value.length > 0);
@@ -43,12 +52,21 @@ const formatCurrency = (value) => {
 };
 
 const filteredCollaterals = computed(() => {
+    let collaterals = props.collaterals;
+    
+    // Filter by withdrawn status - show ONLY withdrawn when toggled
+    if (showWithdrawn.value) {
+        collaterals = collaterals.filter(collateral => collateral.maturity_date === null);
+    } else {
+        collaterals = collaterals.filter(collateral => collateral.maturity_date !== null);
+    }
+    
     if (!searchQuery.value.trim()) {
-        return props.collaterals;
+        return collaterals;
     }
     
     const query = searchQuery.value.toLowerCase();
-    return props.collaterals.filter(collateral => 
+    return collaterals.filter(collateral => 
         collateral.collateral.toLowerCase().includes(query) ||
         collateral.account_number.toLowerCase().includes(query)
     );
@@ -108,6 +126,47 @@ const openEditModal = (collateral) => {
 const closeEditModal = () => {
     showEditModal.value = false;
     selectedCollateral.value = null;
+};
+
+const openRenewModal = (collateral) => {
+    selectedCollateral.value = collateral;
+    showRenewModal.value = true;
+};
+
+const closeRenewModal = () => {
+    showRenewModal.value = false;
+    selectedCollateral.value = null;
+};
+
+const openWithdrawModal = (collateral) => {
+    selectedCollateral.value = collateral;
+    showWithdrawModal.value = true;
+};
+
+const closeWithdrawModal = () => {
+    showWithdrawModal.value = false;
+    selectedCollateral.value = null;
+};
+
+const closeAddBalanceModal = () => {
+    showAddBalanceModal.value = false;
+    selectedCollateral.value = null;
+};
+
+const addCollateral = (collateral) => {
+    selectedCollateral.value = collateral;
+    showAddBalanceModal.value = true;
+};
+
+const viewCollateral = (collateral) => {
+    selectedCollateral.value = collateral;
+    showViewModal.value = true;
+};
+
+const openDropdownId = ref(null);
+
+const toggleDropdown = (collateralId) => {
+    openDropdownId.value = openDropdownId.value === collateralId ? null : collateralId;
 };
 
 const totalBeginningBalance = computed(() => {
@@ -229,7 +288,7 @@ const isOverdueOrDueToday = (dateString) => {
 };
 
 const formatMaturityDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return '✓ Withdrawn';
     const date = new Date(dateString);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -263,91 +322,11 @@ const isCreatedToday = (createdAtString) => {
 };
 
 const renewCollateral = async (collateral) => {
-    const result = await Swal.fire({
-        title: 'Renew Collateral?',
-        html: `
-            <div class="text-left">
-                <p class="mb-3"><strong>Collateral:</strong> ${collateral.collateral}</p>
-                <p class="mb-3"><strong>Account:</strong> ${collateral.account_number}</p>
-                <p class="text-green-600 text-sm"><strong>✓ This will renew the collateral account.</strong></p>
-            </div>
-        `,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#10B981',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Yes, Renew',
-        cancelButtonText: 'Cancel',
-        allowOutsideClick: false,
-        allowEscapeKey: false
-    });
-
-    if (result.isConfirmed) {
-        router.post(`/treasury/collateral/${collateral.id}/renew`, {}, {
-            onSuccess: () => {
-                Swal.fire({
-                    title: 'Renewed!',
-                    text: 'Collateral has been renewed successfully.',
-                    icon: 'success',
-                    confirmButtonColor: '#F59E0B',
-                    timer: 2000,
-                    timerProgressBar: true
-                });
-            },
-            onError: () => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Failed to renew collateral. Please try again.',
-                    icon: 'error',
-                    confirmButtonColor: '#F59E0B'
-                });
-            }
-        });
-    }
+    openRenewModal(collateral);
 };
 
 const withdrawCollateral = async (collateral) => {
-    const result = await Swal.fire({
-        title: 'Withdraw Collateral?',
-        html: `
-            <div class="text-left">
-                <p class="mb-3"><strong>Collateral:</strong> ${collateral.collateral}</p>
-                <p class="mb-3"><strong>Account:</strong> ${collateral.account_number}</p>
-                <p class="text-orange-600 text-sm"><strong>✓ This will withdraw the collateral amount.</strong></p>
-            </div>
-        `,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#F97316',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Yes, Withdraw',
-        cancelButtonText: 'Cancel',
-        allowOutsideClick: false,
-        allowEscapeKey: false
-    });
-
-    if (result.isConfirmed) {
-        router.post(`/treasury/collateral/${collateral.id}/withdraw`, {}, {
-            onSuccess: () => {
-                Swal.fire({
-                    title: 'Withdrawn!',
-                    text: 'Collateral has been withdrawn successfully.',
-                    icon: 'success',
-                    confirmButtonColor: '#F59E0B',
-                    timer: 2000,
-                    timerProgressBar: true
-                });
-            },
-            onError: () => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Failed to withdraw collateral. Please try again.',
-                    icon: 'error',
-                    confirmButtonColor: '#F59E0B'
-                });
-            }
-        });
-    }
+    openWithdrawModal(collateral);
 };
 </script>
 
@@ -373,7 +352,7 @@ const withdrawCollateral = async (collateral) => {
 
             <!-- Search Bar and Date Filter -->
             <div class="bg-yellow-50 rounded-xl border-2 border-yellow-200 p-6 mb-8">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                     <!-- Search Bar -->
                     <div class="md:col-span-2">
                         <label class="block text-sm font-bold text-gray-800 mb-3">Search Collateral</label>
@@ -396,6 +375,23 @@ const withdrawCollateral = async (collateral) => {
                             type="date"
                             class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
                         />
+                    </div>
+
+                    <!-- Show Withdrawn Filter -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Filter</label>
+                        <button
+                            @click="showWithdrawn = !showWithdrawn"
+                            :class="[
+                                'w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-semibold transition-all duration-200 border-2',
+                                showWithdrawn
+                                    ? 'bg-green-100 border-green-400 text-green-700 shadow-md hover:bg-green-200'
+                                    : 'bg-white border-gray-300 text-gray-700 hover:border-yellow-400 hover:bg-yellow-50'
+                            ]"
+                        >
+                            <component :is="showWithdrawn ? Eye : EyeOff" class="h-5 w-5" />
+                            <span>{{ showWithdrawn ? 'Withdrawn Only' : 'Active' }}</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -471,29 +467,62 @@ const withdrawCollateral = async (collateral) => {
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ collateral.account_number }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-200">
+                                <td class="px-6 py-4 text-sm font-mono border-r border-gray-200" :class="collateral.maturity_date ? 'text-gray-700' : 'text-green-600 font-bold'">
                                     {{ formatMaturityDate(collateral.maturity_date) }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(collateral, filterDate)) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(collateral, filterDate) + parseFloat(getCollectionAmount(collateral)) - parseFloat(getDisbursementAmount(collateral))) }}</td>
                                 <td class="px-6 py-4 text-sm border-r border-gray-200">
-                                    <div v-if="isMaturityActionVisible(collateral.maturity_date)" class="flex items-center space-x-2">
+                                    <div class="relative">
                                         <button
-                                            @click="renewCollateral(collateral)"
-                                            class="px-3 py-1.5 bg-green-500 text-white text-xs font-semibold rounded-lg hover:bg-green-600 transition-all duration-200"
-                                            title="Renew"
+                                            @click.stop="toggleDropdown(collateral.id)"
+                                            :class="[
+                                                'inline-flex items-center space-x-1 px-3 py-2 text-xs font-semibold rounded-lg transition-all duration-200',
+                                                openDropdownId === collateral.id 
+                                                    ? 'bg-yellow-600 text-white' 
+                                                    : 'bg-yellow-500 text-white hover:bg-yellow-600'
+                                            ]"
                                         >
-                                            Renew
+                                            <span>Actions</span>
+                                            <ChevronDown :class="['h-4 w-4', openDropdownId === collateral.id ? 'rotate-180' : '']" style="transition: transform 0.2s" />
                                         </button>
-                                        <button
-                                            @click="withdrawCollateral(collateral)"
-                                            class="px-3 py-1.5 bg-orange-500 text-white text-xs font-semibold rounded-lg hover:bg-orange-600 transition-all duration-200"
-                                            title="Withdraw"
+                                        <div 
+                                            v-if="openDropdownId === collateral.id"
+                                            @click.stop
+                                            class="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48 overflow-hidden"
                                         >
-                                            Withdraw
-                                        </button>
+                                            <!-- Renew (Conditional - visible within 30 days of maturity) -->
+                                            <button
+                                                v-if="isMaturityActionVisible(collateral.maturity_date)"
+                                                @click="renewCollateral(collateral); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                ✓ Renew
+                                            </button>
+                                            <!-- Withdraw (Always Visible) -->
+                                            <button
+                                                @click="withdrawCollateral(collateral); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                ↓ Withdraw
+                                            </button>
+                                            <!-- Add (Hidden if withdrawn) -->
+                                            <button
+                                                v-if="collateral.maturity_date !== null"
+                                                @click="addCollateral(collateral); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                + Add
+                                            </button>
+                                            <!-- View (Always Visible) -->
+                                            <button
+                                                @click="viewCollateral(collateral); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                👁 View
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div v-else class="text-xs text-gray-500">—</div>
                                 </td>
                                 <td class="px-6 py-4 text-sm">
                                     <div v-if="isCreatedToday(collateral.created_at)" class="flex items-center space-x-2">
@@ -539,6 +568,22 @@ const withdrawCollateral = async (collateral) => {
 
             <!-- Edit Modal -->
             <EditCollateralModal :isOpen="showEditModal" :collateral="selectedCollateral" :existingCollaterals="props.collaterals" @close="closeEditModal" />
+
+            <!-- Renew Modal -->
+            <RenewCollateralModal :isOpen="showRenewModal" :collateral="selectedCollateral" @close="closeRenewModal" />
+
+            <!-- Withdraw Modal -->
+            <WithdrawCollateralModal :isOpen="showWithdrawModal" :collateral="selectedCollateral" @close="closeWithdrawModal" />
+
+            <!-- Add Balance Modal -->
+            <AddBalanceModal :isOpen="showAddBalanceModal" :collateral="selectedCollateral" @close="closeAddBalanceModal" />
+
+            <!-- View History Modal -->
+            <ViewCollateralModal 
+                v-if="showViewModal && selectedCollateral"
+                :collateral="selectedCollateral"
+                @close="showViewModal = false"
+            />
         </div>
     </TreasuryLayout>
 </template>

@@ -9,7 +9,7 @@ const props = defineProps({
         type: Boolean,
         default: false
     },
-    timeDeposit: {
+    collateral: {
         type: Object,
         default: null
     }
@@ -25,11 +25,11 @@ const form = ref({
 const errors = ref({});
 const isSubmitting = ref(false);
 
-// Watch for time deposit changes and populate form
-watch(() => props.timeDeposit, (newTimeDeposit) => {
-    if (newTimeDeposit && props.isOpen) {
+// Watch for collateral changes and populate form
+watch(() => props.collateral, (newCollateral) => {
+    if (newCollateral && props.isOpen) {
         form.value = {
-            maturity_date: formatDateForInput(newTimeDeposit.maturity_date),
+            maturity_date: formatDateForInput(newCollateral.maturity_date),
             explanation: ''
         };
         errors.value = {};
@@ -79,9 +79,9 @@ const handleSubmit = () => {
     }
 
     // Check if new date is after current maturity date
-    if (form.value.maturity_date && props.timeDeposit?.maturity_date && !errors.value.maturity_date) {
+    if (form.value.maturity_date && props.collateral?.maturity_date && !errors.value.maturity_date) {
         const newDate = new Date(form.value.maturity_date);
-        const currentDate = new Date(props.timeDeposit.maturity_date);
+        const currentDate = new Date(props.collateral.maturity_date);
         
         if (newDate <= currentDate) {
             errors.value.maturity_date = 'New maturity date must be after the current maturity date';
@@ -95,7 +95,7 @@ const handleSubmit = () => {
     isSubmitting.value = true;
 
     router.post(
-        `/treasury/time-deposit/${props.timeDeposit.id}/renew`,
+        `/treasury/collateral/${props.collateral.id}/renew`,
         {
             maturity_date: form.value.maturity_date,
             explanation: form.value.explanation
@@ -104,7 +104,7 @@ const handleSubmit = () => {
             onSuccess: () => {
                 Swal.fire({
                     title: 'Renewed!',
-                    text: 'Time deposit has been renewed successfully.',
+                    text: 'Collateral has been renewed successfully.',
                     icon: 'success',
                     confirmButtonColor: '#F59E0B',
                     timer: 2000,
@@ -125,7 +125,7 @@ const handleSubmit = () => {
                 } else {
                     Swal.fire({
                         title: 'Error!',
-                        text: 'Failed to renew time deposit. Please try again.',
+                        text: 'Failed to renew collateral. Please try again.',
                         icon: 'error',
                         confirmButtonColor: '#F59E0B'
                     });
@@ -147,7 +147,7 @@ const handleSubmit = () => {
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                    <h2 class="text-xl font-bold text-gray-900">Renew Time Deposit</h2>
+                    <h2 class="text-xl font-bold text-gray-900">Renew Collateral</h2>
                     <button
                         @click="closeModal"
                         class="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200"
@@ -158,17 +158,17 @@ const handleSubmit = () => {
 
                 <!-- Modal Content -->
                 <form @submit.prevent="handleSubmit" class="px-6 py-4 space-y-4">
-                    <!-- Time Deposit Info -->
-                    <div v-if="timeDeposit" class="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
+                    <!-- Collateral Info -->
+                    <div v-if="collateral" class="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
                         <p class="text-sm font-semibold text-gray-800">
-                            <span class="text-gray-600">Time Deposit:</span> {{ timeDeposit.time_deposit_name }}
+                            <span class="text-gray-600">Collateral:</span> {{ collateral.collateral }}
                         </p>
                         <p class="text-sm font-semibold text-gray-800 mt-1">
-                            <span class="text-gray-600">Account:</span> {{ timeDeposit.account_number }}
+                            <span class="text-gray-600">Account:</span> {{ collateral.account_number }}
                         </p>
                         <p class="text-sm font-semibold text-gray-800 mt-1">
                             <span class="text-gray-600">Current Maturity:</span> 
-                            {{ new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(timeDeposit.maturity_date)) }}
+                            {{ new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(collateral.maturity_date)) }}
                         </p>
                     </div>
 

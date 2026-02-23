@@ -17,4 +17,28 @@ class Collateral extends Model
         'ending_balance',
         'maturity_date',
     ];
+
+    /**
+     * Get all renewals for this collateral
+     */
+    public function renewals()
+    {
+        return $this->hasMany(CollateralRenewal::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get all withdrawals for this collateral
+     */
+    public function withdrawals()
+    {
+        return $this->hasMany(CollateralWithdrawal::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get all balance additions for this collateral
+     */
+    public function balances()
+    {
+        return $this->hasMany(CollateralBalance::class)->orderBy('created_at', 'desc');
+    }
 }

@@ -128,12 +128,18 @@ Route::middleware('auth')->group(function () {
         Route::post('/collateral', [CollateralController::class, 'store'])->name('collateral.store');
         Route::put('/collateral/{id}', [CollateralController::class, 'update'])->name('collateral.update');
         Route::delete('/collateral/{id}', [CollateralController::class, 'destroy'])->name('collateral.destroy');
+        Route::post('/collateral/{id}/renew', [CollateralController::class, 'renew'])->name('collateral.renew');
+        Route::post('/collateral/{id}/withdraw', [CollateralController::class, 'withdraw'])->name('collateral.withdraw');
+        Route::post('/collateral/{id}/add-balance', [CollateralController::class, 'addBalance'])->name('collateral.add-balance');
 
         // Time Deposit Routes
         Route::get('/time-deposit', [TimeDepositController::class, 'index'])->name('timedeposit');
         Route::post('/time-deposit', [TimeDepositController::class, 'store'])->name('timedeposit.store');
         Route::put('/time-deposit/{id}', [TimeDepositController::class, 'update'])->name('timedeposit.update');
         Route::delete('/time-deposit/{id}', [TimeDepositController::class, 'destroy'])->name('timedeposit.destroy');
+        Route::post('/time-deposit/{id}/renew', [TimeDepositController::class, 'renew'])->name('timedeposit.renew');
+        Route::post('/time-deposit/{id}/withdraw', [TimeDepositController::class, 'withdraw'])->name('timedeposit.withdraw');
+        Route::post('/time-deposit/{id}/add-balance', [TimeDepositController::class, 'addBalance'])->name('timedeposit.add-balance');
 
         // Government Securities Routes
         Route::get('/government-securities', [GovernmentSecurityController::class, 'index'])->name('government-securities');

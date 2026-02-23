@@ -32,7 +32,7 @@ const props = defineProps({
         type: Boolean,
         default: false
     },
-    timeDeposit: {
+    collateral: {
         type: Object,
         default: null
     }
@@ -57,7 +57,7 @@ const displayAmount = computed(() => {
 
 // Calculate remaining balance after withdrawal
 const remainingBalance = computed(() => {
-    const currentBalance = parseFloat(props.timeDeposit?.beginning_balance || 0);
+    const currentBalance = parseFloat(props.collateral?.beginning_balance || 0);
     const withdrawAmount = parseFloat(form.value.amount.replace(/,/g, '') || 0);
     return currentBalance - withdrawAmount;
 });
@@ -70,13 +70,13 @@ const formatCurrency = (value) => {
 };
 
 const withdrawAll = () => {
-    const balance = props.timeDeposit?.beginning_balance || 0;
+    const balance = props.collateral?.beginning_balance || 0;
     form.value.amount = balance.toString();
 };
 
-// Watch for time deposit changes and reset form
-watch(() => props.timeDeposit, (newTimeDeposit) => {
-    if (newTimeDeposit && props.isOpen) {
+// Watch for collateral changes and reset form
+watch(() => props.collateral, (newCollateral) => {
+    if (newCollateral && props.isOpen) {
         form.value = {
             amount: '',
             explanation: ''
@@ -108,7 +108,7 @@ const handleSubmit = () => {
 
     // Check if withdrawal amount exceeds available balance
     const withdrawAmount = parseFloat(form.value.amount.replace(/,/g, '') || 0);
-    const currentBalance = parseFloat(props.timeDeposit?.beginning_balance || 0);
+    const currentBalance = parseFloat(props.collateral?.beginning_balance || 0);
     
     if (withdrawAmount > currentBalance) {
         errors.value.amount = 'Withdrawal amount cannot exceed available balance';
@@ -121,7 +121,7 @@ const handleSubmit = () => {
     isSubmitting.value = true;
 
     router.post(
-        `/treasury/time-deposit/${props.timeDeposit.id}/withdraw`,
+        `/treasury/collateral/${props.collateral.id}/withdraw`,
         {
             amount: form.value.amount,
             explanation: form.value.explanation
@@ -130,7 +130,7 @@ const handleSubmit = () => {
             onSuccess: () => {
                 Swal.fire({
                     title: 'Withdrawn!',
-                    text: 'Time deposit withdrawal has been recorded successfully.',
+                    text: 'Collateral withdrawal has been recorded successfully.',
                     icon: 'success',
                     confirmButtonColor: '#F59E0B',
                     timer: 2000,
@@ -173,7 +173,7 @@ const handleSubmit = () => {
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                    <h2 class="text-xl font-bold text-gray-900">Withdraw Time Deposit</h2>
+                    <h2 class="text-xl font-bold text-gray-900">Withdraw Collateral</h2>
                     <button
                         @click="closeModal"
                         class="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200"
@@ -184,20 +184,20 @@ const handleSubmit = () => {
 
                 <!-- Modal Content -->
                 <form @submit.prevent="handleSubmit" class="px-6 py-4 space-y-4">
-                    <!-- Time Deposit Info -->
-                    <div v-if="timeDeposit" class="bg-orange-50 rounded-lg p-3 border border-orange-200">
+                    <!-- Collateral Info -->
+                    <div v-if="collateral" class="bg-orange-50 rounded-lg p-3 border border-orange-200">
                         <p class="text-sm font-semibold text-gray-800">
-                            <span class="text-gray-600">Time Deposit:</span> {{ timeDeposit.time_deposit_name }}
+                            <span class="text-gray-600">Collateral:</span> {{ collateral.collateral }}
                         </p>
                         <p class="text-sm font-semibold text-gray-800 mt-1">
-                            <span class="text-gray-600">Account:</span> {{ timeDeposit.account_number }}
+                            <span class="text-gray-600">Account:</span> {{ collateral.account_number }}
                         </p>
                         <p class="text-sm font-semibold text-gray-800 mt-1">
                             <span class="text-gray-600">Amount:</span> 
-                            ₱ {{ parseFloat(timeDeposit.beginning_balance || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                            ₱ {{ parseFloat(collateral.beginning_balance || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                         </p>
                         <p class="text-orange-600 text-sm font-semibold mt-2">
-                            ⚠️ This action will withdraw the specified amount from the time deposit.
+                            ⚠️ This action will withdraw the specified amount from the collateral.
                         </p>
                     </div>
 
@@ -231,7 +231,7 @@ const handleSubmit = () => {
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <p class="text-xs text-gray-500 font-semibold">Current Balance</p>
-                                    <p class="text-sm font-bold text-gray-900">₱ {{ formatCurrency(timeDeposit?.beginning_balance || 0) }}</p>
+                                    <p class="text-sm font-bold text-gray-900">₱ {{ formatCurrency(collateral?.beginning_balance || 0) }}</p>
                                 </div>
                                 <div>
                                     <p class="text-xs text-gray-500 font-semibold">Remaining After Withdrawal</p>

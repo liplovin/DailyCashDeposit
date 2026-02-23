@@ -4,7 +4,9 @@ import CreateTimeDepositModal from './Create.vue';
 import EditTimeDepositModal from './Edit.vue';
 import RenewTimeDepositModal from './Renew.vue';
 import WithdrawTimeDepositModal from './Withdraw.vue';
-import { Plus, Trash2, Edit2, Search } from 'lucide-vue-next';
+import AddBalanceModal from './AddBalance.vue';
+import ViewRenewalModal from './View.vue';
+import { Plus, Trash2, Edit2, Search, ChevronDown, Eye, EyeOff } from 'lucide-vue-next';
 import { computed, ref, onMounted } from 'vue';
 import { router } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
@@ -18,6 +20,11 @@ onMounted(() => {
     if (searchParam) {
         searchQuery.value = searchParam;
     }
+    
+    // Close dropdown when clicking elsewhere
+    document.addEventListener('click', () => {
+        openDropdownId.value = null;
+    });
 });
 
 const props = defineProps({
@@ -29,11 +36,15 @@ const props = defineProps({
 
 const searchQuery = ref('');
 const filterDate = ref(new Date().toISOString().split('T')[0]);
+const showWithdrawn = ref(false);
 const showModal = ref(false);
 const showEditModal = ref(false);
 const showRenewModal = ref(false);
 const showWithdrawModal = ref(false);
+const showAddBalanceModal = ref(false);
+const showViewModal = ref(false);
 const selectedTimeDeposit = ref(null);
+const openDropdownId = ref(null);
 
 const hasTimeDeposits = computed(() => filteredTimeDeposits.value && filteredTimeDeposits.value.length > 0);
 
@@ -83,12 +94,21 @@ const getRollingBeginningBalance = (deposit, selectedDate) => {
 };
 
 const filteredTimeDeposits = computed(() => {
+    let deposits = props.timeDeposits;
+    
+    // Filter by withdrawn status - show ONLY withdrawn when toggled
+    if (showWithdrawn.value) {
+        deposits = deposits.filter(deposit => deposit.maturity_date === null);
+    } else {
+        deposits = deposits.filter(deposit => deposit.maturity_date !== null);
+    }
+    
     if (!searchQuery.value.trim()) {
-        return props.timeDeposits;
+        return deposits;
     }
     
     const query = searchQuery.value.toLowerCase();
-    return props.timeDeposits.filter(deposit => 
+    return deposits.filter(deposit => 
         deposit.time_deposit_name.toLowerCase().includes(query) ||
         deposit.account_number.toLowerCase().includes(query)
     );
@@ -131,6 +151,11 @@ const openWithdrawModal = (timeDeposit) => {
 
 const closeWithdrawModal = () => {
     showWithdrawModal.value = false;
+    selectedTimeDeposit.value = null;
+};
+
+const closeAddBalanceModal = () => {
+    showAddBalanceModal.value = false;
     selectedTimeDeposit.value = null;
 };
 
@@ -206,6 +231,20 @@ const deleteTimeDeposit = async (timeDeposit) => {
     }
 };
 
+const addTimeDeposit = (timeDeposit) => {
+    selectedTimeDeposit.value = timeDeposit;
+    showAddBalanceModal.value = true;
+};
+
+const viewTimeDeposit = (timeDeposit) => {
+    selectedTimeDeposit.value = timeDeposit;
+    showViewModal.value = true;
+};
+
+const toggleDropdown = (depositId) => {
+    openDropdownId.value = openDropdownId.value === depositId ? null : depositId;
+};
+
 const getDaysRemaining = (dateString) => {
     if (!dateString) return null;
     const date = new Date(dateString);
@@ -240,7 +279,7 @@ const isCreatedToday = (createdAtString) => {
 };
 
 const formatMaturityDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return '✓ Withdrawn';
     const date = new Date(dateString);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -294,7 +333,7 @@ const withdrawTimeDeposit = async (timeDeposit) => {
 
             <!-- Search Bar and Date Filter -->
             <div class="bg-yellow-50 rounded-xl border-2 border-yellow-200 p-6 mb-8">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                     <!-- Search Bar -->
                     <div class="md:col-span-2">
                         <label class="block text-sm font-bold text-gray-800 mb-3">Search Time Deposit</label>
@@ -317,6 +356,23 @@ const withdrawTimeDeposit = async (timeDeposit) => {
                             type="date"
                             class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
                         />
+                    </div>
+
+                    <!-- Show Withdrawn Filter -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Filter</label>
+                        <button
+                            @click="showWithdrawn = !showWithdrawn"
+                            :class="[
+                                'w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-semibold transition-all duration-200 border-2',
+                                showWithdrawn
+                                    ? 'bg-green-100 border-green-400 text-green-700 shadow-md hover:bg-green-200'
+                                    : 'bg-white border-gray-300 text-gray-700 hover:border-yellow-400 hover:bg-yellow-50'
+                            ]"
+                        >
+                            <component :is="showWithdrawn ? Eye : EyeOff" class="h-5 w-5" />
+                            <span>{{ showWithdrawn ? 'Withdrawn Only' : 'Active Deposits' }}</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -377,7 +433,7 @@ const withdrawTimeDeposit = async (timeDeposit) => {
                                 :key="timeDeposit.id"
                                 :class="[
                                     'border-b border-gray-200 hover:bg-yellow-50 transition-colors duration-150',
-                                    isOverdueOrDueToday(timeDeposit.maturity_date) ? 'blink-red' : (index % 2 === 0 ? 'bg-white' : 'bg-gray-50')
+                                    !timeDeposit.maturity_date ? 'bg-green-50' : (isOverdueOrDueToday(timeDeposit.maturity_date) ? 'blink-red' : (index % 2 === 0 ? 'bg-white' : 'bg-gray-50'))
                                 ]"
                             >
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">
@@ -387,29 +443,62 @@ const withdrawTimeDeposit = async (timeDeposit) => {
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ timeDeposit.account_number }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-200">
+                                <td class="px-6 py-4 text-sm font-mono border-r border-gray-200" :class="timeDeposit.maturity_date ? 'text-gray-700' : 'text-green-600 font-bold'">
                                     {{ formatMaturityDate(timeDeposit.maturity_date) }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(timeDeposit, filterDate)) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(timeDeposit, filterDate) + parseFloat(getCollectionAmount(timeDeposit)) - parseFloat(getDisbursementAmount(timeDeposit))) }}</td>
                                 <td class="px-6 py-4 text-sm border-r border-gray-200">
-                                    <div v-if="isMaturityActionVisible(timeDeposit.maturity_date)" class="flex items-center space-x-2">
+                                    <div class="relative">
                                         <button
-                                            @click="renewTimeDeposit(timeDeposit)"
-                                            class="px-3 py-1.5 bg-green-500 text-white text-xs font-semibold rounded-lg hover:bg-green-600 transition-all duration-200"
-                                            title="Renew"
+                                            @click.stop="toggleDropdown(timeDeposit.id)"
+                                            :class="[
+                                                'inline-flex items-center space-x-1 px-3 py-2 text-xs font-semibold rounded-lg transition-all duration-200',
+                                                openDropdownId === timeDeposit.id 
+                                                    ? 'bg-yellow-600 text-white' 
+                                                    : 'bg-yellow-500 text-white hover:bg-yellow-600'
+                                            ]"
                                         >
-                                            Renew
+                                            <span>Actions</span>
+                                            <ChevronDown :class="['h-4 w-4', openDropdownId === timeDeposit.id ? 'rotate-180' : '']" style="transition: transform 0.2s" />
                                         </button>
-                                        <button
-                                            @click="withdrawTimeDeposit(timeDeposit)"
-                                            class="px-3 py-1.5 bg-orange-500 text-white text-xs font-semibold rounded-lg hover:bg-orange-600 transition-all duration-200"
-                                            title="Withdraw"
+                                        <div 
+                                            v-if="openDropdownId === timeDeposit.id"
+                                            @click.stop
+                                            class="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48 overflow-hidden"
                                         >
-                                            Withdraw
-                                        </button>
+                                            <!-- Renew (Conditional) -->
+                                            <button
+                                                v-if="isMaturityActionVisible(timeDeposit.maturity_date)"
+                                                @click="renewTimeDeposit(timeDeposit); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                ✓ Renew
+                                            </button>
+                                            <!-- Withdraw (Always Visible) -->
+                                            <button
+                                                @click="withdrawTimeDeposit(timeDeposit); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                ↓ Withdraw
+                                            </button>
+                                            <!-- Add (Hidden if withdrawn) -->
+                                            <button
+                                                v-if="timeDeposit.maturity_date !== null"
+                                                @click="addTimeDeposit(timeDeposit); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                + Add
+                                            </button>
+                                            <!-- View (Always Visible) -->
+                                            <button
+                                                @click="viewTimeDeposit(timeDeposit); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                👁 View
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div v-else class="text-xs text-gray-500">—</div>
                                 </td>
                                 <td class="px-6 py-4 text-sm">
                                     <div v-if="isCreatedToday(timeDeposit.created_at)" class="flex items-center space-x-2">
@@ -461,6 +550,16 @@ const withdrawTimeDeposit = async (timeDeposit) => {
 
             <!-- Withdraw Modal -->
             <WithdrawTimeDepositModal :isOpen="showWithdrawModal" :timeDeposit="selectedTimeDeposit" @close="closeWithdrawModal" />
+
+            <!-- Add Balance Modal -->
+            <AddBalanceModal :isOpen="showAddBalanceModal" :timeDeposit="selectedTimeDeposit" @close="closeAddBalanceModal" />
+
+            <!-- View Renewal History Modal -->
+            <ViewRenewalModal 
+                v-if="showViewModal && selectedTimeDeposit"
+                :time-deposit="selectedTimeDeposit"
+                @close="showViewModal = false"
+            />
         </div>
     </TreasuryLayout>
 </template>

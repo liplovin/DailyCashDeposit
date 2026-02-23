@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Collateral;
+use App\Models\CollateralRenewal;
+use App\Models\CollateralWithdrawal;
+use App\Models\CollateralBalance;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -10,7 +13,7 @@ class CollateralController extends Controller
 {
     public function index()
     {
-        $collaterals = Collateral::all();
+        $collaterals = Collateral::with('renewals', 'withdrawals', 'balances')->get();
         return Inertia::render('Treasury/Collateral/Index', [
             'collaterals' => $collaterals
         ]);
@@ -148,5 +151,89 @@ class CollateralController extends Controller
             return $year . '-' . $month . '-' . $day;
         }
         return $dateString;
+    }
+
+    public function renew(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'maturity_date' => 'required|date|after:today',
+            'explanation' => 'required|string',
+        ], [
+            'maturity_date.after' => 'New maturity date must be in the future',
+        ]);
+
+        $collateral = Collateral::findOrFail($id);
+        
+        $previousMaturityDate = $collateral->maturity_date;
+        
+        // Create renewal record
+        CollateralRenewal::create([
+            'collateral_id' => $collateral->id,
+            'previous_maturity_date' => $previousMaturityDate,
+            'new_maturity_date' => $validated['maturity_date'],
+            'explanation' => $validated['explanation'],
+        ]);
+        
+        // Update maturity date
+        $collateral->maturity_date = $validated['maturity_date'];
+        $collateral->save();
+
+        return redirect()->back()->with('success', 'Collateral renewed successfully!');
+    }
+
+    public function withdraw(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'explanation' => 'required|string',
+        ]);
+
+        $collateral = Collateral::findOrFail($id);
+        
+        $currentBalance = $collateral->beginning_balance;
+        $withdrawAmount = (float)$validated['amount'];
+        $isFullWithdrawal = abs($withdrawAmount - $currentBalance) < 0.01; // Account for floating point precision
+        
+        // Create withdrawal record
+        CollateralWithdrawal::create([
+            'collateral_id' => $collateral->id,
+            'amount' => $validated['amount'],
+            'explanation' => $validated['explanation'],
+        ]);
+        
+        // Update beginning balance
+        $collateral->beginning_balance -= $validated['amount'];
+        
+        // If withdrawing all, set maturity date to null
+        if ($isFullWithdrawal) {
+            $collateral->maturity_date = null;
+        }
+        
+        $collateral->save();
+
+        return redirect()->back()->with('success', 'Collateral withdrawal recorded successfully!');
+    }
+
+    public function addBalance(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'explanation' => 'required|string',
+        ]);
+
+        $collateral = Collateral::findOrFail($id);
+        
+        // Create balance addition record
+        CollateralBalance::create([
+            'collateral_id' => $collateral->id,
+            'amount' => $validated['amount'],
+            'explanation' => $validated['explanation'],
+        ]);
+        
+        // Update beginning balance
+        $collateral->beginning_balance += $validated['amount'];
+        $collateral->save();
+
+        return redirect()->back()->with('success', 'Balance added successfully!');
     }
 }
