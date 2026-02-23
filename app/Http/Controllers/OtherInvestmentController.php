@@ -13,7 +13,7 @@ class OtherInvestmentController extends Controller
      */
     public function index()
     {
-        $otherInvestments = OtherInvestment::all();
+        $otherInvestments = OtherInvestment::with('renewals', 'withdrawals', 'balances')->get();
         return Inertia::render('Treasury/Other Investment/Index', [
             'otherInvestments' => $otherInvestments,
         ]);
@@ -146,6 +146,99 @@ class OtherInvestmentController extends Controller
         $otherInvestment->delete();
 
         return redirect('/treasury/other-investment')->with('success', 'Other Investment deleted successfully.');
+    }
+
+    /**
+     * Renew an other investment
+     */
+    public function renew($id)
+    {
+        try {
+            $otherInvestment = OtherInvestment::findOrFail($id);
+
+            // Create renewal record
+            $otherInvestment->renewals()->create([
+                'new_maturity_date' => now()->addMonths(1)->toDateString()
+            ]);
+
+            // Update maturity date
+            $otherInvestment->update([
+                'maturity_date' => now()->addMonths(1)->toDateString()
+            ]);
+
+            return redirect()->back()->with('success', 'Other Investment renewed successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['message' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Withdraw an other investment
+     */
+    public function withdraw(Request $request, $id)
+    {
+        try {
+            $validated = $request->validate([
+                'amount' => 'required|numeric|gt:0',
+                'explanation' => 'required|string|min:3'
+            ]);
+
+            $otherInvestment = OtherInvestment::findOrFail($id);
+
+            $currentBalance = $otherInvestment->beginning_balance;
+            $withdrawAmount = (float)$validated['amount'];
+            $isFullWithdrawal = abs($withdrawAmount - $currentBalance) < 0.01; // Account for floating point precision
+
+            // Create withdrawal record
+            $otherInvestment->withdrawals()->create([
+                'amount' => $validated['amount'],
+                'explanation' => $validated['explanation']
+            ]);
+
+            // Update beginning balance
+            $otherInvestment->beginning_balance -= $validated['amount'];
+
+            // Only set maturity date to null if withdrawing all
+            if ($isFullWithdrawal) {
+                $otherInvestment->maturity_date = null;
+            }
+
+            $otherInvestment->save();
+
+            return redirect()->back()->with('success', 'Investment withdrawn successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['message' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Add balance to an other investment
+     */
+    public function addBalance(Request $request, $id)
+    {
+        try {
+            $validated = $request->validate([
+                'amount' => 'required|numeric|gt:0',
+                'reason' => 'required|string|min:3'
+            ]);
+
+            $otherInvestment = OtherInvestment::findOrFail($id);
+
+            // Create balance record
+            $otherInvestment->balances()->create([
+                'amount' => $validated['amount'],
+                'explanation' => $validated['reason']
+            ]);
+
+            // Update beginning balance
+            $otherInvestment->update([
+                'beginning_balance' => $otherInvestment->beginning_balance + $validated['amount']
+            ]);
+
+            return redirect()->back()->with('success', 'Balance added successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['message' => $e->getMessage()]);
+        }
     }
 
     /**

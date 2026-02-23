@@ -2,23 +2,14 @@
 import TreasuryLayout from '@/Layouts/TreasuryLayout.vue';
 import CreateOtherInvestmentModal from './Create.vue';
 import EditOtherInvestmentModal from './Edit.vue';
-import { Plus, Trash2, Edit2, Search } from 'lucide-vue-next';
-import { computed, ref, onMounted, watch } from 'vue';
+import RenewOtherInvestmentModal from './Renew.vue';
+import WithdrawOtherInvestmentModal from './Withdraw.vue';
+import AddBalanceModal from './AddBalance.vue';
+import ViewOtherInvestmentModal from './View.vue';
+import { Plus, Trash2, Edit2, Search, ChevronDown, Eye, EyeOff } from 'lucide-vue-next';
+import { computed, ref, onMounted } from 'vue';
 import { router } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
-
-const props = defineProps({
-    otherInvestments: {
-        type: Array,
-        default: () => []
-    }
-});
-
-const searchQuery = ref('');
-const filterDate = ref(new Date().toISOString().split('T')[0]);
-const showModal = ref(false);
-const showEditModal = ref(false);
-const selectedOtherInvestment = ref(null);
 
 onMounted(() => {
     document.title = 'Other Investments Management - Daily Deposit';
@@ -31,15 +22,25 @@ onMounted(() => {
     }
 });
 
-const updateUrlWithDate = (date) => {
-    const params = new URLSearchParams(window.location.search);
-    params.set('date', date);
-    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
-};
-
-watch(filterDate, (newDate) => {
-    updateUrlWithDate(newDate);
+const props = defineProps({
+    otherInvestments: {
+        type: Array,
+        default: () => []
+    }
 });
+
+const searchQuery = ref('');
+const filterDate = ref(new Date().toISOString().split('T')[0]);
+const showWithdrawn = ref(false);
+const showModal = ref(false);
+const showEditModal = ref(false);
+const showRenewModal = ref(false);
+const showWithdrawModal = ref(false);
+const showAddBalanceModal = ref(false);
+const showViewModal = ref(false);
+const selectedOtherInvestment = ref(null);
+
+const hasOtherInvestments = computed(() => filteredOtherInvestments.value && filteredOtherInvestments.value.length > 0);
 
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', {
@@ -50,94 +51,71 @@ const formatCurrency = (value) => {
     }).format(value || 0);
 };
 
-const filteredOtherInvestments = computed(() => {
-    let filtered = props.otherInvestments;
-    
-    if (searchQuery.value.trim()) {
-        const query = searchQuery.value.toLowerCase();
-        filtered = filtered.filter(item => 
-            item.other_investment_name.toLowerCase().includes(query) ||
-            item.account_number.toLowerCase().includes(query)
-        );
-    }
-    
-    return filtered;
-});
-
-const getCollectionAmount = (item) => {
+const getCollectionAmount = (investment) => {
     if (!filterDate.value) {
-        return item.collection || 0;
+        return investment.collection || 0;
     }
-    const collectionDate = item.collection_date ? new Date(item.collection_date).toISOString().split('T')[0] : null;
-    return collectionDate === filterDate.value ? (item.collection || 0) : 0;
+    const collectionDate = investment.collection_date ? new Date(investment.collection_date).toISOString().split('T')[0] : null;
+    return collectionDate === filterDate.value ? (investment.collection || 0) : 0;
 };
 
-const getDisbursementAmount = (item) => {
+const getDisbursementAmount = (investment) => {
     if (!filterDate.value) {
-        return item.disbursement || 0;
+        return investment.disbursement || 0;
     }
-    const disbursementDate = item.disbursement_date ? new Date(item.disbursement_date).toISOString().split('T')[0] : null;
-    return disbursementDate === filterDate.value ? (item.disbursement || 0) : 0;
+    const disbursementDate = investment.disbursement_date ? new Date(investment.disbursement_date).toISOString().split('T')[0] : null;
+    return disbursementDate === filterDate.value ? (investment.disbursement || 0) : 0;
 };
 
-const getRollingBeginningBalance = (item, selectedDate) => {
+const getRollingBeginningBalance = (investment, selectedDate) => {
     if (!selectedDate) {
-        return parseFloat(item.beginning_balance || 0);
+        return parseFloat(investment.beginning_balance || 0);
     }
     
-    let balance = parseFloat(item.beginning_balance || 0);
+    let balance = parseFloat(investment.beginning_balance || 0);
     
-    const collectionDate = item.collection_date ? new Date(item.collection_date).toISOString().split('T')[0] : null;
+    const collectionDate = investment.collection_date ? new Date(investment.collection_date).toISOString().split('T')[0] : null;
     if (collectionDate && collectionDate < selectedDate) {
-        balance += parseFloat(item.collection || 0);
+        balance += parseFloat(investment.collection || 0);
     }
     
-    const disbursementDate = item.disbursement_date ? new Date(item.disbursement_date).toISOString().split('T')[0] : null;
+    const disbursementDate = investment.disbursement_date ? new Date(investment.disbursement_date).toISOString().split('T')[0] : null;
     if (disbursementDate && disbursementDate < selectedDate) {
-        balance -= parseFloat(item.disbursement || 0);
+        balance -= parseFloat(investment.disbursement || 0);
     }
     
     return balance;
 };
 
-const hasOtherInvestments = computed(() => filteredOtherInvestments.value && filteredOtherInvestments.value.length > 0);
-
-const totalBeginningBalance = computed(() => {
-    return filteredOtherInvestments.value.reduce((sum, item) => {
-        return sum + getRollingBeginningBalance(item, filterDate.value);
-    }, 0);
+const filteredOtherInvestments = computed(() => {
+    let investments = props.otherInvestments;
+    
+    // Filter by withdrawn status - show ONLY withdrawn when toggled
+    if (showWithdrawn.value) {
+        investments = investments.filter(investment => investment.maturity_date === null);
+    } else {
+        investments = investments.filter(investment => investment.maturity_date !== null);
+    }
+    
+    if (!searchQuery.value.trim()) {
+        return investments;
+    }
+    
+    const query = searchQuery.value.toLowerCase();
+    return investments.filter(investment => 
+        investment.other_investment_name.toLowerCase().includes(query) ||
+        investment.account_number.toLowerCase().includes(query)
+    );
 });
-
-const totalCollection = computed(() => {
-    return filteredOtherInvestments.value.reduce((sum, item) => {
-        return sum + getCollectionAmount(item);
-    }, 0);
-});
-
-const totalDisbursement = computed(() => {
-    return filteredOtherInvestments.value.reduce((sum, item) => {
-        return sum + getDisbursementAmount(item);
-    }, 0);
-});
-
-const totalEndingBalance = computed(() => {
-    return filteredOtherInvestments.value.reduce((sum, item) => {
-        const beginning = getRollingBeginningBalance(item, filterDate.value);
-        const collection = parseFloat(getCollectionAmount(item) || 0);
-        const disbursement = parseFloat(getDisbursementAmount(item) || 0);
-        const ending = beginning + collection - disbursement;
-        return sum + ending;
-    }, 0);
-});
-
-const openModal = () => {
-    selectedOtherInvestment.value = null;
-    showModal.value = true;
-};
 
 const closeModal = () => {
     showModal.value = false;
     selectedOtherInvestment.value = null;
+};
+
+const openModal = () => {
+    selectedOtherInvestment.value = null;
+    showModal.value = true;
 };
 
 const openEditModal = (investment) => {
@@ -150,10 +128,100 @@ const closeEditModal = () => {
     selectedOtherInvestment.value = null;
 };
 
+const openRenewModal = (investment) => {
+    selectedOtherInvestment.value = investment;
+    showRenewModal.value = true;
+};
 
+const closeRenewModal = () => {
+    showRenewModal.value = false;
+    selectedOtherInvestment.value = null;
+};
+
+const openWithdrawModal = (investment) => {
+    selectedOtherInvestment.value = investment;
+    showWithdrawModal.value = true;
+};
+
+const closeWithdrawModal = () => {
+    showWithdrawModal.value = false;
+    selectedOtherInvestment.value = null;
+};
+
+const closeAddBalanceModal = () => {
+    showAddBalanceModal.value = false;
+    selectedOtherInvestment.value = null;
+};
+
+const addOtherInvestment = (investment) => {
+    selectedOtherInvestment.value = investment;
+    showAddBalanceModal.value = true;
+};
+
+const viewOtherInvestment = (investment) => {
+    selectedOtherInvestment.value = investment;
+    showViewModal.value = true;
+};
+
+const openDropdownId = ref(null);
+
+const toggleDropdown = (investmentId) => {
+    openDropdownId.value = openDropdownId.value === investmentId ? null : investmentId;
+};
+
+const totalBeginningBalance = computed(() => {
+    return filteredOtherInvestments.value.reduce((sum, investment) => {
+        return sum + getRollingBeginningBalance(investment, filterDate.value);
+    }, 0);
+});
+
+const totalCollection = computed(() => {
+    return filteredOtherInvestments.value.reduce((sum, investment) => {
+        return sum + parseFloat(getCollectionAmount(investment) || 0);
+    }, 0);
+});
+
+const totalDisbursement = computed(() => {
+    return filteredOtherInvestments.value.reduce((sum, investment) => {
+        return sum + parseFloat(getDisbursementAmount(investment) || 0);
+    }, 0);
+});
+
+const totalEndingBalance = computed(() => {
+    return filteredOtherInvestments.value.reduce((sum, investment) => {
+        const beginning = getRollingBeginningBalance(investment, filterDate.value);
+        const collection = parseFloat(getCollectionAmount(investment) || 0);
+        const disbursement = parseFloat(getDisbursementAmount(investment) || 0);
+        const ending = beginning + collection - disbursement;
+        return sum + ending;
+    }, 0);
+});
+
+const getDaysRemaining = (dateString) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    
+    const diffTime = date - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays;
+};
+
+const isMaturityActionVisible = (dateString) => {
+    const daysRemaining = getDaysRemaining(dateString);
+    return daysRemaining !== null && daysRemaining <= 30;
+};
+
+const isOverdueOrDueToday = (dateString) => {
+    const daysRemaining = getDaysRemaining(dateString);
+    return daysRemaining !== null && daysRemaining <= 0;
+};
 
 const formatMaturityDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return '✓ Withdrawn';
     const date = new Date(dateString);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -229,117 +297,6 @@ const deleteOtherInvestment = async (investment) => {
         });
     }
 };
-
-const getDaysRemaining = (dateString) => {
-    if (!dateString) return null;
-    const date = new Date(dateString);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    date.setHours(0, 0, 0, 0);
-    
-    const diffTime = date - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    return diffDays;
-};
-
-const isMaturityActionVisible = (dateString) => {
-    const daysRemaining = getDaysRemaining(dateString);
-    return daysRemaining !== null && daysRemaining <= 30;
-};
-
-const isOverdueOrDueToday = (dateString) => {
-    const daysRemaining = getDaysRemaining(dateString);
-    return daysRemaining !== null && daysRemaining <= 0;
-};
-
-const renewOtherInvestment = async (investment) => {
-    const result = await Swal.fire({
-        title: 'Renew Other Investment?',
-        html: `
-            <div class="text-left">
-                <p class="mb-3"><strong>Other Investment:</strong> ${investment.other_investment_name}</p>
-                <p class="mb-3"><strong>Account:</strong> ${investment.account_number}</p>
-                <p class="text-green-600 text-sm"><strong>✓ This will renew the other investment account.</strong></p>
-            </div>
-        `,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#10B981',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Yes, Renew',
-        cancelButtonText: 'Cancel',
-        allowOutsideClick: false,
-        allowEscapeKey: false
-    });
-
-    if (result.isConfirmed) {
-        router.post(`/treasury/other-investment/${investment.id}/renew`, {}, {
-            onSuccess: () => {
-                Swal.fire({
-                    title: 'Renewed!',
-                    text: 'Other Investment has been renewed successfully.',
-                    icon: 'success',
-                    confirmButtonColor: '#F59E0B',
-                    timer: 2000,
-                    timerProgressBar: true
-                });
-            },
-            onError: () => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Failed to renew other investment. Please try again.',
-                    icon: 'error',
-                    confirmButtonColor: '#F59E0B'
-                });
-            }
-        });
-    }
-};
-
-const withdrawOtherInvestment = async (investment) => {
-    const result = await Swal.fire({
-        title: 'Withdraw Other Investment?',
-        html: `
-            <div class="text-left">
-                <p class="mb-3"><strong>Other Investment:</strong> ${investment.other_investment_name}</p>
-                <p class="mb-3"><strong>Account:</strong> ${investment.account_number}</p>
-                <p class="text-orange-600 text-sm"><strong>✓ This will withdraw the other investment amount.</strong></p>
-            </div>
-        `,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#F97316',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Yes, Withdraw',
-        cancelButtonText: 'Cancel',
-        allowOutsideClick: false,
-        allowEscapeKey: false
-    });
-
-    if (result.isConfirmed) {
-        router.post(`/treasury/other-investment/${investment.id}/withdraw`, {}, {
-            onSuccess: () => {
-                Swal.fire({
-                    title: 'Withdrawn!',
-                    text: 'Other Investment has been withdrawn successfully.',
-                    icon: 'success',
-                    confirmButtonColor: '#F59E0B',
-                    timer: 2000,
-                    timerProgressBar: true
-                });
-            },
-            onError: () => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Failed to withdraw other investment. Please try again.',
-                    icon: 'error',
-                    confirmButtonColor: '#F59E0B'
-                });
-            }
-        });
-    }
-};
 </script>
 
 <template>
@@ -364,7 +321,7 @@ const withdrawOtherInvestment = async (investment) => {
 
             <!-- Search Bar and Date Filter -->
             <div class="bg-yellow-50 rounded-xl border-2 border-yellow-200 p-6 mb-8">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                     <!-- Search Bar -->
                     <div class="md:col-span-2">
                         <label class="block text-sm font-bold text-gray-800 mb-3">Search</label>
@@ -387,6 +344,24 @@ const withdrawOtherInvestment = async (investment) => {
                             type="date"
                             class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
                         />
+                    </div>
+
+                    <!-- Filter -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Filter</label>
+                        <button
+                            @click="showWithdrawn = !showWithdrawn"
+                            :class="[
+                                'w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-semibold transition-all duration-200 border-2',
+                                showWithdrawn
+                                    ? 'bg-green-100 border-green-400 text-green-700 shadow-md hover:bg-green-200'
+                                    : 'bg-white border-gray-300 text-gray-700 hover:border-yellow-400 hover:bg-yellow-50'
+                            ]"
+                        >
+                            <Eye v-if="!showWithdrawn" class="h-5 w-5" />
+                            <EyeOff v-else class="h-5 w-5" />
+                            <span>{{ showWithdrawn ? 'Withdrawn' : 'Active' }}</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -437,8 +412,8 @@ const withdrawOtherInvestment = async (investment) => {
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Ending Balance</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Action</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">Actions</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Actions</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white">More</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -457,29 +432,62 @@ const withdrawOtherInvestment = async (investment) => {
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ investment.account_number }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-200">
+                                <td class="px-6 py-4 text-sm font-mono border-r border-gray-200" :class="investment.maturity_date ? 'text-gray-700' : 'text-green-600 font-bold'">
                                     {{ formatMaturityDate(investment.maturity_date) }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(investment, filterDate)) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(investment, filterDate) + parseFloat(getCollectionAmount(investment)) - parseFloat(getDisbursementAmount(investment))) }}</td>
                                 <td class="px-6 py-4 text-sm border-r border-gray-200">
-                                    <div v-if="isMaturityActionVisible(investment.maturity_date)" class="flex items-center space-x-2">
+                                    <div class="relative">
                                         <button
-                                            @click="renewOtherInvestment(investment)"
-                                            class="px-3 py-1.5 bg-green-500 text-white text-xs font-semibold rounded-lg hover:bg-green-600 transition-all duration-200"
-                                            title="Renew"
+                                            @click.stop="toggleDropdown(investment.id)"
+                                            :class="[
+                                                'inline-flex items-center space-x-1 px-3 py-2 text-xs font-semibold rounded-lg transition-all duration-200',
+                                                openDropdownId === investment.id 
+                                                    ? 'bg-yellow-600 text-white' 
+                                                    : 'bg-yellow-500 text-white hover:bg-yellow-600'
+                                            ]"
                                         >
-                                            Renew
+                                            <span>Actions</span>
+                                            <ChevronDown :class="['h-4 w-4', openDropdownId === investment.id ? 'rotate-180' : '']" style="transition: transform 0.2s" />
                                         </button>
-                                        <button
-                                            @click="withdrawOtherInvestment(investment)"
-                                            class="px-3 py-1.5 bg-orange-500 text-white text-xs font-semibold rounded-lg hover:bg-orange-600 transition-all duration-200"
-                                            title="Withdraw"
+                                        <div 
+                                            v-if="openDropdownId === investment.id"
+                                            @click.stop
+                                            class="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48 overflow-hidden"
                                         >
-                                            Withdraw
-                                        </button>
+                                            <!-- Renew (Conditional - visible within 30 days of maturity) -->
+                                            <button
+                                                v-if="isMaturityActionVisible(investment.maturity_date)"
+                                                @click="openRenewModal(investment); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                ✓ Renew
+                                            </button>
+                                            <!-- Withdraw (Always Visible) -->
+                                            <button
+                                                @click="openWithdrawModal(investment); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                ↓ Withdraw
+                                            </button>
+                                            <!-- Add (Hidden if withdrawn) -->
+                                            <button
+                                                v-if="investment.maturity_date !== null"
+                                                @click="addOtherInvestment(investment); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                + Add
+                                            </button>
+                                            <!-- View (Always Visible) -->
+                                            <button
+                                                @click="viewOtherInvestment(investment); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                👁 View
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div v-else class="text-xs text-gray-500">—</div>
                                 </td>
                                 <td class="px-6 py-4 text-sm">
                                     <div v-if="isCreatedToday(investment.created_at)" class="flex items-center space-x-2">
@@ -503,7 +511,7 @@ const withdrawOtherInvestment = async (investment) => {
                             </tr>
                         </tbody>
                         <tfoot v-if="filteredOtherInvestments.length > 0">
-                            <tr class="bg-yellow-50 font-bold border-b-2 border-gray-300">
+                            <tr class="bg-yellow-50 font-bold border-t-2 border-gray-300">
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">TOTAL</td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
@@ -515,6 +523,9 @@ const withdrawOtherInvestment = async (investment) => {
                         </tfoot>
                     </table>
                 </div>
+                <div class="bg-gray-50 px-6 py-4 border-t-2 border-gray-300">
+                    <p class="text-sm text-gray-600">Total: <span class="font-semibold text-gray-900">{{ filteredOtherInvestments.length }}</span> other investment(s)</p>
+                </div>
             </div>
 
             <!-- Create Modal -->
@@ -522,6 +533,22 @@ const withdrawOtherInvestment = async (investment) => {
 
             <!-- Edit Modal -->
             <EditOtherInvestmentModal :isOpen="showEditModal" :otherInvestment="selectedOtherInvestment" :existingOtherInvestments="props.otherInvestments" @close="closeEditModal" />
+
+            <!-- Renew Modal -->
+            <RenewOtherInvestmentModal :isOpen="showRenewModal" :otherInvestment="selectedOtherInvestment" @close="closeRenewModal" />
+
+            <!-- Withdraw Modal -->
+            <WithdrawOtherInvestmentModal :isOpen="showWithdrawModal" :otherInvestment="selectedOtherInvestment" @close="closeWithdrawModal" />
+
+            <!-- Add Balance Modal -->
+            <AddBalanceModal :isOpen="showAddBalanceModal" :otherInvestment="selectedOtherInvestment" @close="closeAddBalanceModal" />
+
+            <!-- View History Modal -->
+            <ViewOtherInvestmentModal 
+                v-if="showViewModal && selectedOtherInvestment"
+                :otherInvestment="selectedOtherInvestment"
+                @close="showViewModal = false"
+            />
         </div>
     </TreasuryLayout>
 </template>

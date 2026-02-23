@@ -165,6 +165,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/other-investment', [OtherInvestmentController::class, 'store'])->name('other-investment.store');
         Route::put('/other-investment/{id}', [OtherInvestmentController::class, 'update'])->name('other-investment.update');
         Route::delete('/other-investment/{id}', [OtherInvestmentController::class, 'destroy'])->name('other-investment.destroy');
+        Route::post('/other-investment/{id}/renew', [OtherInvestmentController::class, 'renew'])->name('other-investment.renew');
+        Route::post('/other-investment/{id}/withdraw', [OtherInvestmentController::class, 'withdraw'])->name('other-investment.withdraw');
+        Route::post('/other-investment/{id}/add-balance', [OtherInvestmentController::class, 'addBalance'])->name('other-investment.add-balance');
 
         Route::get('/dollar', [DollarController::class, 'index'])->name('dollar');
         Route::post('/dollar', [DollarController::class, 'store'])->name('dollar.store');

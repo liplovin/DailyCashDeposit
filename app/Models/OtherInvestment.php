@@ -20,4 +20,19 @@ class OtherInvestment extends Model
         'disbursement_date',
         'ending_balance',
     ];
+
+    public function renewals()
+    {
+        return $this->hasMany(OtherInvestmentRenewal::class)->orderBy('created_at', 'desc');
+    }
+
+    public function withdrawals()
+    {
+        return $this->hasMany(OtherInvestmentWithdrawal::class)->orderBy('created_at', 'desc');
+    }
+
+    public function balances()
+    {
+        return $this->hasMany(OtherInvestmentBalance::class)->orderBy('created_at', 'desc');
+    }
 }
