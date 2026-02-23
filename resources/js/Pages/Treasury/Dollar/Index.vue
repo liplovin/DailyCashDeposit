@@ -2,10 +2,25 @@
 import TreasuryLayout from '@/Layouts/TreasuryLayout.vue';
 import CreateDollarModal from './Create.vue';
 import EditDollarModal from './Edit.vue';
-import { Plus, Trash2, Edit2, Search } from 'lucide-vue-next';
-import { computed, ref, onMounted, watch } from 'vue';
+import RenewDollarModal from './Renew.vue';
+import WithdrawDollarModal from './Withdraw.vue';
+import AddBalanceModal from './AddBalance.vue';
+import ViewDollarModal from './View.vue';
+import { Plus, Trash2, Edit2, Search, ChevronDown, Eye, EyeOff } from 'lucide-vue-next';
+import { computed, ref, onMounted } from 'vue';
 import { router } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
+
+onMounted(() => {
+    document.title = 'Dollar Management - Daily Deposit';
+    
+    // Auto-search from dashboard route parameter
+    const params = new URLSearchParams(window.location.search);
+    const searchParam = params.get('search');
+    if (searchParam) {
+        searchQuery.value = searchParam;
+    }
+});
 
 const props = defineProps({
     dollars: {
@@ -16,8 +31,13 @@ const props = defineProps({
 
 const searchQuery = ref('');
 const filterDate = ref(new Date().toISOString().split('T')[0]);
+const showWithdrawn = ref(false);
 const showModal = ref(false);
 const showEditModal = ref(false);
+const showRenewModal = ref(false);
+const showWithdrawModal = ref(false);
+const showAddBalanceModal = ref(false);
+const showViewModal = ref(false);
 const selectedDollar = ref(null);
 
 onMounted(() => {
@@ -36,87 +56,6 @@ const updateUrlWithDate = (date) => {
     params.set('date', date);
     window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
 };
-
-watch(filterDate, (newDate) => {
-    updateUrlWithDate(newDate);
-});
-
-const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    }).format(value || 0);
-};
-
-const filteredDollars = computed(() => {
-    let filtered = props.dollars;
-    
-    if (searchQuery.value.trim()) {
-        const query = searchQuery.value.toLowerCase();
-        filtered = filtered.filter(item => 
-            item.dollar_name.toLowerCase().includes(query) ||
-            item.account_number.toLowerCase().includes(query)
-        );
-    }
-    
-    return filtered;
-});
-
-const getCollectionAmount = (dollar) => {
-    if (!filterDate.value) {
-        return dollar.collection || 0;
-    }
-    const collectionDate = dollar.collection_date ? new Date(dollar.collection_date).toISOString().split('T')[0] : null;
-    return collectionDate === filterDate.value ? (dollar.collection || 0) : 0;
-};
-
-const getDisbursementAmount = (dollar) => {
-    if (!filterDate.value) {
-        return dollar.disbursement || 0;
-    }
-    const disbursementDate = dollar.disbursement_date ? new Date(dollar.disbursement_date).toISOString().split('T')[0] : null;
-    return disbursementDate === filterDate.value ? (dollar.disbursement || 0) : 0;
-};
-
-const getRollingBeginningBalance = (dollar, selectedDate) => {
-    if (!selectedDate) {
-        return parseFloat(dollar.beginning_balance || 0);
-    }
-    
-    let balance = parseFloat(dollar.beginning_balance || 0);
-    
-    const collectionDate = dollar.collection_date ? new Date(dollar.collection_date).toISOString().split('T')[0] : null;
-    if (collectionDate && collectionDate < selectedDate) {
-        balance += parseFloat(dollar.collection || 0);
-    }
-    
-    const disbursementDate = dollar.disbursement_date ? new Date(dollar.disbursement_date).toISOString().split('T')[0] : null;
-    if (disbursementDate && disbursementDate < selectedDate) {
-        balance -= parseFloat(dollar.disbursement || 0);
-    }
-    
-    return balance;
-};
-
-const hasDollars = computed(() => filteredDollars.value && filteredDollars.value.length > 0);
-
-const totalBeginningBalance = computed(() => {
-    return filteredDollars.value.reduce((sum, dollar) => {
-        return sum + getRollingBeginningBalance(dollar, filterDate.value);
-    }, 0);
-});
-
-const totalEndingBalance = computed(() => {
-    return filteredDollars.value.reduce((sum, dollar) => {
-        const beginning = getRollingBeginningBalance(dollar, filterDate.value);
-        const collection = parseFloat(getCollectionAmount(dollar) || 0);
-        const disbursement = parseFloat(getDisbursementAmount(dollar) || 0);
-        const ending = beginning + collection - disbursement;
-        return sum + ending;
-    }, 0);
-});
 
 const openModal = () => {
     selectedDollar.value = null;
@@ -138,6 +77,46 @@ const closeEditModal = () => {
     selectedDollar.value = null;
 };
 
+const openRenewModal = (dollar) => {
+    selectedDollar.value = dollar;
+    showRenewModal.value = true;
+};
+
+const closeRenewModal = () => {
+    showRenewModal.value = false;
+    selectedDollar.value = null;
+};
+
+const openWithdrawModal = (dollar) => {
+    selectedDollar.value = dollar;
+    showWithdrawModal.value = true;
+};
+
+const closeWithdrawModal = () => {
+    showWithdrawModal.value = false;
+    selectedDollar.value = null;
+};
+
+const closeAddBalanceModal = () => {
+    showAddBalanceModal.value = false;
+    selectedDollar.value = null;
+};
+
+const addDollar = (dollar) => {
+    selectedDollar.value = dollar;
+    showAddBalanceModal.value = true;
+};
+
+const viewDollar = (dollar) => {
+    selectedDollar.value = dollar;
+    showViewModal.value = true;
+};
+
+const openDropdownId = ref(null);
+
+const toggleDropdown = (dollarId) => {
+    openDropdownId.value = openDropdownId.value === dollarId ? null : dollarId;
+};
 
 
 const getDaysRemaining = (dateString) => {
@@ -164,7 +143,7 @@ const isOverdueOrDueToday = (dateString) => {
 };
 
 const formatMaturityDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return '✓ Withdrawn';
     const date = new Date(dateString);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -195,94 +174,6 @@ const isCreatedToday = (createdAtString) => {
     createdDate.setHours(0, 0, 0, 0);
     
     return createdDate.getTime() === today.getTime();
-};
-
-const renewDollar = async (dollar) => {
-    const result = await Swal.fire({
-        title: 'Renew Dollar?',
-        html: `
-            <div class="text-left">
-                <p class="mb-3"><strong>Dollar:</strong> ${dollar.dollar_name}</p>
-                <p class="mb-3"><strong>Account:</strong> ${dollar.account_number}</p>
-                <p class="text-green-600 text-sm"><strong>✓ This will renew the dollar account.</strong></p>
-            </div>
-        `,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#10B981',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Yes, Renew',
-        cancelButtonText: 'Cancel',
-        allowOutsideClick: false,
-        allowEscapeKey: false
-    });
-
-    if (result.isConfirmed) {
-        router.post(`/treasury/dollar/${dollar.id}/renew`, {}, {
-            onSuccess: () => {
-                Swal.fire({
-                    title: 'Renewed!',
-                    text: 'Dollar has been renewed successfully.',
-                    icon: 'success',
-                    confirmButtonColor: '#F59E0B',
-                    timer: 2000,
-                    timerProgressBar: true
-                });
-            },
-            onError: () => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Failed to renew dollar. Please try again.',
-                    icon: 'error',
-                    confirmButtonColor: '#F59E0B'
-                });
-            }
-        });
-    }
-};
-
-const withdrawDollar = async (dollar) => {
-    const result = await Swal.fire({
-        title: 'Withdraw Dollar?',
-        html: `
-            <div class="text-left">
-                <p class="mb-3"><strong>Dollar:</strong> ${dollar.dollar_name}</p>
-                <p class="mb-3"><strong>Account:</strong> ${dollar.account_number}</p>
-                <p class="text-orange-600 text-sm"><strong>✓ This will withdraw the dollar amount.</strong></p>
-            </div>
-        `,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#F97316',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Yes, Withdraw',
-        cancelButtonText: 'Cancel',
-        allowOutsideClick: false,
-        allowEscapeKey: false
-    });
-
-    if (result.isConfirmed) {
-        router.post(`/treasury/dollar/${dollar.id}/withdraw`, {}, {
-            onSuccess: () => {
-                Swal.fire({
-                    title: 'Withdrawn!',
-                    text: 'Dollar has been withdrawn successfully.',
-                    icon: 'success',
-                    confirmButtonColor: '#F59E0B',
-                    timer: 2000,
-                    timerProgressBar: true
-                });
-            },
-            onError: () => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Failed to withdraw dollar. Please try again.',
-                    icon: 'error',
-                    confirmButtonColor: '#F59E0B'
-                });
-            }
-        });
-    }
 };
 
 const deleteDollar = async (dollar) => {
@@ -328,6 +219,47 @@ const deleteDollar = async (dollar) => {
         });
     }
 };
+
+const hasDollars = computed(() => props.dollars.length > 0);
+
+const filteredDollars = computed(() => {
+    let result = props.dollars;
+
+    // Filter by search query
+    if (searchQuery.value) {
+        const query = searchQuery.value.toLowerCase();
+        result = result.filter(dollar => 
+            dollar.dollar_name?.toLowerCase().includes(query) || 
+            dollar.account_number?.toLowerCase().includes(query)
+        );
+    }
+
+    // Filter by withdrawn status
+    if (showWithdrawn.value) {
+        result = result.filter(dollar => dollar.maturity_date === null);
+    } else {
+        result = result.filter(dollar => dollar.maturity_date !== null);
+    }
+
+    return result;
+});
+
+const totalBeginningBalance = computed(() => {
+    return filteredDollars.value.reduce((sum, d) => sum + parseFloat(d.beginning_balance || 0), 0);
+});
+
+const totalEndingBalance = computed(() => {
+    return filteredDollars.value.reduce((sum, d) => sum + parseFloat(d.beginning_balance || 0), 0);
+});
+
+const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(amount);
+};
 </script>
 
 <template>
@@ -352,7 +284,7 @@ const deleteDollar = async (dollar) => {
 
             <!-- Search Bar and Date Filter -->
             <div class="bg-yellow-50 rounded-xl border-2 border-yellow-200 p-6 mb-8">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                     <!-- Search Bar -->
                     <div class="md:col-span-2">
                         <label class="block text-sm font-bold text-gray-800 mb-3">Search</label>
@@ -375,6 +307,24 @@ const deleteDollar = async (dollar) => {
                             type="date"
                             class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
                         />
+                    </div>
+
+                    <!-- Filter -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Filter</label>
+                        <button
+                            @click="showWithdrawn = !showWithdrawn"
+                            :class="[
+                                'w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-semibold transition-all duration-200 border-2',
+                                showWithdrawn
+                                    ? 'bg-green-100 border-green-400 text-green-700 shadow-md hover:bg-green-200'
+                                    : 'bg-white border-gray-300 text-gray-700 hover:border-yellow-400 hover:bg-yellow-50'
+                            ]"
+                        >
+                            <Eye v-if="!showWithdrawn" class="h-5 w-5" />
+                            <EyeOff v-else class="h-5 w-5" />
+                            <span>{{ showWithdrawn ? 'Withdrawn' : 'Active' }}</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -425,8 +375,8 @@ const deleteDollar = async (dollar) => {
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Ending Balance</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Action</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">Actions</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Actions</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white">More</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -444,30 +394,63 @@ const deleteDollar = async (dollar) => {
                                         {{ dollar.dollar_name }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-200">{{ dollar.account_number }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-200">
+                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ dollar.account_number }}</td>
+                                <td class="px-6 py-4 text-sm font-mono border-r border-gray-200" :class="dollar.maturity_date ? 'text-gray-700' : 'text-green-600 font-bold'">
                                     {{ formatMaturityDate(dollar.maturity_date) }}
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(dollar, filterDate)) }}</td>
-                                <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(dollar, filterDate) + parseFloat(getCollectionAmount(dollar)) - parseFloat(getDisbursementAmount(dollar))) }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(dollar.beginning_balance) }}</td>
+                                <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(dollar.beginning_balance) }}</td>
                                 <td class="px-6 py-4 text-sm border-r border-gray-200">
-                                    <div v-if="isMaturityActionVisible(dollar.maturity_date)" class="flex items-center space-x-2">
+                                    <div class="relative">
                                         <button
-                                            @click="renewDollar(dollar)"
-                                            class="px-3 py-1.5 bg-green-500 text-white text-xs font-semibold rounded-lg hover:bg-green-600 transition-all duration-200"
-                                            title="Renew"
+                                            @click.stop="toggleDropdown(dollar.id)"
+                                            :class="[
+                                                'inline-flex items-center space-x-1 px-3 py-2 text-xs font-semibold rounded-lg transition-all duration-200',
+                                                openDropdownId === dollar.id 
+                                                    ? 'bg-yellow-600 text-white' 
+                                                    : 'bg-yellow-500 text-white hover:bg-yellow-600'
+                                            ]"
                                         >
-                                            Renew
+                                            <span>Actions</span>
+                                            <ChevronDown :class="['h-4 w-4', openDropdownId === dollar.id ? 'rotate-180' : '']" style="transition: transform 0.2s" />
                                         </button>
-                                        <button
-                                            @click="withdrawDollar(dollar)"
-                                            class="px-3 py-1.5 bg-orange-500 text-white text-xs font-semibold rounded-lg hover:bg-orange-600 transition-all duration-200"
-                                            title="Withdraw"
+                                        <div 
+                                            v-if="openDropdownId === dollar.id"
+                                            @click.stop
+                                            class="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48 overflow-hidden"
                                         >
-                                            Withdraw
-                                        </button>
+                                            <!-- Renew (Conditional - visible within 30 days of maturity) -->
+                                            <button
+                                                v-if="isMaturityActionVisible(dollar.maturity_date)"
+                                                @click="openRenewModal(dollar); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                ✓ Renew
+                                            </button>
+                                            <!-- Withdraw (Always Visible) -->
+                                            <button
+                                                @click="openWithdrawModal(dollar); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                ↓ Withdraw
+                                            </button>
+                                            <!-- Add (Hidden if withdrawn) -->
+                                            <button
+                                                v-if="dollar.maturity_date !== null"
+                                                @click="addDollar(dollar); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                + Add
+                                            </button>
+                                            <!-- View (Always Visible) -->
+                                            <button
+                                                @click="viewDollar(dollar); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                👁 View
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div v-else class="text-xs text-gray-500">—</div>
                                 </td>
                                 <td class="px-6 py-4 text-sm">
                                     <div v-if="isCreatedToday(dollar.created_at)" class="flex items-center space-x-2">
@@ -491,7 +474,7 @@ const deleteDollar = async (dollar) => {
                             </tr>
                         </tbody>
                         <tfoot v-if="filteredDollars.length > 0">
-                            <tr class="bg-yellow-50 font-bold border-b-2 border-gray-300">
+                            <tr class="bg-yellow-50 font-bold border-t-2 border-gray-300">
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">TOTAL</td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
@@ -503,6 +486,9 @@ const deleteDollar = async (dollar) => {
                         </tfoot>
                     </table>
                 </div>
+                <div class="bg-gray-50 px-6 py-4 border-t-2 border-gray-300">
+                    <p class="text-sm text-gray-600">Total: <span class="font-semibold text-gray-900">{{ filteredDollars.length }}</span> dollar(s)</p>
+                </div>
             </div>
 
             <!-- Create Modal -->
@@ -510,6 +496,22 @@ const deleteDollar = async (dollar) => {
 
             <!-- Edit Modal -->
             <EditDollarModal :isOpen="showEditModal" :dollar="selectedDollar" :existingDollars="props.dollars" @close="closeEditModal" />
+
+            <!-- Renew Modal -->
+            <RenewDollarModal :isOpen="showRenewModal" :dollar="selectedDollar" @close="closeRenewModal" />
+
+            <!-- Withdraw Modal -->
+            <WithdrawDollarModal :isOpen="showWithdrawModal" :dollar="selectedDollar" @close="closeWithdrawModal" />
+
+            <!-- Add Balance Modal -->
+            <AddBalanceModal :isOpen="showAddBalanceModal" :dollar="selectedDollar" @close="closeAddBalanceModal" />
+
+            <!-- View History Modal -->
+            <ViewDollarModal 
+                v-if="showViewModal && selectedDollar"
+                :dollar="selectedDollar"
+                @close="showViewModal = false"
+            />
         </div>
     </TreasuryLayout>
 </template>

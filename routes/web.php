@@ -173,6 +173,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/dollar', [DollarController::class, 'store'])->name('dollar.store');
         Route::put('/dollar/{id}', [DollarController::class, 'update'])->name('dollar.update');
         Route::delete('/dollar/{id}', [DollarController::class, 'destroy'])->name('dollar.destroy');
+        Route::post('/dollar/{id}/renew', [DollarController::class, 'renew'])->name('dollar.renew');
+        Route::post('/dollar/{id}/withdraw', [DollarController::class, 'withdraw'])->name('dollar.withdraw');
+        Route::post('/dollar/{id}/add-balance', [DollarController::class, 'addBalance'])->name('dollar.add-balance');
 
         Route::get('/corporate-bonds', [CorporateBondController::class, 'index'])->name('corporate-bonds');
         Route::post('/corporate-bonds', [CorporateBondController::class, 'store'])->name('corporate-bonds.store');

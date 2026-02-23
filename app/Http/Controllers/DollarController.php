@@ -10,7 +10,7 @@ class DollarController extends Controller
 {
     public function index()
     {
-        $dollars = Dollar::all();
+        $dollars = Dollar::with('renewals', 'withdrawals', 'balances')->get();
         return Inertia::render('Treasury/Dollar/Index', [
             'dollars' => $dollars,
         ]);
@@ -174,5 +174,98 @@ class DollarController extends Controller
             return $year . '-' . $month . '-' . $day;
         }
         return $dateString;
+    }
+
+    /**
+     * Renew a dollar
+     */
+    public function renew($id)
+    {
+        try {
+            $dollar = Dollar::findOrFail($id);
+
+            // Create renewal record
+            $dollar->renewals()->create([
+                'new_maturity_date' => now()->addMonths(1)->toDateString()
+            ]);
+
+            // Update maturity date
+            $dollar->update([
+                'maturity_date' => now()->addMonths(1)->toDateString()
+            ]);
+
+            return redirect()->back()->with('success', 'Dollar renewed successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['message' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Withdraw a dollar
+     */
+    public function withdraw(Request $request, $id)
+    {
+        try {
+            $validated = $request->validate([
+                'amount' => 'required|numeric|gt:0',
+                'explanation' => 'required|string|min:3'
+            ]);
+
+            $dollar = Dollar::findOrFail($id);
+
+            $currentBalance = $dollar->beginning_balance;
+            $withdrawAmount = (float)$validated['amount'];
+            $isFullWithdrawal = abs($withdrawAmount - $currentBalance) < 0.01; // Account for floating point precision
+
+            // Create withdrawal record
+            $dollar->withdrawals()->create([
+                'amount' => $validated['amount'],
+                'explanation' => $validated['explanation']
+            ]);
+
+            // Update beginning balance
+            $dollar->beginning_balance -= $validated['amount'];
+
+            // Only set maturity date to null if withdrawing all
+            if ($isFullWithdrawal) {
+                $dollar->maturity_date = null;
+            }
+
+            $dollar->save();
+
+            return redirect()->back()->with('success', 'Dollar withdrawn successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['message' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Add balance to a dollar
+     */
+    public function addBalance(Request $request, $id)
+    {
+        try {
+            $validated = $request->validate([
+                'amount' => 'required|numeric|gt:0',
+                'reason' => 'required|string|min:3'
+            ]);
+
+            $dollar = Dollar::findOrFail($id);
+
+            // Create balance record
+            $dollar->balances()->create([
+                'amount' => $validated['amount'],
+                'explanation' => $validated['reason']
+            ]);
+
+            // Update beginning balance
+            $dollar->update([
+                'beginning_balance' => $dollar->beginning_balance + $validated['amount']
+            ]);
+
+            return redirect()->back()->with('success', 'Balance added successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['message' => $e->getMessage()]);
+        }
     }
 }

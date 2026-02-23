@@ -27,4 +27,19 @@ class Dollar extends Model
         'disbursement' => 'decimal:2',
         'ending_balance' => 'decimal:2',
     ];
+
+    public function renewals()
+    {
+        return $this->hasMany(DollarRenewal::class);
+    }
+
+    public function withdrawals()
+    {
+        return $this->hasMany(DollarWithdrawal::class);
+    }
+
+    public function balances()
+    {
+        return $this->hasMany(DollarBalance::class);
+    }
 }
