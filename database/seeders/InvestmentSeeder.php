@@ -27,7 +27,7 @@ class InvestmentSeeder extends Seeder
             'investment_name' => 'CHINA BANK',
             'reference_number' => 'FXTN 03-30',
             'beginning_balance' => 50214049.73,
-            'maturity_date' => '2027-01-04',
+            'maturity_date' => '2027-01-05',
         ]);
 
         Investment::create([
