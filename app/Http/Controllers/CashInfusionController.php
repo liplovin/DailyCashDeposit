@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\CashInfusion;
+use App\Models\CashInfusionRenewal;
+use App\Models\CashInfusionWithdrawal;
+use App\Models\CashInfusionBalance;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -10,7 +13,7 @@ class CashInfusionController extends Controller
 {
     public function index()
     {
-        $cashInfusions = CashInfusion::all();
+        $cashInfusions = CashInfusion::with(['renewals', 'withdrawals', 'balances'])->get();
         return Inertia::render('Treasury/Cash Infusion/Index', [
             'cashInfusions' => $cashInfusions,
         ]);
@@ -138,5 +141,85 @@ class CashInfusionController extends Controller
             'message' => 'Disbursement updated successfully',
             'cashInfusion' => $cashInfusion
         ]);
+    }
+
+    public function renew(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'new_maturity_date' => 'required|date|after:today',
+            'explanation' => 'required|string|max:1000',
+        ]);
+
+        $cashInfusion = CashInfusion::findOrFail($id);
+        $previousMaturityDate = $cashInfusion->maturity_date;
+
+        // Create renewal record
+        CashInfusionRenewal::create([
+            'cash_infusion_id' => $cashInfusion->id,
+            'previous_maturity_date' => $previousMaturityDate,
+            'new_maturity_date' => $validated['new_maturity_date'],
+            'explanation' => $validated['explanation'],
+        ]);
+
+        // Update maturity date
+        $cashInfusion->update(['maturity_date' => $validated['new_maturity_date']]);
+
+        return redirect()->back()->with('success', 'Cash Infusion renewed successfully.');
+    }
+
+    public function withdraw(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'explanation' => 'required|string|max:1000',
+        ]);
+
+        $cashInfusion = CashInfusion::findOrFail($id);
+        $currentBalance = $cashInfusion->beginning_balance;
+
+        if ($validated['amount'] > $currentBalance) {
+            return redirect()->back()->withErrors(['amount' => 'Withdrawal amount exceeds current balance']);
+        }
+
+        // Create withdrawal record
+        CashInfusionWithdrawal::create([
+            'cash_infusion_id' => $cashInfusion->id,
+            'amount' => $validated['amount'],
+            'explanation' => $validated['explanation'],
+        ]);
+
+        // Update balance
+        $newBalance = $currentBalance - $validated['amount'];
+        $cashInfusion->update(['beginning_balance' => $newBalance]);
+
+        // If fully withdrawn, mark as withdrawn (set maturity_date to null)
+        if ($newBalance <= 0) {
+            $cashInfusion->update(['maturity_date' => null]);
+        }
+
+        return redirect()->back()->with('success', 'Cash Infusion withdrawn successfully.');
+    }
+
+    public function addBalance(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'explanation' => 'required|string|max:1000',
+        ]);
+
+        $cashInfusion = CashInfusion::findOrFail($id);
+
+        // Create balance addition record
+        CashInfusionBalance::create([
+            'cash_infusion_id' => $cashInfusion->id,
+            'amount' => $validated['amount'],
+            'explanation' => $validated['explanation'],
+        ]);
+
+        // Update balance
+        $newBalance = $cashInfusion->beginning_balance + $validated['amount'];
+        $cashInfusion->update(['beginning_balance' => $newBalance]);
+
+        return redirect()->back()->with('success', 'Balance added successfully.');
     }
 }

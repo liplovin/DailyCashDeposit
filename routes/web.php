@@ -189,6 +189,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/cash-infusion', [CashInfusionController::class, 'store'])->name('cash-infusion.store');
         Route::put('/cash-infusion/{id}', [CashInfusionController::class, 'update'])->name('cash-infusion.update');
         Route::delete('/cash-infusion/{id}', [CashInfusionController::class, 'destroy'])->name('cash-infusion.destroy');
+        Route::post('/cash-infusion/{id}/renew', [CashInfusionController::class, 'renew'])->name('cash-infusion.renew');
+        Route::post('/cash-infusion/{id}/withdraw', [CashInfusionController::class, 'withdraw'])->name('cash-infusion.withdraw');
+        Route::post('/cash-infusion/{id}/add-balance', [CashInfusionController::class, 'addBalance'])->name('cash-infusion.add-balance');
 
         Route::get('/investment', [InvestmentController::class, 'index'])->name('investment');
         Route::post('/investment', [InvestmentController::class, 'store'])->name('investment.store');

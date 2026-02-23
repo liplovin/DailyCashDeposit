@@ -2,23 +2,14 @@
 import TreasuryLayout from '@/Layouts/TreasuryLayout.vue';
 import CreateCashInfusionModal from './Create.vue';
 import EditCashInfusionModal from './Edit.vue';
-import { Plus, Trash2, Edit2, Search } from 'lucide-vue-next';
-import { computed, ref, onMounted, watch } from 'vue';
+import RenewCashInfusionModal from './Renew.vue';
+import WithdrawCashInfusionModal from './Withdraw.vue';
+import AddBalanceCashInfusionModal from './AddBalance.vue';
+import ViewCashInfusionModal from './View.vue';
+import { Plus, Trash2, Edit2, Search, ChevronDown, Eye, EyeOff } from 'lucide-vue-next';
+import { computed, ref, onMounted } from 'vue';
 import { router } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
-
-const props = defineProps({
-    cashInfusions: {
-        type: Array,
-        default: () => []
-    }
-});
-
-const searchQuery = ref('');
-const filterDate = ref(new Date().toISOString().split('T')[0]);
-const showModal = ref(false);
-const showEditModal = ref(false);
-const selectedCashInfusion = ref(null);
 
 onMounted(() => {
     document.title = 'Cash Infusion Management - Daily Deposit';
@@ -31,18 +22,28 @@ onMounted(() => {
     }
 });
 
-const updateUrlWithDate = (date) => {
-    const params = new URLSearchParams(window.location.search);
-    params.set('date', date);
-    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
-};
-
-watch(filterDate, (newDate) => {
-    updateUrlWithDate(newDate);
+const props = defineProps({
+    cashInfusions: {
+        type: Array,
+        default: () => []
+    }
 });
 
+const searchQuery = ref('');
+const filterDate = ref(new Date().toISOString().split('T')[0]);
+const showWithdrawn = ref(false);
+const showModal = ref(false);
+const showEditModal = ref(false);
+const showRenewModal = ref(false);
+const showWithdrawModal = ref(false);
+const showAddBalanceModal = ref(false);
+const showViewModal = ref(false);
+const selectedCashInfusion = ref(null);
+
+const hasCashInfusions = computed(() => filteredCashInfusions.value && filteredCashInfusions.value.length > 0);
+
 const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-PH', {
         style: 'currency',
         currency: 'PHP',
         minimumFractionDigits: 2,
@@ -51,17 +52,24 @@ const formatCurrency = (value) => {
 };
 
 const filteredCashInfusions = computed(() => {
-    let filtered = props.cashInfusions;
+    let cashInfusions = props.cashInfusions;
     
-    if (searchQuery.value.trim()) {
-        const query = searchQuery.value.toLowerCase();
-        filtered = filtered.filter(item => 
-            item.cash_infusion_name.toLowerCase().includes(query) ||
-            item.account_number.toLowerCase().includes(query)
-        );
+    // Filter by withdrawn status - show ONLY withdrawn when toggled
+    if (showWithdrawn.value) {
+        cashInfusions = cashInfusions.filter(cashInfusion => cashInfusion.maturity_date === null);
+    } else {
+        cashInfusions = cashInfusions.filter(cashInfusion => cashInfusion.maturity_date !== null);
     }
     
-    return filtered;
+    if (!searchQuery.value.trim()) {
+        return cashInfusions;
+    }
+    
+    const query = searchQuery.value.toLowerCase();
+    return cashInfusions.filter(cashInfusion => 
+        cashInfusion.cash_infusion_name.toLowerCase().includes(query) ||
+        cashInfusion.account_number.toLowerCase().includes(query)
+    );
 });
 
 const getCollectionAmount = (infusion) => {
@@ -100,11 +108,21 @@ const getRollingBeginningBalance = (infusion, selectedDate) => {
     return balance;
 };
 
-const hasCashInfusions = computed(() => filteredCashInfusions.value && filteredCashInfusions.value.length > 0);
-
 const totalBeginningBalance = computed(() => {
     return filteredCashInfusions.value.reduce((sum, infusion) => {
         return sum + getRollingBeginningBalance(infusion, filterDate.value);
+    }, 0);
+});
+
+const totalCollection = computed(() => {
+    return filteredCashInfusions.value.reduce((sum, infusion) => {
+        return sum + parseFloat(getCollectionAmount(infusion) || 0);
+    }, 0);
+});
+
+const totalDisbursement = computed(() => {
+    return filteredCashInfusions.value.reduce((sum, infusion) => {
+        return sum + parseFloat(getDisbursementAmount(infusion) || 0);
     }, 0);
 });
 
@@ -138,152 +156,53 @@ const closeEditModal = () => {
     selectedCashInfusion.value = null;
 };
 
-
-
-const getDaysRemaining = (dateString) => {
-    if (!dateString) return null;
-    const date = new Date(dateString);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    date.setHours(0, 0, 0, 0);
-    
-    const diffTime = date - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    return diffDays;
+const openRenewModal = (cashInfusion) => {
+    selectedCashInfusion.value = cashInfusion;
+    showRenewModal.value = true;
 };
 
-const isMaturityActionVisible = (dateString) => {
-    const daysRemaining = getDaysRemaining(dateString);
-    return daysRemaining !== null && daysRemaining <= 30;
+const closeRenewModal = () => {
+    showRenewModal.value = false;
+    selectedCashInfusion.value = null;
 };
 
-const isOverdueOrDueToday = (dateString) => {
-    const daysRemaining = getDaysRemaining(dateString);
-    return daysRemaining !== null && daysRemaining <= 0;
+const openWithdrawModal = (cashInfusion) => {
+    selectedCashInfusion.value = cashInfusion;
+    showWithdrawModal.value = true;
 };
 
-const formatMaturityDate = (dateString) => {
-    if (!dateString) return '';
-    
-    const date = new Date(dateString);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    date.setHours(0, 0, 0, 0);
-    
-    const diffTime = date - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    const formattedDate = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(date);
-    
-    if (diffDays < 0) {
-        return `${formattedDate} (Overdue by ${Math.abs(diffDays)} days)`;
-    } else if (diffDays === 0) {
-        return `${formattedDate} (Due Today)`;
-    } else if (diffDays <= 30) {
-        return `${formattedDate} (${diffDays} days remaining)`;
-    }
-    
-    return formattedDate;
+const closeWithdrawModal = () => {
+    showWithdrawModal.value = false;
+    selectedCashInfusion.value = null;
 };
 
-const isCreatedToday = (createdAtString) => {
-    if (!createdAtString) return false;
-    const createdDate = new Date(createdAtString);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    createdDate.setHours(0, 0, 0, 0);
-    
-    return createdDate.getTime() === today.getTime();
+const closeAddBalanceModal = () => {
+    showAddBalanceModal.value = false;
+    selectedCashInfusion.value = null;
 };
 
-const renewCashInfusion = async (infusion) => {
-    const result = await Swal.fire({
-        title: 'Renew Cash Infusion?',
-        html: `
-            <div class="text-left">
-                <p class="mb-3"><strong>Cash Infusion:</strong> ${infusion.cash_infusion_name}</p>
-                <p class="mb-3"><strong>Account:</strong> ${infusion.account_number}</p>
-                <p class="text-green-600 text-sm"><strong>✓ This will renew the cash infusion.</strong></p>
-            </div>
-        `,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#10B981',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Yes, Renew',
-        cancelButtonText: 'Cancel',
-        allowOutsideClick: false,
-        allowEscapeKey: false
-    });
-
-    if (result.isConfirmed) {
-        router.post(`/treasury/cash-infusion/${infusion.id}/renew`, {}, {
-            onSuccess: () => {
-                Swal.fire({
-                    title: 'Renewed!',
-                    text: 'Cash Infusion has been renewed successfully.',
-                    icon: 'success',
-                    confirmButtonColor: '#F59E0B',
-                    timer: 2000,
-                    timerProgressBar: true
-                });
-            },
-            onError: () => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Failed to renew cash infusion. Please try again.',
-                    icon: 'error',
-                    confirmButtonColor: '#F59E0B'
-                });
-            }
-        });
-    }
+const addCashInfusion = (cashInfusion) => {
+    selectedCashInfusion.value = cashInfusion;
+    showAddBalanceModal.value = true;
 };
 
-const withdrawCashInfusion = async (infusion) => {
-    const result = await Swal.fire({
-        title: 'Withdraw Cash Infusion?',
-        html: `
-            <div class="text-left">
-                <p class="mb-3"><strong>Cash Infusion:</strong> ${infusion.cash_infusion_name}</p>
-                <p class="mb-3"><strong>Account:</strong> ${infusion.account_number}</p>
-                <p class="text-orange-600 text-sm"><strong>✓ This will withdraw the cash infusion amount.</strong></p>
-            </div>
-        `,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#F97316',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Yes, Withdraw',
-        cancelButtonText: 'Cancel',
-        allowOutsideClick: false,
-        allowEscapeKey: false
-    });
-
-    if (result.isConfirmed) {
-        router.post(`/treasury/cash-infusion/${infusion.id}/withdraw`, {}, {
-            onSuccess: () => {
-                Swal.fire({
-                    title: 'Withdrawn!',
-                    text: 'Cash Infusion has been withdrawn successfully.',
-                    icon: 'success',
-                    confirmButtonColor: '#F59E0B',
-                    timer: 2000,
-                    timerProgressBar: true
-                });
-            },
-            onError: () => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Failed to withdraw cash infusion. Please try again.',
-                    icon: 'error',
-                    confirmButtonColor: '#F59E0B'
-                });
-            }
-        });
-    }
+const viewCashInfusion = (cashInfusion) => {
+    selectedCashInfusion.value = cashInfusion;
+    showViewModal.value = true;
 };
+
+const closeViewModal = () => {
+    showViewModal.value = false;
+    selectedCashInfusion.value = null;
+};
+
+const openDropdownId = ref(null);
+
+const toggleDropdown = (cashInfusionId) => {
+    openDropdownId.value = openDropdownId.value === cashInfusionId ? null : cashInfusionId;
+};
+
+
 
 const deleteCashInfusion = async (infusion) => {
     const result = await Swal.fire({
@@ -328,6 +247,71 @@ const deleteCashInfusion = async (infusion) => {
         });
     }
 };
+
+const getDaysRemaining = (dateString) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    
+    const diffTime = date - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays;
+};
+
+const isMaturityActionVisible = (dateString) => {
+    const daysRemaining = getDaysRemaining(dateString);
+    return daysRemaining !== null && daysRemaining <= 30;
+};
+
+const isOverdueOrDueToday = (dateString) => {
+    const daysRemaining = getDaysRemaining(dateString);
+    return daysRemaining !== null && daysRemaining <= 0;
+};
+
+const formatMaturityDate = (dateString) => {
+    if (!dateString) return '✓ Withdrawn';
+    const date = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    
+    const diffTime = date - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    const formattedDate = new Intl.DateTimeFormat('en-US', options).format(date);
+    
+    if (diffDays < 0) {
+        return `${formattedDate} (Overdue by ${Math.abs(diffDays)} days)`;
+    } else if (diffDays === 0) {
+        return `${formattedDate} (Due Today)`;
+    } else if (diffDays <= 30) {
+        return `${formattedDate} (${diffDays} days remaining)`;
+    }
+    
+    return formattedDate;
+};
+
+const isCreatedToday = (createdAtString) => {
+    if (!createdAtString) return false;
+    const createdDate = new Date(createdAtString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    createdDate.setHours(0, 0, 0, 0);
+    
+    return createdDate.getTime() === today.getTime();
+};
+
+const renewCashInfusion = async (infusion) => {
+    openRenewModal(infusion);
+};
+
+const withdrawCashInfusion = async (infusion) => {
+    openWithdrawModal(infusion);
+};
 </script>
 
 <template>
@@ -337,8 +321,8 @@ const deleteCashInfusion = async (infusion) => {
             <div class="mb-8">
                 <div class="flex items-center justify-between mb-6">
                     <div>
-                        <h1 class="text-4xl font-black text-gray-900 mb-2">Cash Infusion Management</h1>
-                        <p class="text-gray-600 text-sm font-medium">View all cash infusion records with real-time balances and transactions</p>
+                        <h1 class="text-4xl font-black text-gray-900 mb-2">Cash Infusion Accounts</h1>
+                        <p class="text-gray-600 text-sm font-medium">View all cash infusion accounts with real-time balance tracking</p>
                     </div>
                     <button
                         @click="openModal"
@@ -352,10 +336,10 @@ const deleteCashInfusion = async (infusion) => {
 
             <!-- Search Bar and Date Filter -->
             <div class="bg-yellow-50 rounded-xl border-2 border-yellow-200 p-6 mb-8">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                     <!-- Search Bar -->
                     <div class="md:col-span-2">
-                        <label class="block text-sm font-bold text-gray-800 mb-3">Search</label>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Search Cash Infusion</label>
                         <div class="relative">
                             <Search class="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
                             <input
@@ -376,6 +360,23 @@ const deleteCashInfusion = async (infusion) => {
                             class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
                         />
                     </div>
+
+                    <!-- Show Withdrawn Filter -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Filter</label>
+                        <button
+                            @click="showWithdrawn = !showWithdrawn"
+                            :class="[
+                                'w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-semibold transition-all duration-200 border-2',
+                                showWithdrawn
+                                    ? 'bg-green-100 border-green-400 text-green-700 shadow-md hover:bg-green-200'
+                                    : 'bg-white border-gray-300 text-gray-700 hover:border-yellow-400 hover:bg-yellow-50'
+                            ]"
+                        >
+                            <component :is="showWithdrawn ? Eye : EyeOff" class="h-5 w-5" />
+                            <span>{{ showWithdrawn ? 'Withdrawn Only' : 'Active' }}</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -390,7 +391,7 @@ const deleteCashInfusion = async (infusion) => {
                         </div>
                     </div>
                     <h2 class="text-2xl font-bold text-gray-900 mb-2">No Cash Infusions Yet</h2>
-                    <p class="text-gray-600 mb-6">Get started by creating your first cash infusion.</p>
+                    <p class="text-gray-600 mb-6">Get started by creating your first cash infusion account.</p>
                     <button
                         @click="openModal"
                         class="inline-flex items-center space-x-2 px-6 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-all duration-200 font-semibold"
@@ -420,7 +421,7 @@ const deleteCashInfusion = async (infusion) => {
                     <table class="w-full border-collapse">
                         <thead class="bg-gradient-to-r from-yellow-400 to-yellow-500">
                             <tr class="border-b-2 border-gray-300">
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Infusion Name</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Cash Infusion Name</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Account Number</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
@@ -430,6 +431,11 @@ const deleteCashInfusion = async (infusion) => {
                             </tr>
                         </thead>
                         <tbody>
+                            <tr v-if="filteredCashInfusions.length === 0" class="border-b border-gray-200">
+                                <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                                    No cash infusion records found.
+                                </td>
+                            </tr>
                             <tr 
                                 v-for="(infusion, index) in filteredCashInfusions" 
                                 :key="infusion.id"
@@ -444,30 +450,63 @@ const deleteCashInfusion = async (infusion) => {
                                         {{ infusion.cash_infusion_name }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-200">{{ infusion.account_number }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-200">
+                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ infusion.account_number }}</td>
+                                <td class="px-6 py-4 text-sm font-mono border-r border-gray-200" :class="infusion.maturity_date ? 'text-gray-700' : 'text-green-600 font-bold'">
                                     {{ formatMaturityDate(infusion.maturity_date) }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(infusion, filterDate)) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(infusion, filterDate) + parseFloat(getCollectionAmount(infusion)) - parseFloat(getDisbursementAmount(infusion))) }}</td>
                                 <td class="px-6 py-4 text-sm border-r border-gray-200">
-                                    <div v-if="isMaturityActionVisible(infusion.maturity_date)" class="flex items-center space-x-2">
+                                    <div class="relative">
                                         <button
-                                            @click="renewCashInfusion(infusion)"
-                                            class="px-3 py-1.5 bg-green-500 text-white text-xs font-semibold rounded-lg hover:bg-green-600 transition-all duration-200"
-                                            title="Renew"
+                                            @click.stop="toggleDropdown(infusion.id)"
+                                            :class="[
+                                                'inline-flex items-center space-x-1 px-3 py-2 text-xs font-semibold rounded-lg transition-all duration-200',
+                                                openDropdownId === infusion.id 
+                                                    ? 'bg-yellow-600 text-white' 
+                                                    : 'bg-yellow-500 text-white hover:bg-yellow-600'
+                                            ]"
                                         >
-                                            Renew
+                                            <span>Actions</span>
+                                            <ChevronDown :class="['h-4 w-4', openDropdownId === infusion.id ? 'rotate-180' : '']" style="transition: transform 0.2s" />
                                         </button>
-                                        <button
-                                            @click="withdrawCashInfusion(infusion)"
-                                            class="px-3 py-1.5 bg-orange-500 text-white text-xs font-semibold rounded-lg hover:bg-orange-600 transition-all duration-200"
-                                            title="Withdraw"
+                                        <div 
+                                            v-if="openDropdownId === infusion.id"
+                                            @click.stop
+                                            class="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48 overflow-hidden"
                                         >
-                                            Withdraw
-                                        </button>
+                                            <!-- Renew (Conditional - visible within 30 days of maturity) -->
+                                            <button
+                                                v-if="isMaturityActionVisible(infusion.maturity_date)"
+                                                @click="renewCashInfusion(infusion); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                ✓ Renew
+                                            </button>
+                                            <!-- Withdraw (Always Visible) -->
+                                            <button
+                                                @click="withdrawCashInfusion(infusion); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                ↓ Withdraw
+                                            </button>
+                                            <!-- Add (Hidden if withdrawn) -->
+                                            <button
+                                                v-if="infusion.maturity_date !== null"
+                                                @click="addCashInfusion(infusion); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                + Add
+                                            </button>
+                                            <!-- View (Always Visible) -->
+                                            <button
+                                                @click="viewCashInfusion(infusion); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                👁 View
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div v-else class="text-xs text-gray-500">—</div>
                                 </td>
                                 <td class="px-6 py-4 text-sm">
                                     <div v-if="isCreatedToday(infusion.created_at)" class="flex items-center space-x-2">
@@ -491,7 +530,7 @@ const deleteCashInfusion = async (infusion) => {
                             </tr>
                         </tbody>
                         <tfoot v-if="filteredCashInfusions.length > 0">
-                            <tr class="bg-yellow-50 font-bold border-b-2 border-gray-300">
+                            <tr class="bg-yellow-50 font-bold border-t-2 border-gray-300">
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">TOTAL</td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
@@ -503,6 +542,9 @@ const deleteCashInfusion = async (infusion) => {
                         </tfoot>
                     </table>
                 </div>
+                <div class="bg-gray-50 px-6 py-4 border-t-2 border-gray-300">
+                    <p class="text-sm text-gray-600">Total: <span class="font-semibold text-gray-900">{{ filteredCashInfusions.length }}</span> cash infusion(s)</p>
+                </div>
             </div>
 
             <!-- Create Modal -->
@@ -510,6 +552,22 @@ const deleteCashInfusion = async (infusion) => {
 
             <!-- Edit Modal -->
             <EditCashInfusionModal :isOpen="showEditModal" :cashInfusion="selectedCashInfusion" :existingCashInfusions="props.cashInfusions" @close="closeEditModal" />
+
+            <!-- Renew Modal -->
+            <RenewCashInfusionModal :isOpen="showRenewModal" :cashInfusion="selectedCashInfusion" @close="closeRenewModal" />
+
+            <!-- Withdraw Modal -->
+            <WithdrawCashInfusionModal :isOpen="showWithdrawModal" :cashInfusion="selectedCashInfusion" @close="closeWithdrawModal" />
+
+            <!-- Add Balance Modal -->
+            <AddBalanceCashInfusionModal :isOpen="showAddBalanceModal" :cashInfusion="selectedCashInfusion" @close="closeAddBalanceModal" />
+
+            <!-- View History Modal -->
+            <ViewCashInfusionModal 
+                :isOpen="showViewModal"
+                :cashInfusion="selectedCashInfusion"
+                @close="closeViewModal"
+            />
         </div>
     </TreasuryLayout>
 </template>

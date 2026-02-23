@@ -27,4 +27,19 @@ class CashInfusion extends Model
         'disbursement' => 'decimal:2',
         'ending_balance' => 'decimal:2',
     ];
+
+    public function renewals()
+    {
+        return $this->hasMany(CashInfusionRenewal::class);
+    }
+
+    public function withdrawals()
+    {
+        return $this->hasMany(CashInfusionWithdrawal::class);
+    }
+
+    public function balances()
+    {
+        return $this->hasMany(CashInfusionBalance::class);
+    }
 }
