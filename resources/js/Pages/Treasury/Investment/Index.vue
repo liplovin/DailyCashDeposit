@@ -2,15 +2,18 @@
 import TreasuryLayout from '@/Layouts/TreasuryLayout.vue';
 import CreateInvestmentModal from './Create.vue';
 import EditInvestmentModal from './Edit.vue';
-import { Plus, Trash2, Edit2, Search } from 'lucide-vue-next';
-import { computed, ref, onMounted, watch } from 'vue';
+import RenewInvestmentModal from './Renew.vue';
+import WithdrawInvestmentModal from './Withdraw.vue';
+import AddBalanceInvestmentModal from './AddBalance.vue';
+import ViewInvestmentModal from './View.vue';
+import { Plus, Trash2, Edit2, Search, ChevronDown, Eye, EyeOff } from 'lucide-vue-next';
+import { computed, ref, onMounted } from 'vue';
 import { router } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
 
 onMounted(() => {
     document.title = 'Investment Management - Daily Deposit';
     
-    // Auto-search from dashboard route parameter
     const params = new URLSearchParams(window.location.search);
     const searchParam = params.get('search');
     if (searchParam) {
@@ -27,105 +30,80 @@ const props = defineProps({
 
 const searchQuery = ref('');
 const filterDate = ref(new Date().toISOString().split('T')[0]);
+const showWithdrawn = ref(false);
 const showModal = ref(false);
 const showEditModal = ref(false);
+const showRenewModal = ref(false);
+const showWithdrawModal = ref(false);
+const showAddBalanceModal = ref(false);
+const showViewModal = ref(false);
 const selectedInvestment = ref(null);
 
-watch(filterDate, (newDate) => {
-    const url = new URL(window.location);
-    url.searchParams.set('date', newDate);
-    window.history.pushState({}, '', url);
-});
-
-const formatCurrency = (amount) => {
-    return '₱ ' + parseFloat(amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-};
-
-const getCollectionAmount = (item) => {
-    if (!item.collection_date) return 0;
-    const collectionDate = new Date(item.collection_date).toISOString().split('T')[0];
-    const selectedDate = filterDate.value;
-    return collectionDate === selectedDate ? parseFloat(item.collection || 0) : 0;
-};
-
-const getDisbursementAmount = (item) => {
-    if (!item.disbursement_date) return 0;
-    const disbursementDate = new Date(item.disbursement_date).toISOString().split('T')[0];
-    const selectedDate = filterDate.value;
-    return disbursementDate === selectedDate ? parseFloat(item.disbursement || 0) : 0;
-};
-
-const getRollingBeginningBalance = (item, selectedDate) => {
-    let balance = parseFloat(item.beginning_balance || 0);
+const filteredInvestments = computed(() => {
+    let investments = props.investments;
     
-    const collectionDate = item.collection_date ? new Date(item.collection_date).toISOString().split('T')[0] : null;
-    if (collectionDate && collectionDate < selectedDate) {
-        balance += parseFloat(item.collection || 0);
+    if (showWithdrawn.value) {
+        investments = investments.filter(investment => investment.maturity_date === null);
+    } else {
+        investments = investments.filter(investment => investment.maturity_date !== null);
     }
     
-    const disbursementDate = item.disbursement_date ? new Date(item.disbursement_date).toISOString().split('T')[0] : null;
-    if (disbursementDate && disbursementDate < selectedDate) {
-        balance -= parseFloat(item.disbursement || 0);
-    }
-    
-    return balance;
-};
-
-const filteredItems = computed(() => {
     if (!searchQuery.value.trim()) {
-        return props.investments;
+        return investments;
     }
     
     const query = searchQuery.value.toLowerCase();
-    return props.investments.filter(investment => 
+    return investments.filter(investment => 
         investment.investment_name.toLowerCase().includes(query) ||
         investment.reference_number.toLowerCase().includes(query)
     );
 });
 
-const openModal = () => {
-    selectedInvestment.value = null;
-    showModal.value = true;
+const formatCurrency = (value) => {
+    return new Intl.NumberFormat('en-PH', {
+        style: 'currency',
+        currency: 'PHP',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(value || 0);
 };
 
-const closeModal = () => {
-    showModal.value = false;
-    selectedInvestment.value = null;
+const getRollingBeginningBalance = (investment, selectedDate) => {
+    let balance = parseFloat(investment.beginning_balance || 0);
+    const collectionDate = investment.collection_date ? new Date(investment.collection_date).toISOString().split('T')[0] : null;
+    if (collectionDate && collectionDate < selectedDate) {
+        balance += parseFloat(investment.collection || 0);
+    }
+    const disbursementDate = investment.disbursement_date ? new Date(investment.disbursement_date).toISOString().split('T')[0] : null;
+    if (disbursementDate && disbursementDate < selectedDate) {
+        balance -= parseFloat(investment.disbursement || 0);
+    }
+    return balance;
 };
 
-const openEditModal = (investment) => {
-    selectedInvestment.value = investment;
-    showEditModal.value = true;
+const getCollectionAmount = (investment) => {
+    if (!filterDate.value) return investment.collection || 0;
+    const collectionDate = investment.collection_date ? new Date(investment.collection_date).toISOString().split('T')[0] : null;
+    return collectionDate === filterDate.value ? (investment.collection || 0) : 0;
 };
 
-const closeEditModal = () => {
-    showEditModal.value = false;
-    selectedInvestment.value = null;
+const getDisbursementAmount = (investment) => {
+    if (!filterDate.value) return investment.disbursement || 0;
+    const disbursementDate = investment.disbursement_date ? new Date(investment.disbursement_date).toISOString().split('T')[0] : null;
+    return disbursementDate === filterDate.value ? (investment.disbursement || 0) : 0;
 };
 
 const totalBeginningBalance = computed(() => {
-    return filteredItems.value.reduce((sum, item) => {
-        return sum + getRollingBeginningBalance(item, filterDate.value);
-    }, 0);
-});
-
-const totalCollection = computed(() => {
-    return filteredItems.value.reduce((sum, item) => {
-        return sum + parseFloat(getCollectionAmount(item));
-    }, 0);
-});
-
-const totalDisbursement = computed(() => {
-    return filteredItems.value.reduce((sum, item) => {
-        return sum + parseFloat(getDisbursementAmount(item));
+    return filteredInvestments.value.reduce((sum, investment) => {
+        return sum + getRollingBeginningBalance(investment, filterDate.value);
     }, 0);
 });
 
 const totalEndingBalance = computed(() => {
-    return filteredItems.value.reduce((sum, item) => {
-        const beginning = getRollingBeginningBalance(item, filterDate.value);
-        const collection = parseFloat(getCollectionAmount(item));
-        const disbursement = parseFloat(getDisbursementAmount(item));
+    return filteredInvestments.value.reduce((sum, investment) => {
+        const beginning = getRollingBeginningBalance(investment, filterDate.value);
+        const collection = parseFloat(getCollectionAmount(investment) || 0);
+        const disbursement = parseFloat(getDisbursementAmount(investment) || 0);
         return sum + (beginning + collection - disbursement);
     }, 0);
 });
@@ -136,10 +114,8 @@ const getDaysRemaining = (dateString) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     date.setHours(0, 0, 0, 0);
-    
     const diffTime = date - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
     return diffDays;
 };
 
@@ -163,15 +139,13 @@ const isCreatedToday = (createdAtString) => {
 };
 
 const formatMaturityDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return '✓ Withdrawn';
     const date = new Date(dateString);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     date.setHours(0, 0, 0, 0);
-    
     const diffTime = date - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     const formattedDate = new Intl.DateTimeFormat('en-US', options).format(date);
     
@@ -182,96 +156,73 @@ const formatMaturityDate = (dateString) => {
     } else if (diffDays <= 30) {
         return `${formattedDate} (${diffDays} days remaining)`;
     }
-    
     return formattedDate;
 };
 
-const renewInvestment = async (investment) => {
-    const result = await Swal.fire({
-        title: 'Renew Investment?',
-        html: `
-            <div class="text-left">
-                <p class="mb-3"><strong>Investment:</strong> ${investment.investment_name}</p>
-                <p class="mb-3"><strong>Reference:</strong> ${investment.reference_number}</p>
-                <p class="text-green-600 text-sm"><strong>✓ This will renew the investment.</strong></p>
-            </div>
-        `,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#10B981',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Yes, Renew',
-        cancelButtonText: 'Cancel',
-        allowOutsideClick: false,
-        allowEscapeKey: false
-    });
-
-    if (result.isConfirmed) {
-        router.post(`/treasury/investment/${investment.id}/renew`, {}, {
-            onSuccess: () => {
-                Swal.fire({
-                    title: 'Renewed!',
-                    text: 'Investment has been renewed successfully.',
-                    icon: 'success',
-                    confirmButtonColor: '#F59E0B',
-                    timer: 2000,
-                    timerProgressBar: true
-                });
-            },
-            onError: () => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Failed to renew investment. Please try again.',
-                    icon: 'error',
-                    confirmButtonColor: '#F59E0B'
-                });
-            }
-        });
-    }
+const openModal = () => {
+    selectedInvestment.value = null;
+    showModal.value = true;
 };
 
-const withdrawInvestment = async (investment) => {
-    const result = await Swal.fire({
-        title: 'Withdraw Investment?',
-        html: `
-            <div class="text-left">
-                <p class="mb-3"><strong>Investment:</strong> ${investment.investment_name}</p>
-                <p class="mb-3"><strong>Reference:</strong> ${investment.reference_number}</p>
-                <p class="text-orange-600 text-sm"><strong>✓ This will withdraw the investment amount.</strong></p>
-            </div>
-        `,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#F97316',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Yes, Withdraw',
-        cancelButtonText: 'Cancel',
-        allowOutsideClick: false,
-        allowEscapeKey: false
-    });
+const closeModal = () => {
+    showModal.value = false;
+    selectedInvestment.value = null;
+};
 
-    if (result.isConfirmed) {
-        router.post(`/treasury/investment/${investment.id}/withdraw`, {}, {
-            onSuccess: () => {
-                Swal.fire({
-                    title: 'Withdrawn!',
-                    text: 'Investment has been withdrawn successfully.',
-                    icon: 'success',
-                    confirmButtonColor: '#F59E0B',
-                    timer: 2000,
-                    timerProgressBar: true
-                });
-            },
-            onError: () => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Failed to withdraw investment. Please try again.',
-                    icon: 'error',
-                    confirmButtonColor: '#F59E0B'
-                });
-            }
-        });
-    }
+const openEditModal = (investment) => {
+    selectedInvestment.value = investment;
+    showEditModal.value = true;
+};
+
+const closeEditModal = () => {
+    showEditModal.value = false;
+    selectedInvestment.value = null;
+};
+
+const openRenewModal = (investment) => {
+    selectedInvestment.value = investment;
+    showRenewModal.value = true;
+};
+
+const closeRenewModal = () => {
+    showRenewModal.value = false;
+    selectedInvestment.value = null;
+};
+
+const openWithdrawModal = (investment) => {
+    selectedInvestment.value = investment;
+    showWithdrawModal.value = true;
+};
+
+const closeWithdrawModal = () => {
+    showWithdrawModal.value = false;
+    selectedInvestment.value = null;
+};
+
+const closeAddBalanceModal = () => {
+    showAddBalanceModal.value = false;
+    selectedInvestment.value = null;
+};
+
+const addBalance = (investment) => {
+    selectedInvestment.value = investment;
+    showAddBalanceModal.value = true;
+};
+
+const viewInvestment = (investment) => {
+    selectedInvestment.value = investment;
+    showViewModal.value = true;
+};
+
+const closeViewModal = () => {
+    showViewModal.value = false;
+    selectedInvestment.value = null;
+};
+
+const openDropdownId = ref(null);
+
+const toggleDropdown = (investmentId) => {
+    openDropdownId.value = openDropdownId.value === investmentId ? null : investmentId;
 };
 
 const deleteInvestment = async (investment) => {
@@ -326,8 +277,8 @@ const deleteInvestment = async (investment) => {
             <div class="mb-8">
                 <div class="flex items-center justify-between mb-6">
                     <div>
-                        <h1 class="text-3xl font-black text-gray-900">Investment Management</h1>
-                        <p class="text-gray-600 mt-1">Manage and track your investments</p>
+                        <h1 class="text-4xl font-black text-gray-900 mb-2">Investment Accounts</h1>
+                        <p class="text-gray-600 text-sm font-medium">View all investments with real-time balance tracking</p>
                     </div>
                     <button
                         @click="openModal"
@@ -337,12 +288,11 @@ const deleteInvestment = async (investment) => {
                         <span>Create New</span>
                     </button>
                 </div>
-
             </div>
 
-            <!-- Filter Section -->
-            <div class="bg-yellow-50 rounded-xl border-2 border-yellow-200 shadow-md p-6 mb-6">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Search Bar and Filter -->
+            <div class="bg-yellow-50 rounded-xl border-2 border-yellow-200 p-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                     <!-- Search Bar -->
                     <div class="md:col-span-2">
                         <label class="block text-sm font-bold text-gray-800 mb-3">Search Investment</label>
@@ -351,7 +301,7 @@ const deleteInvestment = async (investment) => {
                             <input
                                 v-model="searchQuery"
                                 type="text"
-                                placeholder="Search by investment name or reference number..."
+                                placeholder="Search by investment name or reference..."
                                 class="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
                             />
                         </div>
@@ -366,11 +316,63 @@ const deleteInvestment = async (investment) => {
                             class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
                         />
                     </div>
+
+                    <!-- Show Withdrawn Filter -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Filter</label>
+                        <button
+                            @click="showWithdrawn = !showWithdrawn"
+                            :class="[
+                                'w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-semibold transition-all duration-200 border-2',
+                                showWithdrawn
+                                    ? 'bg-green-100 border-green-400 text-green-700 shadow-md hover:bg-green-200'
+                                    : 'bg-white border-gray-300 text-gray-700 hover:border-yellow-400 hover:bg-yellow-50'
+                            ]"
+                        >
+                            <component :is="showWithdrawn ? Eye : EyeOff" class="h-5 w-5" />
+                            <span>{{ showWithdrawn ? 'Withdrawn Only' : 'Active' }}</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Investment Table -->
-            <div class="bg-white rounded-xl border-2 border-gray-300 shadow-lg overflow-hidden">
+            <!-- Empty State -->
+            <div v-if="filteredInvestments.length === 0" class="max-w-6xl">
+                <div class="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-2xl border-2 border-yellow-200 p-12 text-center shadow-lg">
+                    <div class="inline-block">
+                        <div class="w-16 h-16 bg-yellow-200 rounded-full flex items-center justify-center mb-4">
+                            <svg class="h-8 w-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m0 0h6"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">No Investments Yet</h2>
+                    <p class="text-gray-600 mb-6">Get started by creating your first investment.</p>
+                    <button
+                        @click="openModal"
+                        class="inline-flex items-center space-x-2 px-6 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-all duration-200 font-semibold"
+                    >
+                        <Plus class="h-5 w-5" />
+                        <span>Create First Investment</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- No Search Results -->
+            <div v-else-if="searchQuery && filteredInvestments.length === 0" class="max-w-6xl">
+                <div class="bg-blue-50 rounded-2xl border-2 border-blue-200 p-12 text-center">
+                    <div class="inline-block">
+                        <div class="w-16 h-16 bg-blue-200 rounded-full flex items-center justify-center mb-4">
+                            <Search class="h-8 w-8 text-blue-600" />
+                        </div>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">No Results Found</h2>
+                    <p class="text-gray-600">No investments match your search query.</p>
+                </div>
+            </div>
+
+            <!-- Investments Table -->
+            <div v-else class="bg-white rounded-xl border-2 border-gray-300 shadow-lg overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full border-collapse">
                         <thead class="bg-gradient-to-r from-yellow-400 to-yellow-500">
@@ -380,66 +382,90 @@ const deleteInvestment = async (investment) => {
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Ending Balance</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Action</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">Actions</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Actions</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white">Edit/Delete</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-if="filteredItems.length === 0" class="border-b border-gray-200">
-                                <td colspan="6" class="px-6 py-8 text-center text-gray-500">
-                                    No investment records found.
-                                </td>
-                            </tr>
                             <tr 
-                                v-for="(item, index) in filteredItems" 
-                                :key="item.id"
+                                v-for="(investment, index) in filteredInvestments" 
+                                :key="investment.id"
                                 :class="[
                                     'border-b border-gray-200 hover:bg-yellow-50 transition-colors duration-150',
-                                    isOverdueOrDueToday(item.maturity_date) ? 'blink-red' : (index % 2 === 0 ? 'bg-white' : 'bg-gray-50')
+                                    isOverdueOrDueToday(investment.maturity_date) ? 'blink-red' : (index % 2 === 0 ? 'bg-white' : 'bg-gray-50')
                                 ]"
                             >
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">
                                     <div class="flex items-center gap-2">
                                         <span class="w-2 h-2 bg-yellow-500 rounded-full"></span>
-                                        {{ item.investment_name }}
+                                        {{ investment.investment_name }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ item.reference_number }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-200">
-                                    {{ item.maturity_date ? new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(item.maturity_date)) : 'N/A' }}
+                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ investment.reference_number }}</td>
+                                <td class="px-6 py-4 text-sm font-mono border-r border-gray-200" :class="investment.maturity_date ? 'text-gray-700' : 'text-green-600 font-bold'">
+                                    {{ formatMaturityDate(investment.maturity_date) }}
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(item, filterDate)) }}</td>
-                                <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(item, filterDate) + parseFloat(getCollectionAmount(item)) - parseFloat(getDisbursementAmount(item))) }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(investment, filterDate)) }}</td>
+                                <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(investment, filterDate) + parseFloat(getCollectionAmount(investment)) - parseFloat(getDisbursementAmount(investment))) }}</td>
                                 <td class="px-6 py-4 text-sm border-r border-gray-200">
-                                    <div v-if="isMaturityActionVisible(item.maturity_date)" class="flex items-center space-x-2">
+                                    <div class="relative">
                                         <button
-                                            @click="renewInvestment(item)"
-                                            class="px-3 py-1.5 bg-green-500 text-white text-xs font-semibold rounded-lg hover:bg-green-600 transition-all duration-200"
-                                            title="Renew"
+                                            @click.stop="toggleDropdown(investment.id)"
+                                            :class="[
+                                                'inline-flex items-center space-x-1 px-3 py-2 text-xs font-semibold rounded-lg transition-all duration-200',
+                                                openDropdownId === investment.id 
+                                                    ? 'bg-yellow-600 text-white' 
+                                                    : 'bg-yellow-500 text-white hover:bg-yellow-600'
+                                            ]"
                                         >
-                                            Renew
+                                            <span>Actions</span>
+                                            <ChevronDown :class="['h-4 w-4', openDropdownId === investment.id ? 'rotate-180' : '']" style="transition: transform 0.2s" />
                                         </button>
-                                        <button
-                                            @click="withdrawInvestment(item)"
-                                            class="px-3 py-1.5 bg-orange-500 text-white text-xs font-semibold rounded-lg hover:bg-orange-600 transition-all duration-200"
-                                            title="Withdraw"
+                                        <div 
+                                            v-if="openDropdownId === investment.id"
+                                            @click.stop
+                                            class="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48 overflow-hidden"
                                         >
-                                            Withdraw
-                                        </button>
+                                            <button
+                                                v-if="isMaturityActionVisible(investment.maturity_date)"
+                                                @click="openRenewModal(investment); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                ✓ Renew
+                                            </button>
+                                            <button
+                                                @click="openWithdrawModal(investment); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                ↓ Withdraw
+                                            </button>
+                                            <button
+                                                v-if="investment.maturity_date !== null"
+                                                @click="addBalance(investment); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                + Add
+                                            </button>
+                                            <button
+                                                @click="viewInvestment(investment); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                👁 View
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div v-else class="text-xs text-gray-500">—</div>
                                 </td>
                                 <td class="px-6 py-4 text-sm">
-                                    <div v-if="isCreatedToday(item.created_at)" class="flex items-center space-x-2">
+                                    <div v-if="isCreatedToday(investment.created_at)" class="flex items-center space-x-2">
                                         <button
-                                            @click="openEditModal(item)"
+                                            @click="openEditModal(investment)"
                                             class="inline-flex items-center justify-center space-x-1 w-9 h-9 text-blue-600 hover:bg-blue-100 rounded-lg transition-all duration-200"
                                             title="Edit"
                                         >
                                             <Edit2 class="h-4 w-4" />
                                         </button>
                                         <button
-                                            @click="deleteInvestment(item)"
+                                            @click="deleteInvestment(investment)"
                                             class="inline-flex items-center justify-center space-x-1 w-9 h-9 text-red-600 hover:bg-red-100 rounded-lg transition-all duration-200"
                                             title="Delete"
                                         >
@@ -450,8 +476,8 @@ const deleteInvestment = async (investment) => {
                                 </td>
                             </tr>
                         </tbody>
-                        <tfoot v-if="filteredItems.length > 0">
-                            <tr class="bg-yellow-50 font-bold border-b-2 border-gray-300">
+                        <tfoot v-if="filteredInvestments.length > 0">
+                            <tr class="bg-yellow-50 font-bold border-t-2 border-gray-300">
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">TOTAL</td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
@@ -463,6 +489,9 @@ const deleteInvestment = async (investment) => {
                         </tfoot>
                     </table>
                 </div>
+                <div class="bg-gray-50 px-6 py-4 border-t-2 border-gray-300">
+                    <p class="text-sm text-gray-600">Total: <span class="font-semibold text-gray-900">{{ filteredInvestments.length }}</span> investment(s)</p>
+                </div>
             </div>
 
             <!-- Create Modal -->
@@ -470,6 +499,22 @@ const deleteInvestment = async (investment) => {
 
             <!-- Edit Modal -->
             <EditInvestmentModal :isOpen="showEditModal" :investment="selectedInvestment" :existingInvestments="props.investments" @close="closeEditModal" />
+
+            <!-- Renew Modal -->
+            <RenewInvestmentModal :isOpen="showRenewModal" :investment="selectedInvestment" @close="closeRenewModal" />
+
+            <!-- Withdraw Modal -->
+            <WithdrawInvestmentModal :isOpen="showWithdrawModal" :investment="selectedInvestment" @close="closeWithdrawModal" />
+
+            <!-- Add Balance Modal -->
+            <AddBalanceInvestmentModal :isOpen="showAddBalanceModal" :investment="selectedInvestment" @close="closeAddBalanceModal" />
+
+            <!-- View History Modal -->
+            <ViewInvestmentModal 
+                :isOpen="showViewModal"
+                :investment="selectedInvestment"
+                @close="closeViewModal"
+            />
         </div>
     </TreasuryLayout>
 </template>

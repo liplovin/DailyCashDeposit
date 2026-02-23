@@ -197,6 +197,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/investment', [InvestmentController::class, 'store'])->name('investment.store');
         Route::put('/investment/{id}', [InvestmentController::class, 'update'])->name('investment.update');
         Route::delete('/investment/{id}', [InvestmentController::class, 'destroy'])->name('investment.destroy');
+        Route::post('/investment/{id}/renew', [InvestmentController::class, 'renew'])->name('investment.renew');
+        Route::post('/investment/{id}/withdraw', [InvestmentController::class, 'withdraw'])->name('investment.withdraw');
+        Route::post('/investment/{id}/add-balance', [InvestmentController::class, 'addBalance'])->name('investment.add-balance');
 
         Route::get('/processed-collection', function () {
             $operatingAccounts = \App\Models\OperatingAccount::with(['collections' => function($query) {

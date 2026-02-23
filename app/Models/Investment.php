@@ -27,4 +27,28 @@ class Investment extends Model
         'disbursement' => 'decimal:2',
         'ending_balance' => 'decimal:2',
     ];
+
+    /**
+     * Get all renewals for this investment
+     */
+    public function renewals()
+    {
+        return $this->hasMany(InvestmentRenewal::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get all withdrawals for this investment
+     */
+    public function withdrawals()
+    {
+        return $this->hasMany(InvestmentWithdrawal::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get all balance additions for this investment
+     */
+    public function balances()
+    {
+        return $this->hasMany(InvestmentBalance::class)->orderBy('created_at', 'desc');
+    }
 }
