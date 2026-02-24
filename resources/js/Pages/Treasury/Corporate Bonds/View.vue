@@ -88,9 +88,9 @@
                       </div>
                     </div>
                     
-                    <div class="mb-3">
-                      <p class="text-xs text-gray-500 font-semibold">Explanation</p>
-                      <p class="text-sm text-gray-700">{{ renewal.explanation }}</p>
+                    <div class="bg-white rounded-lg p-4 border border-blue-100 mb-3">
+                      <p class="text-xs text-gray-600 font-bold uppercase tracking-widest mb-2">Explanation</p>
+                      <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap break-words">{{ renewal.explanation?.trim() || '—' }}</p>
                     </div>
 
                     <div class="flex justify-between items-center pt-3 border-t border-gray-200">

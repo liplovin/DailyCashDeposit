@@ -188,7 +188,7 @@ const handleSubmit = () => {
                             Amount to Add <span class="text-red-500">*</span>
                         </label>
                         <div class="relative">
-                            <span class="absolute left-4 top-2 text-gray-500 font-semibold">₱</span>
+                            <span class="absolute left-4 top-2.5 text-gray-500 font-semibold">₱</span>
                             <input
                                 type="text"
                                 @input="handleAmountInput"
@@ -202,14 +202,22 @@ const handleSubmit = () => {
                         <p v-if="errors.amount" class="text-red-500 text-sm mt-1">{{ errors.amount }}</p>
                     </div>
 
+                    <!-- New Balance Preview -->
+                    <div v-if="form.amount && parseFloat(form.amount) > 0" class="bg-green-50 rounded-lg p-3 border border-green-200">
+                        <p class="text-sm text-gray-600">New Beginning Balance:</p>
+                        <p class="text-lg font-semibold text-green-600">
+                            {{ formatCurrency(parseFloat(operatingAccount?.beginning_balance || 0) + parseFloat(form.amount || 0)) }}
+                        </p>
+                    </div>
+
                     <!-- Explanation Field -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-900 mb-2">
-                            Reason for Adding Balance <span class="text-red-500">*</span>
+                            Reason <span class="text-red-500">*</span>
                         </label>
                         <textarea
                             v-model="form.explanation"
-                            placeholder="Enter reason for adding balance..."
+                            placeholder="Enter reason for adding to balance..."
                             rows="4"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400 resize-none"
                             :class="{ 'border-red-500 focus:ring-red-500': errors.explanation }"
@@ -217,8 +225,8 @@ const handleSubmit = () => {
                         <p v-if="errors.explanation" class="text-red-500 text-sm mt-1">{{ errors.explanation }}</p>
                     </div>
 
-                    <!-- Form Footer -->
-                    <div class="flex gap-2 pt-2">
+                    <!-- Modal Actions -->
+                    <div class="flex space-x-3 pt-4 border-t border-gray-200">
                         <button
                             type="button"
                             @click="closeModal"
@@ -229,7 +237,7 @@ const handleSubmit = () => {
                         <button
                             type="submit"
                             :disabled="isSubmitting"
-                            class="flex-1 px-4 py-2 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 disabled:bg-gray-400 transition-all duration-200"
+                            class="flex-1 px-4 py-2 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
                         >
                             {{ isSubmitting ? 'Adding...' : 'Add Balance' }}
                         </button>
@@ -241,11 +249,13 @@ const handleSubmit = () => {
 </template>
 
 <style scoped>
-.fade-enter-active, .fade-leave-active {
-    transition: opacity 0.2s ease;
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s ease;
 }
 
-.fade-enter-from, .fade-leave-to {
+.fade-enter-from,
+.fade-leave-to {
     opacity: 0;
 }
 </style>

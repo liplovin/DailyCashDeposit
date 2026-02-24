@@ -319,9 +319,8 @@ const deleteCorporateBond = async (bond) => {
                                     : 'bg-white border-gray-300 text-gray-700 hover:border-yellow-400 hover:bg-yellow-50'
                             ]"
                         >
-                            <Eye v-if="!showWithdrawn" class="h-5 w-5" />
-                            <EyeOff v-else class="h-5 w-5" />
-                            <span>{{ showWithdrawn ? 'Withdrawn' : 'Active' }}</span>
+                            <component :is="showWithdrawn ? Eye : EyeOff" class="h-5 w-5" />
+                            <span>{{ showWithdrawn ? 'Withdrawn Only' : 'Active' }}</span>
                         </button>
                     </div>
                 </div>
@@ -392,8 +391,8 @@ const deleteCorporateBond = async (bond) => {
                                         {{ bond.corporate_bond_name }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-200">{{ bond.account_number }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-200">
+                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ bond.account_number }}</td>
+                                <td class="px-6 py-4 text-sm border-r border-gray-200" :class="bond.maturity_date ? 'text-gray-700' : 'text-green-600 font-bold'">
                                     {{ formatMaturityDate(bond.maturity_date) }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(bond.beginning_balance) }}</td>
@@ -414,7 +413,8 @@ const deleteCorporateBond = async (bond) => {
                                         </button>
                                         <div 
                                             v-if="openDropdownId === bond.id"
-                                            class="absolute right-0 mt-2 w-40 bg-white border-2 border-gray-200 rounded-lg shadow-lg z-20"
+                                            @click.stop
+                                            class="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48 overflow-hidden"
                                         >
                                             <!-- Renew (Visible if within 30 days) -->
                                             <button
@@ -422,7 +422,7 @@ const deleteCorporateBond = async (bond) => {
                                                 @click="openRenewModal(bond); toggleDropdown(null)"
                                                 class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
                                             >
-                                                ↻ Renew
+                                                ✓ Renew
                                             </button>
                                             <!-- Withdraw (Always Visible) -->
                                             <button

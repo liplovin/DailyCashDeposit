@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\OtherInvestment;
+use App\Models\OtherInvestmentRenewal;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -151,25 +152,29 @@ class OtherInvestmentController extends Controller
     /**
      * Renew an other investment
      */
-    public function renew($id)
+    public function renew(Request $request, $id)
     {
-        try {
-            $otherInvestment = OtherInvestment::findOrFail($id);
+        $otherInvestment = OtherInvestment::findOrFail($id);
 
-            // Create renewal record
-            $otherInvestment->renewals()->create([
-                'new_maturity_date' => now()->addMonths(1)->toDateString()
-            ]);
+        $validated = $request->validate([
+            'new_maturity_date' => 'required|date|after:today',
+            'explanation' => 'required|string|max:1000',
+        ]);
 
-            // Update maturity date
-            $otherInvestment->update([
-                'maturity_date' => now()->addMonths(1)->toDateString()
-            ]);
+        // Create renewal record with previous maturity date
+        OtherInvestmentRenewal::create([
+            'other_investment_id' => $id,
+            'previous_maturity_date' => $otherInvestment->maturity_date,
+            'new_maturity_date' => $validated['new_maturity_date'],
+            'explanation' => $validated['explanation'],
+        ]);
 
-            return redirect()->back()->with('success', 'Other Investment renewed successfully.');
-        } catch (\Exception $e) {
-            return redirect()->back()->withErrors(['message' => $e->getMessage()]);
-        }
+        // Update maturity date
+        $otherInvestment->update([
+            'maturity_date' => $validated['new_maturity_date'],
+        ]);
+
+        return redirect('/treasury/other-investment')->with('success', 'Other Investment renewed successfully.');
     }
 
     /**

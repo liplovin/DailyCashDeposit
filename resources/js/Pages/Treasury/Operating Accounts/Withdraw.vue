@@ -132,7 +132,7 @@ const handleSubmit = () => {
                     title: 'Withdrawn!',
                     text: 'Operating Account withdrawal has been recorded successfully.',
                     icon: 'success',
-                    confirmButtonColor: '#F59E0B',
+                    confirmButtonColor: '#F97316',
                     timer: 2000,
                     timerProgressBar: true
                 }).then(() => {
@@ -146,14 +146,14 @@ const handleSubmit = () => {
                         title: 'Error!',
                         text: errors.message,
                         icon: 'error',
-                        confirmButtonColor: '#F59E0B'
+                        confirmButtonColor: '#F97316'
                     });
                 } else {
                     Swal.fire({
                         title: 'Error!',
                         text: 'Failed to record withdrawal. Please try again.',
                         icon: 'error',
-                        confirmButtonColor: '#F59E0B'
+                        confirmButtonColor: '#F97316'
                     });
                 }
             },
@@ -201,43 +201,62 @@ const handleSubmit = () => {
                         </p>
                     </div>
 
-                    <!-- Amount Field -->
+                    <!-- Withdrawal Amount Field -->
                     <div>
                         <div class="flex items-center justify-between mb-2">
-                            <label class="text-sm font-semibold text-gray-900">
+                            <label class="block text-sm font-semibold text-gray-900">
                                 Withdrawal Amount <span class="text-red-500">*</span>
                             </label>
                             <button
                                 type="button"
                                 @click="withdrawAll"
-                                class="text-xs px-2 py-1 text-orange-600 hover:bg-orange-100 rounded transition-all"
+                                class="text-xs font-semibold text-orange-600 hover:text-orange-800 bg-orange-50 hover:bg-orange-100 px-3 py-1 rounded transition-colors"
                             >
                                 Withdraw All
                             </button>
                         </div>
                         <div class="relative">
-                            <span class="absolute left-4 top-2 text-gray-500 font-semibold">₱</span>
+                            <span class="absolute left-4 top-2.5 text-gray-500 font-semibold">₱</span>
                             <input
+                                :value="displayAmount"
                                 type="text"
+                                placeholder="Enter withdrawal amount"
+                                class="w-full px-4 py-2 pl-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
+                                :class="{ 'border-red-500 focus:ring-red-500': errors.amount }"
                                 @input="handleAmountInput"
                                 @keypress="handleAmountKeyPress"
-                                :value="displayAmount"
-                                placeholder="0.00"
-                                class="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 text-gray-900 text-right"
-                                :class="{ 'border-red-500 focus:ring-red-500': errors.amount }"
                             />
                         </div>
                         <p v-if="errors.amount" class="text-red-500 text-sm mt-1">{{ errors.amount }}</p>
+                        
+                        <!-- Remaining Balance Preview -->
+                        <div v-if="form.amount" class="mt-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-xs text-gray-500 font-semibold">Current Balance</p>
+                                    <p class="text-sm font-bold text-gray-900">₱ {{ formatCurrency(operatingAccount?.beginning_balance || 0) }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500 font-semibold">Remaining After Withdrawal</p>
+                                    <p class="text-sm font-bold" :class="remainingBalance < 0 ? 'text-red-600' : 'text-orange-600'">
+                                        ₱ {{ formatCurrency(remainingBalance) }}
+                                    </p>
+                                </div>
+                            </div>
+                            <p v-if="remainingBalance < 0" class="text-xs text-red-600 font-semibold mt-2">
+                                ⚠️ Withdrawal amount exceeds available balance!
+                            </p>
+                        </div>
                     </div>
 
                     <!-- Explanation Field -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-900 mb-2">
-                            Explanation / Reason <span class="text-red-500">*</span>
+                            Explanation / Notes <span class="text-red-500">*</span>
                         </label>
                         <textarea
                             v-model="form.explanation"
-                            placeholder="Enter reason for withdrawal..."
+                            placeholder="Enter reason or notes for withdrawal..."
                             rows="4"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400 resize-none"
                             :class="{ 'border-red-500 focus:ring-red-500': errors.explanation }"
@@ -245,8 +264,8 @@ const handleSubmit = () => {
                         <p v-if="errors.explanation" class="text-red-500 text-sm mt-1">{{ errors.explanation }}</p>
                     </div>
 
-                    <!-- Form Footer -->
-                    <div class="flex gap-2 pt-2">
+                    <!-- Modal Actions -->
+                    <div class="flex space-x-3 pt-4 border-t border-gray-200">
                         <button
                             type="button"
                             @click="closeModal"
@@ -257,9 +276,9 @@ const handleSubmit = () => {
                         <button
                             type="submit"
                             :disabled="isSubmitting"
-                            class="flex-1 px-4 py-2 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 disabled:bg-gray-400 transition-all duration-200"
+                            class="flex-1 px-4 py-2 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
                         >
-                            {{ isSubmitting ? 'Processing...' : 'Withdraw' }}
+                            {{ isSubmitting ? 'Withdrawing...' : 'Withdraw' }}
                         </button>
                     </div>
                 </form>
