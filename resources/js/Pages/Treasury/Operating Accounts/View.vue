@@ -19,6 +19,17 @@
         <div class="sticky top-14 bg-white border-b border-gray-200 px-6">
           <div class="flex space-x-8">
             <button
+              @click="activeTab = 'details'"
+              :class="[
+                'py-3 px-1 border-b-2 font-medium text-sm transition-colors',
+                activeTab === 'details'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              ]"
+            >
+              Details
+            </button>
+            <button
               @click="activeTab = 'renewals'"
               :class="[
                 'py-3 px-1 border-b-2 font-medium text-sm transition-colors',
@@ -56,6 +67,40 @@
 
         <!-- Content -->
         <div class="p-6">
+          <!-- Details Tab -->
+          <div v-if="activeTab === 'details'">
+            <div v-if="operatingAccount" class="space-y-4">
+              <!-- Operating Account Basic Info Grid -->
+              <div class="grid grid-cols-2 gap-4">
+                <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Operating Account Name</p>
+                  <p class="text-sm font-medium text-gray-900">{{ operatingAccount.operating_account_name }}</p>
+                </div>
+                <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Account Number</p>
+                  <p class="text-sm font-medium text-gray-900">{{ operatingAccount.account_number }}</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                  <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Acquisition Date</p>
+                  <p class="text-sm font-medium text-gray-900">{{ formatDate(operatingAccount.acquisition_date) }}</p>
+                </div>
+                <div class="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+                  <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Maturity Date</p>
+                  <p class="text-sm font-medium text-gray-900">{{ formatDate(operatingAccount.maturity_date) }}</p>
+                </div>
+              </div>
+
+              <!-- Explanation -->
+              <div class="bg-white rounded-lg p-4 border border-blue-100">
+                <p class="text-xs text-gray-600 font-bold uppercase tracking-widest mb-2">Explanation</p>
+                <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap break-words">{{ operatingAccount.explanation?.trim() || '—' }}</p>
+              </div>
+            </div>
+          </div>
+
           <!-- Renewal History Tab -->
           <div v-if="activeTab === 'renewals'">
             <div v-if="operatingAccount && operatingAccount.renewals && operatingAccount.renewals.length > 0" class="space-y-4">
@@ -240,11 +285,11 @@ const props = defineProps({
 
 defineEmits(['close']);
 
-const activeTab = ref('renewals');
+const activeTab = ref('details');
 
 watch(() => props.isOpen, (newVal) => {
   if (newVal) {
-    activeTab.value = 'renewals';
+    activeTab.value = 'details';
   }
 });
 
