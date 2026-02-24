@@ -26,10 +26,13 @@ class CollateralController extends Controller
             'account_number' => 'required|string|unique:collaterals,account_number',
             'beginning_balance' => 'required|numeric|min:0',
             'maturity_date' => 'required|date_format:m/d/Y',
+            'acquisition_date' => 'required|date_format:m/d/Y',
+            'explanation' => 'required|string|max:1000',
         ]);
 
-        // Convert mm/dd/yy to Y-m-d format for storage
+        // Convert mm/dd/yyyy to Y-m-d format for storage
         $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
+        $validated['acquisition_date'] = $this->convertDateFormat($validated['acquisition_date']);
 
         Collateral::create($validated);
 
@@ -53,10 +56,13 @@ class CollateralController extends Controller
             'account_number' => 'required|string|unique:collaterals,account_number,' . $id,
             'beginning_balance' => 'required|numeric|min:0',
             'maturity_date' => 'required|date_format:m/d/Y',
+            'acquisition_date' => 'required|date_format:m/d/Y',
+            'explanation' => 'required|string|max:1000',
         ]);
 
         // Convert mm/dd/yyyy to Y-m-d format for storage
         $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
+        $validated['acquisition_date'] = $this->convertDateFormat($validated['acquisition_date']);
 
         $collateral->update($validated);
 

@@ -439,6 +439,7 @@ const withdrawCollateral = async (collateral) => {
                             <tr class="border-b-2 border-gray-300">
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Collateral Name</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Account Number</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Acquisition Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Ending Balance</th>
@@ -467,6 +468,9 @@ const withdrawCollateral = async (collateral) => {
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ collateral.account_number }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-200">
+                                    {{ collateral.acquisition_date ? new Date(collateral.acquisition_date).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }) : '—' }}
+                                </td>
                                 <td class="px-6 py-4 text-sm font-mono border-r border-gray-200" :class="collateral.maturity_date ? 'text-gray-700' : 'text-green-600 font-bold'">
                                     {{ formatMaturityDate(collateral.maturity_date) }}
                                 </td>

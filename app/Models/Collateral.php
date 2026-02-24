@@ -16,6 +16,8 @@ class Collateral extends Model
         'disbursement_date',
         'ending_balance',
         'maturity_date',
+        'acquisition_date',
+        'explanation',
     ];
 
     /**
