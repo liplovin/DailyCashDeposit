@@ -57,7 +57,7 @@
       <div class="p-6">
         <!-- Renewal History Tab -->
         <div v-if="activeTab === 'renewals'">
-          <div v-if="collateral.renewals && collateral.renewals.length > 0" class="space-y-4">
+          <div v-if="collateral && collateral.renewals && collateral.renewals.length > 0" class="space-y-4">
             <!-- Timeline -->
             <div class="relative">
               <div class="space-y-6">
@@ -112,7 +112,7 @@
 
         <!-- Withdrawal History Tab -->
         <div v-if="activeTab === 'withdrawals'">
-          <div v-if="collateral.withdrawals && collateral.withdrawals.length > 0" class="space-y-4">
+          <div v-if="collateral && collateral.withdrawals && collateral.withdrawals.length > 0" class="space-y-4">
             <div
               v-for="withdrawal in collateral.withdrawals"
               :key="`withdrawal-${withdrawal.id}`"
@@ -129,7 +129,7 @@
               <div class="grid grid-cols-3 gap-3 mb-5 pb-5 border-b border-orange-200">
                 <div class="bg-white rounded-lg p-4 border border-orange-100">
                   <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Previous Balance</p>
-                  <p class="text-xl font-bold text-gray-800">₱ {{ formatCurrency(collateral.beginning_balance + withdrawal.amount) }}</p>
+                  <p class="text-xl font-bold text-gray-800">₱ {{ formatCurrency((collateral?.beginning_balance || 0) + withdrawal.amount) }}</p>
                 </div>
                 <div class="bg-orange-100 rounded-lg p-4 border border-orange-300 flex items-center justify-center">
                   <div class="text-center">
@@ -139,7 +139,7 @@
                 </div>
                 <div class="bg-green-50 rounded-lg p-4 border border-green-300">
                   <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">New Balance</p>
-                  <p class="text-xl font-bold text-green-700">₱ {{ formatCurrency(collateral.beginning_balance) }}</p>
+                  <p class="text-xl font-bold text-green-700">₱ {{ formatCurrency(collateral?.beginning_balance || 0) }}</p>
                 </div>
               </div>
 
@@ -161,7 +161,7 @@
 
         <!-- Balance History Tab -->
         <div v-if="activeTab === 'balances'">
-          <div v-if="collateral.balances && collateral.balances.length > 0" class="space-y-4">
+          <div v-if="collateral && collateral.balances && collateral.balances.length > 0" class="space-y-4">
             <div
               v-for="balance in collateral.balances"
               :key="`balance-${balance.id}`"
@@ -178,7 +178,7 @@
               <div class="grid grid-cols-3 gap-3 mb-5 pb-5 border-b border-green-200">
                 <div class="bg-white rounded-lg p-4 border border-green-100">
                   <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Previous Balance</p>
-                  <p class="text-xl font-bold text-gray-800">₱ {{ formatCurrency(collateral.beginning_balance - balance.amount) }}</p>
+                  <p class="text-xl font-bold text-gray-800">₱ {{ formatCurrency((collateral?.beginning_balance || 0) - balance.amount) }}</p>
                 </div>
                 <div class="bg-green-100 rounded-lg p-4 border border-green-300 flex items-center justify-center">
                   <div class="text-center">
@@ -188,7 +188,7 @@
                 </div>
                 <div class="bg-blue-50 rounded-lg p-4 border border-blue-300">
                   <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">New Balance</p>
-                  <p class="text-xl font-bold text-blue-700">₱ {{ formatCurrency(collateral.beginning_balance) }}</p>
+                  <p class="text-xl font-bold text-blue-700">₱ {{ formatCurrency(collateral?.beginning_balance || 0) }}</p>
                 </div>
               </div>
 

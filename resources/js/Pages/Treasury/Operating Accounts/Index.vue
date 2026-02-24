@@ -2,8 +2,12 @@
 import TreasuryLayout from '@/Layouts/TreasuryLayout.vue';
 import CreateOperatingAccountModal from './Create.vue';
 import EditOperatingAccountModal from './Edit.vue';
-import { Plus, Trash2, Edit2, Search } from 'lucide-vue-next';
-import { computed, ref, onMounted, watch } from 'vue';
+import RenewOperatingAccountModal from './Renew.vue';
+import WithdrawOperatingAccountModal from './Withdraw.vue';
+import AddBalanceOperatingAccountModal from './AddBalance.vue';
+import ViewOperatingAccountModal from './View.vue';
+import { Plus, Trash2, Edit2, Search, ChevronDown, Eye, EyeOff } from 'lucide-vue-next';
+import { computed, ref, onMounted } from 'vue';
 import { router } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
 
@@ -22,16 +26,9 @@ const getTodayDate = () => {
     return `${year}-${month}-${day}`;
 };
 
-const searchQuery = ref('');
-const filterDate = ref(getTodayDate());
-const showModal = ref(false);
-const showEditModal = ref(false);
-const selectedOperatingAccount = ref(null);
-
 onMounted(() => {
     document.title = 'Operating Accounts Management - Daily Deposit';
     
-    // Auto-search from dashboard route parameter
     const params = new URLSearchParams(window.location.search);
     const searchParam = params.get('search');
     if (searchParam) {
@@ -39,18 +36,20 @@ onMounted(() => {
     }
 });
 
-const updateUrlWithDate = (date) => {
-    const params = new URLSearchParams(window.location.search);
-    params.set('date', date);
-    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
-};
-
-watch(filterDate, (newDate) => {
-    updateUrlWithDate(newDate);
-});
+const searchQuery = ref('');
+const filterDate = ref(getTodayDate());
+const showWithdrawn = ref(false);
+const showModal = ref(false);
+const showEditModal = ref(false);
+const showRenewModal = ref(false);
+const showWithdrawModal = ref(false);
+const showAddBalanceModal = ref(false);
+const showViewModal = ref(false);
+const selectedOperatingAccount = ref(null);
+const openDropdownId = ref(null);
 
 const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-PH', {
         style: 'currency',
         currency: 'PHP',
         minimumFractionDigits: 2,
@@ -60,6 +59,13 @@ const formatCurrency = (value) => {
 
 const filteredOperatingAccounts = computed(() => {
     let filtered = props.operatingAccounts;
+    
+    // Filter by withdrawn status - show ONLY withdrawn when toggled
+    if (showWithdrawn.value) {
+        filtered = filtered.filter(account => account.maturity_date === null);
+    } else {
+        filtered = filtered.filter(account => account.maturity_date !== null);
+    }
     
     if (searchQuery.value.trim()) {
         const query = searchQuery.value.toLowerCase();
@@ -168,35 +174,49 @@ const closeEditModal = () => {
     selectedOperatingAccount.value = null;
 };
 
-const totalBeginningBalance = computed(() => {
-    return filteredOperatingAccounts.value.reduce((sum, account) => {
-        return sum + getRollingBeginningBalance(account, filterDate.value);
-    }, 0);
-});
+const openRenewModal = (account) => {
+    selectedOperatingAccount.value = account;
+    showRenewModal.value = true;
+};
 
-const totalCollectionByDate = computed(() => {
-    return filteredOperatingAccounts.value.reduce((sum, account) => {
-        return sum + getTotalCollectionByDate(account);
-    }, 0);
-});
+const closeRenewModal = () => {
+    showRenewModal.value = false;
+    selectedOperatingAccount.value = null;
+};
 
-const totalDisbursementByDate = computed(() => {
-    return filteredOperatingAccounts.value.reduce((sum, account) => {
-        return sum + getTotalDisbursementByDate(account);
-    }, 0);
-});
+const openWithdrawModal = (account) => {
+    selectedOperatingAccount.value = account;
+    showWithdrawModal.value = true;
+};
 
-const totalEndingBalance = computed(() => {
-    return filteredOperatingAccounts.value.reduce((sum, account) => {
-        const beginning = getRollingBeginningBalance(account, filterDate.value);
-        const collection = getTotalCollectionByDate(account);
-        const disbursement = getTotalDisbursementByDate(account);
-        const ending = beginning + collection - disbursement;
-        return sum + ending;
-    }, 0);
-});
+const closeWithdrawModal = () => {
+    showWithdrawModal.value = false;
+    selectedOperatingAccount.value = null;
+};
 
+const addBalance = (account) => {
+    selectedOperatingAccount.value = account;
+    showAddBalanceModal.value = true;
+};
 
+const closeAddBalanceModal = () => {
+    showAddBalanceModal.value = false;
+    selectedOperatingAccount.value = null;
+};
+
+const viewOperatingAccount = (account) => {
+    selectedOperatingAccount.value = account;
+    showViewModal.value = true;
+};
+
+const closeViewModal = () => {
+    showViewModal.value = false;
+    selectedOperatingAccount.value = null;
+};
+
+const toggleDropdown = (accountId) => {
+    openDropdownId.value = openDropdownId.value === accountId ? null : accountId;
+};
 
 const deleteOperatingAccount = async (account) => {
     const result = await Swal.fire({
@@ -265,96 +285,18 @@ const isOverdueOrDueToday = (dateString) => {
     return daysRemaining !== null && daysRemaining <= 0;
 };
 
-const renewOperatingAccount = async (account) => {
-    const result = await Swal.fire({
-        title: 'Renew Operating Account?',
-        html: `
-            <div class="text-left">
-                <p class="mb-3"><strong>Operating Account:</strong> ${account.operating_account_name}</p>
-                <p class="mb-3"><strong>Account:</strong> ${account.account_number}</p>
-                <p class="text-green-600 text-sm"><strong>✓ This will renew the operating account.</strong></p>
-            </div>
-        `,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#10B981',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Yes, Renew',
-        cancelButtonText: 'Cancel',
-        allowOutsideClick: false,
-        allowEscapeKey: false
-    });
-
-    if (result.isConfirmed) {
-        router.post(`/treasury/operating-accounts/${account.id}/renew`, {}, {
-            onSuccess: () => {
-                Swal.fire({
-                    title: 'Renewed!',
-                    text: 'Operating Account has been renewed successfully.',
-                    icon: 'success',
-                    confirmButtonColor: '#F59E0B',
-                    timer: 2000,
-                    timerProgressBar: true
-                });
-            },
-            onError: () => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Failed to renew operating account. Please try again.',
-                    icon: 'error',
-                    confirmButtonColor: '#F59E0B'
-                });
-            }
-        });
-    }
-};
-
-const withdrawOperatingAccount = async (account) => {
-    const result = await Swal.fire({
-        title: 'Withdraw Operating Account?',
-        html: `
-            <div class="text-left">
-                <p class="mb-3"><strong>Operating Account:</strong> ${account.operating_account_name}</p>
-                <p class="mb-3"><strong>Account:</strong> ${account.account_number}</p>
-                <p class="text-orange-600 text-sm"><strong>✓ This will withdraw the operating account amount.</strong></p>
-            </div>
-        `,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#F97316',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Yes, Withdraw',
-        cancelButtonText: 'Cancel',
-        allowOutsideClick: false,
-        allowEscapeKey: false
-    });
-
-    if (result.isConfirmed) {
-        router.post(`/treasury/operating-accounts/${account.id}/withdraw`, {}, {
-            onSuccess: () => {
-                Swal.fire({
-                    title: 'Withdrawn!',
-                    text: 'Operating Account has been withdrawn successfully.',
-                    icon: 'success',
-                    confirmButtonColor: '#F59E0B',
-                    timer: 2000,
-                    timerProgressBar: true
-                });
-            },
-            onError: () => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Failed to withdraw operating account. Please try again.',
-                    icon: 'error',
-                    confirmButtonColor: '#F59E0B'
-                });
-            }
-        });
-    }
+const isCreatedToday = (createdAtString) => {
+    if (!createdAtString) return false;
+    const createdDate = new Date(createdAtString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    createdDate.setHours(0, 0, 0, 0);
+    
+    return createdDate.getTime() === today.getTime();
 };
 
 const formatMaturityDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return '✓ Withdrawn';
     const date = new Date(dateString);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -377,15 +319,33 @@ const formatMaturityDate = (dateString) => {
     return formattedDate;
 };
 
-const isCreatedToday = (createdAtString) => {
-    if (!createdAtString) return false;
-    const createdDate = new Date(createdAtString);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    createdDate.setHours(0, 0, 0, 0);
-    
-    return createdDate.getTime() === today.getTime();
-};
+const totalBeginningBalance = computed(() => {
+    return filteredOperatingAccounts.value.reduce((sum, account) => {
+        return sum + getRollingBeginningBalance(account, filterDate.value);
+    }, 0);
+});
+
+const totalCollectionByDate = computed(() => {
+    return filteredOperatingAccounts.value.reduce((sum, account) => {
+        return sum + getTotalCollectionByDate(account);
+    }, 0);
+});
+
+const totalDisbursementByDate = computed(() => {
+    return filteredOperatingAccounts.value.reduce((sum, account) => {
+        return sum + getTotalDisbursementByDate(account);
+    }, 0);
+});
+
+const totalEndingBalance = computed(() => {
+    return filteredOperatingAccounts.value.reduce((sum, account) => {
+        const beginning = getRollingBeginningBalance(account, filterDate.value);
+        const collection = getTotalCollectionByDate(account);
+        const disbursement = getTotalDisbursementByDate(account);
+        const ending = beginning + collection - disbursement;
+        return sum + ending;
+    }, 0);
+});
 </script>
 
 <template>
@@ -408,12 +368,12 @@ const isCreatedToday = (createdAtString) => {
                 </div>
             </div>
 
-            <!-- Search Bar and Date Filter -->
+            <!-- Search Bar and Filter -->
             <div class="bg-yellow-50 rounded-xl border-2 border-yellow-200 p-6 mb-8">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                     <!-- Search Bar -->
                     <div class="md:col-span-2">
-                        <label class="block text-sm font-bold text-gray-800 mb-3">Search</label>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Search Operating Account</label>
                         <div class="relative">
                             <Search class="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
                             <input
@@ -434,11 +394,28 @@ const isCreatedToday = (createdAtString) => {
                             class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
                         />
                     </div>
+
+                    <!-- Show Withdrawn Filter -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Filter</label>
+                        <button
+                            @click="showWithdrawn = !showWithdrawn"
+                            :class="[
+                                'w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-semibold transition-all duration-200 border-2',
+                                showWithdrawn
+                                    ? 'bg-green-100 border-green-400 text-green-700 shadow-md hover:bg-green-200'
+                                    : 'bg-white border-gray-300 text-gray-700 hover:border-yellow-400 hover:bg-yellow-50'
+                            ]"
+                        >
+                            <component :is="showWithdrawn ? Eye : EyeOff" class="h-5 w-5" />
+                            <span>{{ showWithdrawn ? 'Withdrawn Only' : 'Active' }}</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <!-- Empty State -->
-            <div v-if="!hasOperatingAccounts && filteredOperatingAccounts.length === 0" class="max-w-6xl">
+            <div v-if="props.operatingAccounts.length === 0" class="max-w-6xl">
                 <div class="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-2xl border-2 border-yellow-200 p-12 text-center shadow-lg">
                     <div class="inline-block">
                         <div class="w-16 h-16 bg-yellow-200 rounded-full flex items-center justify-center mb-4">
@@ -502,28 +479,59 @@ const isCreatedToday = (createdAtString) => {
                                         {{ account.operating_account_name }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-200">{{ account.account_number }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-200">{{ formatMaturityDate(account.maturity_date) }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ account.account_number }}</td>
+                                <td class="px-6 py-4 text-sm font-mono border-r border-gray-200" :class="account.maturity_date ? 'text-gray-700' : 'text-green-600 font-bold'">
+                                    {{ formatMaturityDate(account.maturity_date) }}
+                                </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(account, filterDate)) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(account, filterDate) + getTotalCollectionByDate(account) - getTotalDisbursementByDate(account)) }}</td>
                                 <td class="px-6 py-4 text-sm border-r border-gray-200">
-                                    <div v-if="isMaturityActionVisible(account.maturity_date)" class="flex items-center space-x-2">
+                                    <div class="relative">
                                         <button
-                                            @click="renewOperatingAccount(account)"
-                                            class="px-3 py-1.5 bg-green-500 text-white text-xs font-semibold rounded-lg hover:bg-green-600 transition-all duration-200"
-                                            title="Renew"
+                                            @click.stop="toggleDropdown(account.id)"
+                                            :class="[
+                                                'inline-flex items-center space-x-1 px-3 py-2 text-xs font-semibold rounded-lg transition-all duration-200',
+                                                openDropdownId === account.id 
+                                                    ? 'bg-yellow-600 text-white' 
+                                                    : 'bg-yellow-500 text-white hover:bg-yellow-600'
+                                            ]"
                                         >
-                                            Renew
+                                            <span>Actions</span>
+                                            <ChevronDown :class="['h-4 w-4', openDropdownId === account.id ? 'rotate-180' : '']" style="transition: transform 0.2s" />
                                         </button>
-                                        <button
-                                            @click="withdrawOperatingAccount(account)"
-                                            class="px-3 py-1.5 bg-orange-500 text-white text-xs font-semibold rounded-lg hover:bg-orange-600 transition-all duration-200"
-                                            title="Withdraw"
+                                        <div 
+                                            v-if="openDropdownId === account.id"
+                                            @click.stop
+                                            class="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48 overflow-hidden"
                                         >
-                                            Withdraw
-                                        </button>
+                                            <button
+                                                v-if="isMaturityActionVisible(account.maturity_date)"
+                                                @click="openRenewModal(account); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                ✓ Renew
+                                            </button>
+                                            <button
+                                                @click="openWithdrawModal(account); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                ↓ Withdraw
+                                            </button>
+                                            <button
+                                                v-if="account.maturity_date !== null"
+                                                @click="addBalance(account); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                + Add
+                                            </button>
+                                            <button
+                                                @click="viewOperatingAccount(account); toggleDropdown(null)"
+                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                            >
+                                                👁 View
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div v-else class="text-xs text-gray-500">—</div>
                                 </td>
                                 <td class="px-6 py-4 text-sm">
                                     <div v-if="isCreatedToday(account.created_at)" class="flex items-center space-x-2">
@@ -559,6 +567,9 @@ const isCreatedToday = (createdAtString) => {
                         </tfoot>
                     </table>
                 </div>
+                <div class="bg-gray-50 px-6 py-4 border-t-2 border-gray-300">
+                    <p class="text-sm text-gray-600">Total: <span class="font-semibold text-gray-900">{{ filteredOperatingAccounts.length }}</span> operating account(s)</p>
+                </div>
             </div>
 
             <!-- Create Modal -->
@@ -566,6 +577,22 @@ const isCreatedToday = (createdAtString) => {
 
             <!-- Edit Modal -->
             <EditOperatingAccountModal :isOpen="showEditModal" :operatingAccount="selectedOperatingAccount" :existingOperatingAccounts="props.operatingAccounts" @close="closeEditModal" />
+
+            <!-- Renew Modal -->
+            <RenewOperatingAccountModal :isOpen="showRenewModal" :operatingAccount="selectedOperatingAccount" @close="closeRenewModal" />
+
+            <!-- Withdraw Modal -->
+            <WithdrawOperatingAccountModal :isOpen="showWithdrawModal" :operatingAccount="selectedOperatingAccount" @close="closeWithdrawModal" />
+
+            <!-- Add Balance Modal -->
+            <AddBalanceOperatingAccountModal :isOpen="showAddBalanceModal" :operatingAccount="selectedOperatingAccount" @close="closeAddBalanceModal" />
+
+            <!-- View History Modal -->
+            <ViewOperatingAccountModal 
+                :isOpen="showViewModal"
+                :operatingAccount="selectedOperatingAccount"
+                @close="closeViewModal"
+            />
         </div>
     </TreasuryLayout>
 </template>

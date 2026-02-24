@@ -155,6 +155,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/operating-accounts', [OperatingAccountController::class, 'store'])->name('operating-accounts.store');
         Route::put('/operating-accounts/{id}', [OperatingAccountController::class, 'update'])->name('operating-accounts.update');
         Route::delete('/operating-accounts/{id}', [OperatingAccountController::class, 'destroy'])->name('operating-accounts.destroy');
+        Route::post('/operating-accounts/{id}/renew', [OperatingAccountController::class, 'renew'])->name('operating-accounts.renew');
+        Route::post('/operating-accounts/{id}/withdraw', [OperatingAccountController::class, 'withdraw'])->name('operating-accounts.withdraw');
+        Route::post('/operating-accounts/{id}/add-balance', [OperatingAccountController::class, 'addBalance'])->name('operating-accounts.add-balance');
         Route::post('/operating-accounts/{id}/collection', [OperatingAccountController::class, 'storeCollections'])->name('operating-accounts.store-collections');
         Route::post('/collections/process', [OperatingAccountController::class, 'processCollections'])->name('collections.process');
         Route::delete('/collections/{id}', [OperatingAccountController::class, 'deleteCollection'])->name('collections.delete');

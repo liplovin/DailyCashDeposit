@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\OperatingAccount;
+use App\Models\OperatingAccountRenewal;
+use App\Models\OperatingAccountWithdrawal;
+use App\Models\OperatingAccountBalance;
 use App\Models\Collection;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,7 +18,7 @@ class OperatingAccountController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $operatingAccounts = OperatingAccount::with('collections')->get();
+        $operatingAccounts = OperatingAccount::with(['collections', 'renewals', 'withdrawals', 'balances'])->get();
         
         // Render based on user role
         $component = match($user->role) {
@@ -93,6 +96,101 @@ class OperatingAccountController extends Controller
         $operatingAccount->delete();
 
         return redirect('/treasury/operating-accounts')->with('success', 'Operating Account deleted successfully.');
+    }
+
+    /**
+     * Renew the operating account maturity date.
+     */
+    public function renew(Request $request, $id)
+    {
+        $operatingAccount = OperatingAccount::findOrFail($id);
+
+        $validated = $request->validate([
+            'new_maturity_date' => 'required|date|after:today',
+            'explanation' => 'required|string|max:1000',
+        ]);
+
+        // Create renewal record
+        OperatingAccountRenewal::create([
+            'operating_account_id' => $id,
+            'previous_maturity_date' => $operatingAccount->maturity_date,
+            'new_maturity_date' => $validated['new_maturity_date'],
+            'explanation' => $validated['explanation'],
+        ]);
+
+        // Update the maturity date
+        $operatingAccount->update([
+            'maturity_date' => $validated['new_maturity_date'],
+        ]);
+
+        return redirect('/treasury/operating-accounts')->with('success', 'Operating Account renewed successfully.');
+    }
+
+    /**
+     * Withdraw the operating account.
+     */
+    public function withdraw(Request $request, $id)
+    {
+        $operatingAccount = OperatingAccount::findOrFail($id);
+
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'explanation' => 'required|string|max:1000',
+        ]);
+
+        // Create withdrawal record
+        OperatingAccountWithdrawal::create([
+            'operating_account_id' => $id,
+            'amount' => $validated['amount'],
+            'explanation' => $validated['explanation'],
+        ]);
+
+        // Update the beginning balance
+        $currentBalance = (float) $operatingAccount->beginning_balance;
+        $newBalance = max(0, $currentBalance - (float) $validated['amount']);
+        
+        $operatingAccount->update([
+            'beginning_balance' => $newBalance,
+        ]);
+
+        // If fully withdrawn, set maturity date to null
+        if ($newBalance <= 0) {
+            $operatingAccount->update([
+                'maturity_date' => null,
+            ]);
+        }
+
+        return redirect('/treasury/operating-accounts')->with('success', 'Operating Account withdrawal recorded successfully.');
+    }
+
+    /**
+     * Add balance to the operating account.
+     */
+    public function addBalance(Request $request, $id)
+    {
+        $operatingAccount = OperatingAccount::findOrFail($id);
+
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'explanation' => 'required|string|max:1000',
+        ]);
+
+        // Create balance addition record
+        OperatingAccountBalance::create([
+            'operating_account_id' => $id,
+            'amount' => $validated['amount'],
+            'explanation' => $validated['explanation'],
+        ]);
+
+        // Update the beginning balance
+        $currentBalance = (float) $operatingAccount->beginning_balance;
+        $newBalance = $currentBalance + (float) $validated['amount'];
+        
+        $operatingAccount->update([
+            'beginning_balance' => $newBalance,
+        ]);
+
+        return redirect('/treasury/operating-accounts')->with('success', 'Operating Account balance added successfully.');
     }
 
     /**

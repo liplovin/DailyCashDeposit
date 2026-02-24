@@ -31,4 +31,28 @@ class OperatingAccount extends Model
     {
         return $this->hasMany(OperatingAccountDisbursement::class);
     }
+
+    /**
+     * Get the renewals for this operating account.
+     */
+    public function renewals()
+    {
+        return $this->hasMany(OperatingAccountRenewal::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get the withdrawals for this operating account.
+     */
+    public function withdrawals()
+    {
+        return $this->hasMany(OperatingAccountWithdrawal::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get the balances for this operating account.
+     */
+    public function balances()
+    {
+        return $this->hasMany(OperatingAccountBalance::class)->orderBy('created_at', 'desc');
+    }
 }
