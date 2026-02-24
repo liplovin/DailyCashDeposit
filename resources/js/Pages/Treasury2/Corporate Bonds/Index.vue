@@ -4,7 +4,7 @@ import AddCollection from './AddCollection.vue';
 import AddDisbursement from './AddDisbursement.vue';
 import EditCollection from './EditCollection.vue';
 import EditDisbursement from './EditDisbursement.vue';
-import { Search, Plus, Pencil, ChevronDown } from 'lucide-vue-next';
+import { Search, Plus, Pencil, ChevronDown, Eye, EyeOff } from 'lucide-vue-next';
 import { ref, computed, onMounted, watch } from 'vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -31,6 +31,7 @@ onMounted(() => {
 
 const searchQuery = ref('');
 const filterDate = ref(new Date().toISOString().split('T')[0]);
+const showWithdrawn = ref(false);
 const isAddCollectionOpen = ref(false);
 const isAddDisbursementOpen = ref(false);
 const isEditCollectionOpen = ref(false);
@@ -68,7 +69,14 @@ const formatDate = (dateString) => {
 const filteredCorporateBonds = computed(() => {
     let filtered = corporateBodsData.value;
     
-    // Filter by search query only
+    // Filter by withdrawn status
+    if (showWithdrawn.value) {
+        filtered = filtered.filter(bond => bond.maturity_date === null);
+    } else {
+        filtered = filtered.filter(bond => bond.maturity_date !== null);
+    }
+    
+    // Filter by search query
     if (searchQuery.value.trim()) {
         const query = searchQuery.value.toLowerCase();
         filtered = filtered.filter(bond => 
@@ -140,7 +148,7 @@ const totalCollection = computed(() => {
 });
 
 const totalDisbursement = computed(() => {
-    return filteredBonds.value.reduce((sum, bond) => {
+    return filteredCorporateBonds.value.reduce((sum, bond) => {
         return sum + (parseFloat(getDisbursementAmount(bond)) || 0);
     }, 0);
 });
@@ -279,7 +287,7 @@ const handleEditDisbursementSubmit = async (disbursementData) => {
 
             <!-- Search Bar and Date Filter -->
             <div class="bg-yellow-50 rounded-xl border-2 border-yellow-200 p-6 mb-8">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                     <!-- Search Bar -->
                     <div class="md:col-span-2">
                         <label class="block text-sm font-bold text-gray-800 mb-3">Search Corporate Bonds</label>
@@ -302,6 +310,23 @@ const handleEditDisbursementSubmit = async (disbursementData) => {
                             type="date"
                             class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
                         />
+                    </div>
+
+                    <!-- Show Withdrawn Filter -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Filter</label>
+                        <button
+                            @click="showWithdrawn = !showWithdrawn"
+                            :class="[
+                                'w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-semibold transition-all duration-200 border-2',
+                                showWithdrawn
+                                    ? 'bg-green-100 border-green-400 text-green-700 shadow-md hover:bg-green-200'
+                                    : 'bg-white border-gray-300 text-gray-700 hover:border-yellow-400 hover:bg-yellow-50'
+                            ]"
+                        >
+                            <component :is="showWithdrawn ? Eye : EyeOff" class="h-5 w-5" />
+                            <span>{{ showWithdrawn ? 'Withdrawn Only' : 'Active' }}</span>
+                        </button>
                     </div>
                 </div>
             </div>

@@ -2,7 +2,7 @@
 import Treasury2Layout from '@/Layouts/Treasury2Layout.vue';
 import EditCollection from './EditCollection.vue';
 import EditDisbursement from './EditDisbursement.vue';
-import { Plus, Search, Pencil, ChevronDown } from 'lucide-vue-next';
+import { Plus, Search, Pencil, ChevronDown, Eye, EyeOff } from 'lucide-vue-next';
 import { ref, computed, onMounted, watch } from 'vue';
 import Swal from 'sweetalert2';
 import AddCollection from './AddCollection.vue';
@@ -18,6 +18,7 @@ const props = defineProps({
 
 const searchQuery = ref('');
 const filterDate = ref('');
+const showWithdrawn = ref(false);
 const showAddCollectionModal = ref(false);
 const showAddDisbursementModal = ref(false);
 const isEditCollectionOpen = ref(false);
@@ -182,15 +183,25 @@ const formatDate = (dateString) => {
 };
 
 const filteredInvestments = computed(() => {
-    if (!searchQuery.value.trim()) {
-        return otherInvestments.value;
+    let filtered = otherInvestments.value;
+    
+    // Filter by withdrawn status
+    if (showWithdrawn.value) {
+        filtered = filtered.filter(investment => investment.maturity_date === null);
+    } else {
+        filtered = filtered.filter(investment => investment.maturity_date !== null);
     }
     
-    const query = searchQuery.value.toLowerCase();
-    return otherInvestments.value.filter(investment => 
-        investment.other_investment_name.toLowerCase().includes(query) ||
-        investment.account_number.toLowerCase().includes(query)
-    );
+    // Filter by search query
+    if (searchQuery.value.trim()) {
+        const query = searchQuery.value.toLowerCase();
+        filtered = filtered.filter(investment => 
+            investment.other_investment_name.toLowerCase().includes(query) ||
+            investment.account_number.toLowerCase().includes(query)
+        );
+    }
+    
+    return filtered;
 });
 
 const totalBeginningBalance = computed(() => {
@@ -248,7 +259,7 @@ const totalEndingBalance = computed(() => {
 
             <!-- Filter & Search Section -->
             <div class="bg-yellow-50 rounded-xl border-2 border-yellow-200 p-6 mb-8">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                     <!-- Search Bar -->
                     <div class="md:col-span-2">
                         <label class="block text-sm font-bold text-gray-800 mb-3">Search Other Investment</label>
@@ -271,6 +282,23 @@ const totalEndingBalance = computed(() => {
                             type="date"
                             class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
                         />
+                    </div>
+
+                    <!-- Show Withdrawn Filter -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Filter</label>
+                        <button
+                            @click="showWithdrawn = !showWithdrawn"
+                            :class="[
+                                'w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-semibold transition-all duration-200 border-2',
+                                showWithdrawn
+                                    ? 'bg-green-100 border-green-400 text-green-700 shadow-md hover:bg-green-200'
+                                    : 'bg-white border-gray-300 text-gray-700 hover:border-yellow-400 hover:bg-yellow-50'
+                            ]"
+                        >
+                            <component :is="showWithdrawn ? Eye : EyeOff" class="h-5 w-5" />
+                            <span>{{ showWithdrawn ? 'Withdrawn Only' : 'Active' }}</span>
+                        </button>
                     </div>
                 </div>
             </div>
