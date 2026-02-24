@@ -17,36 +17,36 @@ class UserSeeder extends Seeder
     {
         // Create admin user
         User::factory()->create([
-            'name' => 'Admin User',
-            'email' => 'admin@intra.com',
+            'name' => 'Nelson Manabal',
+            'email' => 'nelson@intra.com',
             'role' => 'admin',
         ]);
 
         // Create treasury user
         User::factory()->create([
-            'name' => 'Treasury User',
-            'email' => 'treasury@intra.com',
+            'name' => 'Melanie Mendoza',
+            'email' => 'melanie@intra.com',
             'role' => 'treasury',
         ]);
 
         // Create treasury2 user
         User::factory()->create([
-            'name' => 'Aira 2',
-            'email' => 'aira2@intra.com',
+            'name' => 'Airah Ascado',
+            'email' => 'airah@intra.com',
             'role' => 'treasury2',
         ]);
 
         // Create treasury3 user
         User::factory()->create([
-            'name' => 'Treasury 3 User',
-            'email' => 'treasury3@intra.com',
+            'name' => 'Aira Santiago',
+            'email' => 'airasantiago@intra.com',
             'role' => 'treasury3',
         ]);
 
         // Create accounting user
         User::factory()->create([
-            'name' => 'Accounting User',
-            'email' => 'accounting@intra.com',
+            'name' => 'Edwin Domingo',
+            'email' => 'edwin@intra.com',
             'role' => 'accounting',
         ]);
 

@@ -204,7 +204,7 @@ const stats = [
                     <div class="bg-gradient-to-r from-slate-700 to-slate-900 rounded-xl shadow-lg p-8 text-white">
                         <h1 class="text-4xl font-bold mb-2">Welcome, {{ user.name }}!</h1>
                         <p class="text-slate-200 text-lg">System Administration & Financial Overview</p>
-                        <p class="text-slate-300 text-sm mt-2">Monitor all Treasury2 modules and financial activities</p>
+                        <p class="text-slate-300 text-sm mt-2">Monitor all modules and financial activities</p>
                     </div>
                 </div>
                 <div class="bg-white rounded-xl shadow-lg p-6 border-2 border-gray-200">
