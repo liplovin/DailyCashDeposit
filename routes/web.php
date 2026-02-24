@@ -341,7 +341,7 @@ Route::middleware('auth')->group(function () {
 
         // Collateral Viewing
         Route::get('/collateral', function () {
-            $collaterals = \App\Models\Collateral::all();
+            $collaterals = \App\Models\Collateral::with(['renewals', 'withdrawals', 'balances'])->get();
             return Inertia::render('Admin/Collateral/Index', [
                 'collaterals' => $collaterals
             ]);
@@ -349,7 +349,7 @@ Route::middleware('auth')->group(function () {
 
         // Time Deposit Viewing
         Route::get('/time-deposit', function () {
-            $timeDeposits = \App\Models\TimeDeposit::all();
+            $timeDeposits = \App\Models\TimeDeposit::with(['renewals', 'withdrawals', 'balances'])->get();
             return Inertia::render('Admin/Time Deposit/Index', [
                 'timeDeposits' => $timeDeposits
             ]);
@@ -374,7 +374,7 @@ Route::middleware('auth')->group(function () {
         })->name('operating-accounts.view-disbursement');
 
         Route::get('/operating-accounts', function () {
-            $operatingAccounts = \App\Models\OperatingAccount::with('collections', 'disbursements')->get();
+            $operatingAccounts = \App\Models\OperatingAccount::with(['collections', 'disbursements', 'renewals', 'withdrawals'])->get();
             return Inertia::render('Admin/Operating Accounts/Index', [
                 'operatingAccounts' => $operatingAccounts,
             ]);
@@ -382,7 +382,7 @@ Route::middleware('auth')->group(function () {
 
         // Government Securities Viewing
         Route::get('/government-securities', function () {
-            $governmentSecurities = \App\Models\GovernmentSecurity::all();
+            $governmentSecurities = \App\Models\GovernmentSecurity::with(['renewals', 'withdrawals', 'balances'])->get();
             return Inertia::render('Admin/Government Securities/Index', [
                 'governmentSecurities' => $governmentSecurities
             ]);
@@ -390,7 +390,7 @@ Route::middleware('auth')->group(function () {
 
         // Other Investment Viewing
         Route::get('/other-investment', function () {
-            $otherInvestments = \App\Models\OtherInvestment::all();
+            $otherInvestments = \App\Models\OtherInvestment::with(['renewals', 'withdrawals', 'balances'])->get();
             return Inertia::render('Admin/Other Investment/Index', [
                 'otherInvestments' => $otherInvestments
             ]);
@@ -398,7 +398,7 @@ Route::middleware('auth')->group(function () {
 
         // Dollar Viewing
         Route::get('/dollar', function () {
-            $dollars = \App\Models\Dollar::all();
+            $dollars = \App\Models\Dollar::with(['renewals', 'withdrawals', 'balances'])->get();
             return Inertia::render('Admin/Dollar/Index', [
                 'dollars' => $dollars
             ]);
@@ -406,21 +406,21 @@ Route::middleware('auth')->group(function () {
 
         // Corporate Bonds Viewing
         Route::get('/corporate-bonds', function () {
-            $corporateBonds = \App\Models\CorporateBond::all();
+            $corporateBonds = \App\Models\CorporateBond::with(['renewals', 'withdrawals', 'balances'])->get();
             return Inertia::render('Admin/Corporate Bonds/Index', [
                 'corporateBonds' => $corporateBonds
             ]);
         })->name('corporate-bonds');
 
         Route::get('/cash-infusion', function () {
-            $cashInfusions = \App\Models\CashInfusion::all();
+            $cashInfusions = \App\Models\CashInfusion::with(['renewals', 'withdrawals', 'balances'])->get();
             return Inertia::render('Admin/Cash Infusion/Index', [
                 'cashInfusions' => $cashInfusions
             ]);
         })->name('cash-infusion');
 
         Route::get('/investment', function () {
-            $investments = \App\Models\Investment::all();
+            $investments = \App\Models\Investment::with(['renewals', 'withdrawals', 'balances'])->get();
             return Inertia::render('Admin/Investment/Index', [
                 'investments' => $investments
             ]);

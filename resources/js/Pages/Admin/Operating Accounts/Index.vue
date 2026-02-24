@@ -1,5 +1,6 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import ViewOperatingAccountModal from '@/Pages/Treasury/Operating Accounts/View.vue';
 import { Head, usePage, Link } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { Search, Calendar, Eye } from 'lucide-vue-next';
@@ -7,6 +8,8 @@ import { Search, Calendar, Eye } from 'lucide-vue-next';
 const page = usePage();
 const operatingAccounts = computed(() => page.props.operatingAccounts || []);
 const searchQuery = ref('');
+const showViewModal = ref(false);
+const selectedAccount = ref(null);
 
 // Set default date to today
 const getTodayDate = () => {
@@ -181,6 +184,11 @@ const totalEndingBalance = computed(() => {
         return sum + ending;
     }, 0);
 });
+
+const viewOperatingAccount = (account) => {
+    selectedAccount.value = account;
+    showViewModal.value = true;
+};
 </script>
 
 <template>
@@ -245,16 +253,18 @@ const totalEndingBalance = computed(() => {
                             <tr class="bg-gradient-to-r from-yellow-400 to-yellow-500">
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border border-yellow-600">Operating Account Name</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border border-yellow-600">Account Number</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border border-yellow-600">Acquisition Date</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border border-yellow-600">Maturity Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border border-yellow-600">Beginning Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border border-yellow-600">Collection</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border border-yellow-600">Disbursement</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border border-yellow-600">Ending Balance</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border border-yellow-600">Maturity Date</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border border-yellow-600">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="filteredAccounts.length === 0">
-                                <td colspan="7" class="px-6 py-8 text-center text-gray-500 border border-gray-200">
+                                <td colspan="9" class="px-6 py-8 text-center text-gray-500 border border-gray-200">
                                     No operating accounts found.
                                 </td>
                             </tr>
@@ -271,6 +281,12 @@ const totalEndingBalance = computed(() => {
                                 <td class="px-6 py-4 text-sm text-gray-700 font-mono border border-gray-200">
                                     {{ account.account_number }}
                                 </td>
+                                <td class="px-6 py-4 text-sm text-gray-700 border border-gray-200">
+                                    {{ formatDate(account.acquisition_date) }}
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-700 border border-gray-200">
+                                    {{ formatDate(account.maturity_date) }}
+                                </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border border-gray-200">
                                     {{ formatCurrency(getRollingBeginningBalance(account, selectedDate)) }}
                                 </td>
@@ -283,14 +299,21 @@ const totalEndingBalance = computed(() => {
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border border-gray-200">
                                     {{ formatCurrency(getRollingBeginningBalance(account, selectedDate) + getTotalCollectionByDate(account) - getTotalDisbursementByDate(account)) }}
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-700 border border-gray-200">
-                                    {{ formatDate(account.maturity_date) }}
+                                <td class="px-6 py-4 text-sm text-center border border-gray-200">
+                                    <button
+                                        @click="viewOperatingAccount(account)"
+                                        class="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-150"
+                                    >
+                                        View
+                                    </button>
                                 </td>
                             </tr>
                         </tbody>
                         <tfoot>
                             <tr class="bg-yellow-50 font-bold border border-gray-200">
                                 <td class="px-6 py-4 text-sm text-gray-900 border border-gray-200">TOTAL</td>
+                                <td class="px-6 py-4 text-sm text-gray-900 border border-gray-200"></td>
+                                <td class="px-6 py-4 text-sm text-gray-900 border border-gray-200"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border border-gray-200"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border border-gray-200">
                                     {{ formatCurrency(totalBeginningBalance) }}
@@ -310,6 +333,13 @@ const totalEndingBalance = computed(() => {
                     </table>
                 </div>
             </div>
+
+            <!-- View Operating Account Modal -->
+            <ViewOperatingAccountModal 
+                :is-open="showViewModal"
+                :operating-account="selectedAccount"
+                @close="showViewModal = false"
+            />
         </div>
     </AdminLayout>
 </template>

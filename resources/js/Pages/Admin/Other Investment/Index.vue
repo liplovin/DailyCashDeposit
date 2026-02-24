@@ -1,5 +1,6 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import ViewOtherInvestmentModal from '@/Pages/Treasury/Other Investment/View.vue';
 import { Search } from 'lucide-vue-next';
 import { ref, computed, onMounted } from 'vue';
 
@@ -13,6 +14,8 @@ const props = defineProps({
 const investmentsData = ref(props.otherInvestments);
 const searchQuery = ref('');
 const filterDate = ref(new Date().toISOString().split('T')[0]);
+const showViewModal = ref(false);
+const selectedInvestment = ref(null);
 
 onMounted(() => {
     document.title = 'Other Investment - Daily Deposit';
@@ -26,6 +29,15 @@ const formatCurrency = (value) => {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     }).format(value || 0);
+};
+
+const formatDate = (date) => {
+    if (!date) return '—';
+    return new Date(date).toLocaleDateString('en-PH', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
 };
 
 const getCollectionAmount = (investment) => {
@@ -115,6 +127,11 @@ const totalEndingBalance = computed(() => {
         return sum + ending;
     }, 0);
 });
+
+const viewOtherInvestment = (investment) => {
+    selectedInvestment.value = investment;
+    showViewModal.value = true;
+};
 </script>
 
 <template>
@@ -163,15 +180,18 @@ const totalEndingBalance = computed(() => {
                             <tr class="border-b-2 border-gray-300">
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Other Investment Name</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Account Number</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Acquisition Date</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Collection</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Disbursement</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">Ending Balance</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Ending Balance</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="filteredInvestments.length === 0" class="border-b border-gray-200">
-                                <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                <td colspan="9" class="px-6 py-8 text-center text-gray-500">
                                     No other investments found.
                                 </td>
                             </tr>
@@ -190,25 +210,45 @@ const totalEndingBalance = computed(() => {
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-200">{{ investment.account_number }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-200">{{ formatDate(investment.acquisition_date) }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-200">{{ formatDate(investment.maturity_date) }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(investment)) }}</td>
                                 <td class="px-6 py-4 text-sm text-green-600 font-semibold border-r border-gray-200">{{ formatCurrency(getCollectionAmount(investment)) }}</td>
                                 <td class="px-6 py-4 text-sm text-red-600 font-semibold border-r border-gray-200">{{ formatCurrency(getDisbursementAmount(investment)) }}</td>
-                                <td class="px-6 py-4 text-sm text-blue-600 font-semibold">{{ formatCurrency(getRollingBeginningBalance(investment) + getCollectionAmount(investment) - getDisbursementAmount(investment)) }}</td>
+                                <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(investment) + getCollectionAmount(investment) - getDisbursementAmount(investment)) }}</td>
+                                <td class="px-6 py-4 text-sm text-center">
+                                    <button
+                                        @click="viewOtherInvestment(investment)"
+                                        class="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-150"
+                                    >
+                                        View
+                                    </button>
+                                </td>
                             </tr>
                         </tbody>
                         <tfoot v-if="filteredInvestments.length > 0">
                             <tr class="bg-yellow-50 font-bold border-b-2 border-gray-300">
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">TOTAL</td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
+                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
+                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">{{ formatCurrency(totalBeginningBalance) }}</td>
                                 <td class="px-6 py-4 text-sm text-green-600 border-r border-gray-300">{{ formatCurrency(totalCollection) }}</td>
                                 <td class="px-6 py-4 text-sm text-red-600 border-r border-gray-300">{{ formatCurrency(totalDisbursement) }}</td>
-                                <td class="px-6 py-4 text-sm text-blue-600">{{ formatCurrency(totalEndingBalance) }}</td>
+                                <td class="px-6 py-4 text-sm text-blue-600 border-r border-gray-300">{{ formatCurrency(totalEndingBalance) }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-900"></td>
                             </tr>
                         </tfoot>
                     </table>
                 </div>
             </div>
+
+            <!-- View Other Investment Modal -->
+            <ViewOtherInvestmentModal 
+                v-if="showViewModal && selectedInvestment"
+                :other-investment="selectedInvestment"
+                @close="showViewModal = false"
+            />
         </div>
     </AdminLayout>
 </template>
