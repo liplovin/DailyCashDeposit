@@ -26,7 +26,9 @@ const form = ref({
     account_number: '',
     beginning_balance: '',
     maturity_date: '',
-    customDollar: ''
+    acquisition_date: '',
+    customDollar: '',
+    explanation: ''
 });
 
 const errors = ref({});
@@ -54,7 +56,9 @@ watch(() => props.dollar, (newDollar) => {
             account_number: newDollar.account_number || '',
             beginning_balance: formatBalanceDisplay(newDollar.beginning_balance),
             maturity_date: formatDateDisplay(newDollar.maturity_date),
-            customDollar: !existsInList ? newDollar.dollar_name : ''
+            acquisition_date: formatDateDisplay(newDollar.acquisition_date),
+            customDollar: !existsInList ? newDollar.dollar_name : '',
+            explanation: newDollar.explanation || ''
         };
     }
 }, { deep: true });
@@ -100,6 +104,12 @@ const handleSubmit = () => {
     if (!form.value.maturity_date.trim()) {
         errors.value.maturity_date = 'Maturity date is required';
     }
+    if (!form.value.acquisition_date.trim()) {
+        errors.value.acquisition_date = 'Acquisition date is required';
+    }
+    if (!form.value.explanation.trim()) {
+        errors.value.explanation = 'Explanation is required';
+    }
     
     if (Object.keys(errors.value).length === 0) {
         isSubmitting.value = true;
@@ -108,7 +118,9 @@ const handleSubmit = () => {
             dollar_name: dollarValue,
             account_number: form.value.account_number,
             beginning_balance: balanceValue.toFixed(2),
-            maturity_date: form.value.maturity_date
+            maturity_date: form.value.maturity_date,
+            acquisition_date: form.value.acquisition_date,
+            explanation: form.value.explanation
         };
         router.put(`/treasury/dollar/${props.dollar.id}`, submitData, {
             onSuccess: () => {
@@ -137,7 +149,7 @@ const handleSubmit = () => {
 };
 
 const closeModal = () => {
-    form.value = { dollar_name: '', account_number: '', beginning_balance: '', maturity_date: '', customDollar: '' };
+    form.value = { dollar_name: '', account_number: '', beginning_balance: '', maturity_date: '', acquisition_date: '', customDollar: '', explanation: '' };
     errors.value = {};
     emit('close');
 };
@@ -170,6 +182,27 @@ const convertFromDateInput = (dateString) => {
 
 const handleNativeDateChange = (event) => {
     form.value.maturity_date = convertFromDateInput(event.target.value);
+};
+
+const handleNativeAcquisitionDateChange = (event) => {
+    form.value.acquisition_date = convertFromDateInput(event.target.value);
+};
+
+const handleAcquisitionDateInput = (event) => {
+    let value = event.target.value;
+    
+    // Remove all non-digit characters
+    value = value.replace(/\D/g, '');
+    
+    // Format as mm/dd/yyyy
+    if (value.length >= 2) {
+        value = value.substring(0, 2) + '/' + value.substring(2);
+    }
+    if (value.length >= 4) {
+        value = value.substring(0, 5) + '/' + value.substring(5, 9);
+    }
+    
+    form.value.acquisition_date = value;
 };
 
 const handleDateInput = (event) => {
@@ -352,6 +385,51 @@ const handleBalanceKeydown = (event) => {
                             />
                         </div>
                         <p v-if="errors.maturity_date" class="text-red-500 text-sm mt-1">{{ errors.maturity_date }}</p>
+                    </div>
+
+                    <!-- Acquisition Date Field -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">
+                            Acquisition Date <span class="text-red-500">*</span>
+                        </label>
+                        <div class="flex space-x-2">
+                            <!-- Date Picker -->
+                            <input
+                                :value="convertToDateInput(form.acquisition_date)"
+                                @change="handleNativeAcquisitionDateChange"
+                                type="date"
+                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900"
+                                :class="{ 'border-red-500 focus:ring-red-500': errors.acquisition_date }"
+                            />
+                            <!-- Text Input -->
+                            <input
+                                :value="form.acquisition_date"
+                                @input="handleAcquisitionDateInput"
+                                type="text"
+                                placeholder="mm/dd/yyyy"
+                                maxlength="10"
+                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
+                                :class="{ 'border-red-500 focus:ring-red-500': errors.acquisition_date }"
+                            />
+                        </div>
+                        <p v-if="errors.acquisition_date" class="text-red-500 text-sm mt-1">{{ errors.acquisition_date }}</p>
+                    </div>
+
+                    <!-- Explanation Field -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">
+                            Explanation <span class="text-red-500">*</span>
+                        </label>
+                        <textarea
+                            v-model="form.explanation"
+                            placeholder="Please provide details or explanation"
+                            maxlength="1000"
+                            rows="3"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
+                            :class="{ 'border-red-500 focus:ring-red-500': errors.explanation }"
+                        />
+                        <p v-if="errors.explanation" class="text-red-500 text-sm mt-1">{{ errors.explanation }}</p>
+                        <p class="text-xs text-gray-500 mt-1">{{ form.explanation.length }}/1000 characters</p>
                     </div>
 
                     <!-- Modal Actions -->
