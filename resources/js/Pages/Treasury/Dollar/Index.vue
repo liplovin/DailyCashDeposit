@@ -372,6 +372,7 @@ const formatCurrency = (amount) => {
                             <tr class="border-b-2 border-gray-300">
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Dollar Name</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Account Number</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Acquisition Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Ending Balance</th>
@@ -395,6 +396,9 @@ const formatCurrency = (amount) => {
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ dollar.account_number }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-200">
+                                    {{ dollar.acquisition_date ? new Date(dollar.acquisition_date).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }) : '—' }}
+                                </td>
                                 <td class="px-6 py-4 text-sm font-mono border-r border-gray-200" :class="dollar.maturity_date ? 'text-gray-700' : 'text-green-600 font-bold'">
                                     {{ formatMaturityDate(dollar.maturity_date) }}
                                 </td>

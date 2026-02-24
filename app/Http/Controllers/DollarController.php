@@ -91,9 +91,12 @@ class DollarController extends Controller
             'account_number' => 'required|string|unique:dollars,account_number',
             'beginning_balance' => 'required|numeric|min:0',
             'maturity_date' => 'required|date_format:m/d/Y',
+            'acquisition_date' => 'required|date_format:m/d/Y',
+            'explanation' => 'required|string|max:1000',
         ]);
 
         $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
+        $validated['acquisition_date'] = $this->convertDateFormat($validated['acquisition_date']);
         Dollar::create($validated);
 
         return redirect('/treasury/dollar')->with('success', 'Dollar created successfully.');
@@ -108,9 +111,12 @@ class DollarController extends Controller
             'account_number' => 'required|string|unique:dollars,account_number,' . $id,
             'beginning_balance' => 'required|numeric|min:0',
             'maturity_date' => 'required|date_format:m/d/Y',
+            'acquisition_date' => 'required|date_format:m/d/Y',
+            'explanation' => 'required|string|max:1000',
         ]);
 
         $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
+        $validated['acquisition_date'] = $this->convertDateFormat($validated['acquisition_date']);
         $dollar->update($validated);
 
         return redirect('/treasury/dollar')->with('success', 'Dollar updated successfully.');
