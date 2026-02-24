@@ -14,6 +14,8 @@ class OtherInvestment extends Model
         'account_number',
         'beginning_balance',
         'maturity_date',
+        'acquisition_date',
+        'explanation',
         'collection',
         'collection_date',
         'disbursement',
