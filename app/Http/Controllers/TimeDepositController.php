@@ -210,9 +210,11 @@ class TimeDepositController extends Controller
         // Update beginning balance
         $timeDeposit->beginning_balance -= $validated['amount'];
         
-        // If withdrawing all, set maturity date to null
+        // If withdrawing all, set maturity date to null and zero out balances
         if ($isFullWithdrawal) {
             $timeDeposit->maturity_date = null;
+            $timeDeposit->beginning_balance = 0;
+            $timeDeposit->ending_balance = 0;
         }
         
         $timeDeposit->save();

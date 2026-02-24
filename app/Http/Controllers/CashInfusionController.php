@@ -198,9 +198,13 @@ class CashInfusionController extends Controller
         $newBalance = $currentBalance - $validated['amount'];
         $cashInfusion->update(['beginning_balance' => $newBalance]);
 
-        // If fully withdrawn, mark as withdrawn (set maturity_date to null)
+        // If fully withdrawn, mark as withdrawn (set maturity_date to null and zero out balances)
         if ($newBalance <= 0) {
-            $cashInfusion->update(['maturity_date' => null]);
+            $cashInfusion->update([
+                'maturity_date' => null,
+                'beginning_balance' => 0,
+                'ending_balance' => 0
+            ]);
         }
 
         return redirect()->back()->with('success', 'Cash Infusion withdrawn successfully.');

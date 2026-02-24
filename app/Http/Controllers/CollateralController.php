@@ -210,9 +210,11 @@ class CollateralController extends Controller
         // Update beginning balance
         $collateral->beginning_balance -= $validated['amount'];
         
-        // If withdrawing all, set maturity date to null
+        // If withdrawing all, set maturity date to null and zero out balances
         if ($isFullWithdrawal) {
             $collateral->maturity_date = null;
+            $collateral->beginning_balance = 0;
+            $collateral->ending_balance = 0;
         }
         
         $collateral->save();

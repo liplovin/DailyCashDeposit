@@ -212,6 +212,8 @@ class OtherInvestmentController extends Controller
             // Only set maturity date to null if withdrawing all
             if ($isFullWithdrawal) {
                 $otherInvestment->maturity_date = null;
+                $otherInvestment->beginning_balance = 0;
+                $otherInvestment->ending_balance = 0;
             }
 
             $otherInvestment->save();

@@ -159,10 +159,12 @@ class OperatingAccountController extends Controller
             'beginning_balance' => $newBalance,
         ]);
 
-        // If fully withdrawn, set maturity date to null
+        // If fully withdrawn, set maturity date to null and zero out balances
         if ($newBalance <= 0) {
             $operatingAccount->update([
                 'maturity_date' => null,
+                'beginning_balance' => 0,
+                'ending_balance' => 0
             ]);
         }
 

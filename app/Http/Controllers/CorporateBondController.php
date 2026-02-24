@@ -198,9 +198,13 @@ class CorporateBondController extends Controller
         $newBalance = $currentBalance - $validated['amount'];
         $corporateBond->update(['beginning_balance' => $newBalance]);
 
-        // If fully withdrawn, mark as withdrawn (set maturity_date to null)
+        // If fully withdrawn, mark as withdrawn (set maturity_date to null and zero out balances)
         if ($newBalance <= 0) {
-            $corporateBond->update(['maturity_date' => null]);
+            $corporateBond->update([
+                'maturity_date' => null,
+                'beginning_balance' => 0,
+                'ending_balance' => 0
+            ]);
         }
 
         return redirect()->back()->with('success', 'Corporate bond withdrawn successfully!');

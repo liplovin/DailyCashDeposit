@@ -208,8 +208,12 @@ class GovernmentSecurityController extends Controller
         // Check if this is a full withdrawal (with floating-point tolerance)
         $remainingBalance = $currentBalance - $validated['amount'];
         if (abs($remainingBalance) < 0.01) {
-            // Full withdrawal - set maturity_date to NULL
-            $governmentSecurity->update(['maturity_date' => null]);
+            // Full withdrawal - set maturity_date to NULL and zero out balances
+            $governmentSecurity->update([
+                'maturity_date' => null,
+                'beginning_balance' => 0,
+                'ending_balance' => 0
+            ]);
         }
 
         return redirect()->back()->with('success', 'Withdrawal recorded successfully!');

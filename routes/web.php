@@ -11,6 +11,7 @@ use App\Http\Controllers\CorporateBondController;
 use App\Http\Controllers\CashInfusionController;
 use App\Http\Controllers\InvestmentController;
 use App\Http\Controllers\OperatingAccountController;
+use App\Http\Controllers\ReportsController;
 use App\Models\Collateral;
 use App\Models\TimeDeposit;
 use App\Models\GovernmentSecurity;
@@ -336,8 +337,21 @@ Route::middleware('auth')->group(function () {
 
         // Reports Module - Important
         Route::get('/reports', function () {
-            return Inertia::render('Admin/Reports/Index');
+            return Inertia::render('Admin/Reports/Index', [
+                'collaterals' => \App\Models\Collateral::with(['renewals', 'withdrawals', 'balances'])->get(),
+                'timeDeposits' => \App\Models\TimeDeposit::with(['renewals', 'withdrawals', 'balances'])->get(),
+                'governmentSecurities' => \App\Models\GovernmentSecurity::with(['renewals', 'withdrawals', 'balances'])->get(),
+                'otherInvestments' => \App\Models\OtherInvestment::with(['renewals', 'withdrawals', 'balances'])->get(),
+                'operatingAccounts' => \App\Models\OperatingAccount::with(['collections', 'disbursements', 'renewals', 'withdrawals'])->get(),
+                'dollars' => \App\Models\Dollar::with(['renewals', 'withdrawals', 'balances'])->get(),
+                'corporateBonds' => \App\Models\CorporateBond::with(['renewals', 'withdrawals', 'balances'])->get(),
+                'cashInfusions' => \App\Models\CashInfusion::with(['renewals', 'withdrawals', 'balances'])->get(),
+                'investments' => \App\Models\Investment::with(['renewals', 'withdrawals', 'balances'])->get(),
+            ]);
         })->name('reports');
+
+        // Report Generation API
+        Route::post('/reports/generate', [ReportsController::class, 'generate'])->name('reports.generate');
 
         // Collateral Viewing
         Route::get('/collateral', function () {

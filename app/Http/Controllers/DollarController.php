@@ -243,6 +243,8 @@ class DollarController extends Controller
             // Only set maturity date to null if withdrawing all
             if ($isFullWithdrawal) {
                 $dollar->maturity_date = null;
+                $dollar->beginning_balance = 0;
+                $dollar->ending_balance = 0;
             }
 
             $dollar->save();
