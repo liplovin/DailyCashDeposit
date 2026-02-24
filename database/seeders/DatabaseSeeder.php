@@ -17,15 +17,5 @@ class DatabaseSeeder extends Seeder
         // Seed users
         $this->call(UserSeeder::class);
 
-        // Seed Treasury modules with test records
-        $this->call(TimeDepositSeeder::class);
-        $this->call(CollateralSeeder::class);
-        $this->call(GovernmentSecuritySeeder::class);
-        $this->call(OperatingAccountSeeder::class);
-        $this->call(CorporateBondSeeder::class);
-        $this->call(DollarSeeder::class);
-        $this->call(OtherInvestmentSeeder::class);
-        $this->call(CashInfusionSeeder::class);
-        $this->call(InvestmentSeeder::class);
     }
 }
