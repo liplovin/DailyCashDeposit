@@ -352,6 +352,7 @@ Route::middleware('auth')->group(function () {
 
         // Report Generation API
         Route::post('/reports/generate', [ReportsController::class, 'generate'])->name('reports.generate');
+        Route::post('/reports/generate-pdf', [ReportsController::class, 'generatePDF'])->name('reports.generate-pdf');
 
         // Collateral Viewing
         Route::get('/collateral', function () {

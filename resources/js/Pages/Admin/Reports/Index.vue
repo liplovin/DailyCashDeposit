@@ -1,7 +1,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { usePage } from '@inertiajs/vue3';
-import { Calendar, Download, FileText } from 'lucide-vue-next';
+import { Calendar, Download, FileText, File } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -10,6 +10,7 @@ const page = usePage();
 
 const selectedDate = ref(new Date().toISOString().split('T')[0]);
 const isGenerating = ref(false);
+const isGeneratingPDF = ref(false);
 const selectedModule = ref('all');
 
 const props = defineProps({
@@ -169,7 +170,7 @@ const generateReport = async () => {
         Swal.fire({
             icon: 'success',
             title: 'Report Generated',
-            text: `Excel report for ${selectedDate.value} has been downloaded successfully`,
+            text: `CSV report for ${selectedDate.value} has been downloaded successfully`,
             timer: 2000
         });
     } catch (error) {
@@ -181,6 +182,44 @@ const generateReport = async () => {
         });
     } finally {
         isGenerating.value = false;
+    }
+};
+
+const generatePDF = async () => {
+    try {
+        isGeneratingPDF.value = true;
+        
+        const response = await axios.post('/admin/reports/generate-pdf', {
+            date: selectedDate.value
+        }, {
+            responseType: 'blob'
+        });
+
+        // Create a blob link to download
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `Daily_Deposit_Report_${selectedDate.value}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Report Generated',
+            text: `PDF report for ${selectedDate.value} has been downloaded successfully`,
+            timer: 2000
+        });
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to generate PDF. Please try again.'
+        });
+    } finally {
+        isGeneratingPDF.value = false;
     }
 };
 </script>
@@ -224,15 +263,23 @@ const generateReport = async () => {
                         </div>
                     </div>
 
-                    <!-- Generate Report Button -->
+                    <!-- Generate Report Buttons -->
                     <div class="flex gap-4 md:col-span-2">
                         <button
                             @click="generateReport"
-                            :disabled="isGenerating"
+                            :disabled="isGenerating || isGeneratingPDF"
                             class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 font-bold rounded-lg shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Download class="h-5 w-5" />
-                            <span>{{ isGenerating ? 'Generating...' : 'Generate Excel Report' }}</span>
+                            <span>{{ isGenerating ? 'Generating...' : 'CSV Report' }}</span>
+                        </button>
+                        <button
+                            @click="generatePDF"
+                            :disabled="isGeneratingPDF || isGenerating"
+                            class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-red-400 to-red-500 hover:from-red-500 hover:to-red-600 text-white font-bold rounded-lg shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <File class="h-5 w-5" />
+                            <span>{{ isGeneratingPDF ? 'Generating...' : 'PDF Report' }}</span>
                         </button>
                     </div>
                 </div>
