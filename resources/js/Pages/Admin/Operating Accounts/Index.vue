@@ -3,13 +3,14 @@ import AdminLayout from '@/Layouts/AdminLayout.vue';
 import ViewOperatingAccountModal from '@/Pages/Treasury/Operating Accounts/View.vue';
 import { Head, usePage, Link } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
-import { Search, Calendar, Eye } from 'lucide-vue-next';
+import { Search, Calendar, Eye, EyeOff } from 'lucide-vue-next';
 
 const page = usePage();
 const operatingAccounts = computed(() => page.props.operatingAccounts || []);
 const searchQuery = ref('');
 const showViewModal = ref(false);
 const selectedAccount = ref(null);
+const showWithdrawn = ref(false);
 
 // Set default date to today
 const getTodayDate = () => {
@@ -40,6 +41,31 @@ const formatDate = (date) => {
         month: 'short',
         day: 'numeric'
     }).format(new Date(date));
+};
+
+// Format maturity date with withdrawal status
+const formatMaturityDate = (dateString) => {
+    if (!dateString) return '✓ Withdrawn';
+    const date = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    
+    const diffTime = date - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    const formattedDate = new Intl.DateTimeFormat('en-US', options).format(date);
+    
+    if (diffDays < 0) {
+        return `${formattedDate} (Overdue by ${Math.abs(diffDays)} days)`;
+    } else if (diffDays === 0) {
+        return `${formattedDate} (Due Today)`;
+    } else if (diffDays <= 30) {
+        return `${formattedDate} (${diffDays} days remaining)`;
+    }
+    
+    return formattedDate;
 };
 
 // Calculate total collection for an account
@@ -101,7 +127,16 @@ const getEndingBalance = (account) => {
 
 // Filter accounts by search and date
 const filteredAccounts = computed(() => {
-    return operatingAccounts.value.filter(account => {
+    let accounts = operatingAccounts.value;
+    
+    // Filter by withdrawn status - show ONLY withdrawn when toggled
+    if (showWithdrawn.value) {
+        accounts = accounts.filter(account => account.maturity_date === null);
+    } else {
+        accounts = accounts.filter(account => account.maturity_date !== null);
+    }
+    
+    return accounts.filter(account => {
         const matchesSearch = !searchQuery.value.trim() || 
             account.operating_account_name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
             account.account_number.toLowerCase().includes(searchQuery.value.toLowerCase());
@@ -215,9 +250,9 @@ const viewOperatingAccount = (account) => {
 
             <!-- Filters Section -->
             <div class="bg-yellow-50 rounded-lg border border-yellow-200 p-6">
-                <div class="flex gap-4 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                     <!-- Search Bar -->
-                    <div class="flex-1">
+                    <div class="md:col-span-2">
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Search Account</label>
                         <div class="relative">
                             <Search class="absolute left-4 top-3 h-5 w-5 text-gray-400" />
@@ -231,7 +266,7 @@ const viewOperatingAccount = (account) => {
                     </div>
 
                     <!-- Date Filter -->
-                    <div class="w-48">
+                    <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Select Date</label>
                         <div class="relative">
                             <Calendar class="absolute left-4 top-3 h-5 w-5 text-gray-400" />
@@ -241,6 +276,23 @@ const viewOperatingAccount = (account) => {
                                 class="w-full pl-12 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                             />
                         </div>
+                    </div>
+
+                    <!-- Show Withdrawn Filter -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Filter</label>
+                        <button
+                            @click="showWithdrawn = !showWithdrawn"
+                            :class="[
+                                'w-full flex items-center justify-center space-x-2 px-4 py-2 rounded-lg font-semibold transition-all duration-200 border-2',
+                                showWithdrawn
+                                    ? 'bg-green-100 border-green-400 text-green-700 shadow-md hover:bg-green-200'
+                                    : 'bg-white border-gray-300 text-gray-700 hover:border-yellow-400 hover:bg-yellow-50'
+                            ]"
+                        >
+                            <component :is="showWithdrawn ? Eye : EyeOff" class="h-5 w-5" />
+                            <span>{{ showWithdrawn ? 'Withdrawn Only' : 'Active' }}</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -285,7 +337,7 @@ const viewOperatingAccount = (account) => {
                                     {{ formatDate(account.acquisition_date) }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-700 border border-gray-200">
-                                    {{ formatDate(account.maturity_date) }}
+                                    {{ formatMaturityDate(account.maturity_date) }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border border-gray-200">
                                     {{ formatCurrency(getRollingBeginningBalance(account, selectedDate)) }}

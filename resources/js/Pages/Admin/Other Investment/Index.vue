@@ -1,7 +1,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import ViewOtherInvestmentModal from '@/Pages/Treasury/Other Investment/View.vue';
-import { Search } from 'lucide-vue-next';
+import { Search, Eye, EyeOff } from 'lucide-vue-next';
 import { ref, computed, onMounted } from 'vue';
 
 const props = defineProps({
@@ -14,6 +14,7 @@ const props = defineProps({
 const investmentsData = ref(props.otherInvestments);
 const searchQuery = ref('');
 const filterDate = ref(new Date().toISOString().split('T')[0]);
+const showWithdrawn = ref(false);
 const showViewModal = ref(false);
 const selectedInvestment = ref(null);
 
@@ -38,6 +39,30 @@ const formatDate = (date) => {
         month: 'short',
         day: 'numeric'
     });
+};
+
+const formatMaturityDate = (dateString) => {
+    if (!dateString) return '✓ Withdrawn';
+    const date = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    
+    const diffTime = date - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    const formattedDate = new Intl.DateTimeFormat('en-US', options).format(date);
+    
+    if (diffDays < 0) {
+        return `${formattedDate} (Overdue by ${Math.abs(diffDays)} days)`;
+    } else if (diffDays === 0) {
+        return `${formattedDate} (Due Today)`;
+    } else if (diffDays <= 30) {
+        return `${formattedDate} (${diffDays} days remaining)`;
+    }
+    
+    return formattedDate;
 };
 
 const getCollectionAmount = (investment) => {
@@ -89,15 +114,24 @@ const getRollingBeginningBalance = (investment) => {
 };
 
 const filteredInvestments = computed(() => {
-    if (!searchQuery.value.trim()) {
-        return investmentsData.value;
+    let investments = investmentsData.value;
+    
+    // Filter by withdrawn status - show ONLY withdrawn when toggled
+    if (showWithdrawn.value) {
+        investments = investments.filter(investment => investment.maturity_date === null);
+    } else {
+        investments = investments.filter(investment => investment.maturity_date !== null);
     }
     
-    const query = searchQuery.value.toLowerCase();
-    return investmentsData.value.filter(investment => 
-        investment.other_investment_name.toLowerCase().includes(query) ||
-        investment.account_number.toLowerCase().includes(query)
-    );
+    if (searchQuery.value.trim()) {
+        const query = searchQuery.value.toLowerCase();
+        investments = investments.filter(investment => 
+            investment.other_investment_name.toLowerCase().includes(query) ||
+            investment.account_number.toLowerCase().includes(query)
+        );
+    }
+    
+    return investments;
 });
 
 const totalBeginningBalance = computed(() => {
@@ -145,7 +179,7 @@ const viewOtherInvestment = (investment) => {
 
             <!-- Filter & Search Section -->
             <div class="bg-yellow-50 rounded-xl border-2 border-yellow-200 p-6 mb-8">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                     <!-- Search Bar -->
                     <div class="md:col-span-2">
                         <label class="block text-sm font-bold text-gray-800 mb-3">Search Other Investment</label>
@@ -168,6 +202,23 @@ const viewOtherInvestment = (investment) => {
                             type="date"
                             class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
                         />
+                    </div>
+
+                    <!-- Show Withdrawn Filter -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Filter</label>
+                        <button
+                            @click="showWithdrawn = !showWithdrawn"
+                            :class="[
+                                'w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-semibold transition-all duration-200 border-2',
+                                showWithdrawn
+                                    ? 'bg-green-100 border-green-400 text-green-700 shadow-md hover:bg-green-200'
+                                    : 'bg-white border-gray-300 text-gray-700 hover:border-yellow-400 hover:bg-yellow-50'
+                            ]"
+                        >
+                            <component :is="showWithdrawn ? Eye : EyeOff" class="h-5 w-5" />
+                            <span>{{ showWithdrawn ? 'Withdrawn Only' : 'Active' }}</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -211,7 +262,7 @@ const viewOtherInvestment = (investment) => {
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-200">{{ investment.account_number }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-200">{{ formatDate(investment.acquisition_date) }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-200">{{ formatDate(investment.maturity_date) }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-200">{{ formatMaturityDate(investment.maturity_date) }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(investment)) }}</td>
                                 <td class="px-6 py-4 text-sm text-green-600 font-semibold border-r border-gray-200">{{ formatCurrency(getCollectionAmount(investment)) }}</td>
                                 <td class="px-6 py-4 text-sm text-red-600 font-semibold border-r border-gray-200">{{ formatCurrency(getDisbursementAmount(investment)) }}</td>
