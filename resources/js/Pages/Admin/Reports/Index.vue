@@ -258,6 +258,7 @@ const generatePDF = async () => {
                             <input
                                 v-model="selectedDate"
                                 type="date"
+                                :max="new Date().toISOString().split('T')[0]"
                                 class="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
                             />
                         </div>
