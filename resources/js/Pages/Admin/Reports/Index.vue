@@ -10,6 +10,7 @@ const page = usePage();
 
 const selectedDate = ref(new Date().toISOString().split('T')[0]);
 const isGenerating = ref(false);
+const selectedModule = ref('all');
 
 const props = defineProps({
     collaterals: {
@@ -69,6 +70,56 @@ const activeModules = computed(() => {
     }));
 });
 
+const displayedModules = computed(() => {
+    if (selectedModule.value === 'all') {
+        return activeModules.value;
+    }
+    return activeModules.value.filter(module => module.name === selectedModule.value);
+});
+
+const getCollectionAmount = (item) => {
+    if (!selectedDate.value) {
+        return item.collection || 0;
+    }
+    const collectionDate = item.collection_date ? new Date(item.collection_date).toISOString().split('T')[0] : null;
+    return collectionDate === selectedDate.value ? (item.collection || 0) : 0;
+};
+
+const getDisbursementAmount = (item) => {
+    if (!selectedDate.value) {
+        return item.disbursement || 0;
+    }
+    const disbursementDate = item.disbursement_date ? new Date(item.disbursement_date).toISOString().split('T')[0] : null;
+    return disbursementDate === selectedDate.value ? (item.disbursement || 0) : 0;
+};
+
+const getRollingBeginningBalance = (item) => {
+    if (!selectedDate.value) {
+        return parseFloat(item.beginning_balance || 0);
+    }
+    
+    let balance = parseFloat(item.beginning_balance || 0);
+    
+    const collectionDate = item.collection_date ? new Date(item.collection_date).toISOString().split('T')[0] : null;
+    if (collectionDate && collectionDate < selectedDate.value) {
+        balance += parseFloat(item.collection || 0);
+    }
+    
+    const disbursementDate = item.disbursement_date ? new Date(item.disbursement_date).toISOString().split('T')[0] : null;
+    if (disbursementDate && disbursementDate < selectedDate.value) {
+        balance -= parseFloat(item.disbursement || 0);
+    }
+    
+    return balance;
+};
+
+const getEndingBalance = (item) => {
+    const beginning = getRollingBeginningBalance(item);
+    const collection = parseFloat(getCollectionAmount(item) || 0);
+    const disbursement = parseFloat(getDisbursementAmount(item) || 0);
+    return beginning + collection - disbursement;
+};
+
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -100,16 +151,7 @@ const generateReport = async () => {
         isGenerating.value = true;
         
         const response = await axios.post('/admin/reports/generate', {
-            date: selectedDate.value,
-            collaterals: props.collaterals,
-            timeDeposits: props.timeDeposits,
-            governmentSecurities: props.governmentSecurities,
-            otherInvestments: props.otherInvestments,
-            operatingAccounts: props.operatingAccounts,
-            dollars: props.dollars,
-            corporateBonds: props.corporateBonds,
-            cashInfusions: props.cashInfusions,
-            investments: props.investments
+            date: selectedDate.value
         }, {
             responseType: 'blob'
         });
@@ -118,7 +160,7 @@ const generateReport = async () => {
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `Daily_Deposit_Report_${selectedDate.value}.xlsx`);
+        link.setAttribute('download', `Daily_Deposit_Report_${selectedDate.value}.csv`);
         document.body.appendChild(link);
         link.click();
         link.parentNode.removeChild(link);
@@ -154,7 +196,21 @@ const generateReport = async () => {
 
             <!-- Date Selector and Generate Report Button -->
             <div class="bg-yellow-50 rounded-xl border-2 border-yellow-200 p-6 mb-8">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                    <!-- Module Selector -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Select Module</label>
+                        <select
+                            v-model="selectedModule"
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200 bg-white text-gray-900 font-medium"
+                        >
+                            <option value="all">All Modules</option>
+                            <option v-for="module in activeModules" :key="module.name" :value="module.name">
+                                {{ module.name }}
+                            </option>
+                        </select>
+                    </div>
+
                     <!-- Date Picker -->
                     <div>
                         <label class="block text-sm font-bold text-gray-800 mb-3">Select Report Date</label>
@@ -169,7 +225,7 @@ const generateReport = async () => {
                     </div>
 
                     <!-- Generate Report Button -->
-                    <div class="flex gap-4">
+                    <div class="flex gap-4 md:col-span-2">
                         <button
                             @click="generateReport"
                             :disabled="isGenerating"
@@ -184,7 +240,7 @@ const generateReport = async () => {
 
             <!-- Module Summaries -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div v-for="module in activeModules" :key="module.name" class="bg-white rounded-lg border-2 border-gray-200 p-4 shadow">
+                <div v-for="module in displayedModules" :key="module.name" class="bg-white rounded-lg border-2 border-gray-200 p-4 shadow">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm text-gray-600 font-semibold">{{ module.name }}</p>
@@ -197,7 +253,7 @@ const generateReport = async () => {
 
             <!-- Module Tables -->
             <div class="space-y-8">
-                <div v-for="module in activeModules" :key="module.name" class="bg-white rounded-xl border-2 border-gray-300 shadow-lg overflow-hidden">
+                <div v-for="module in displayedModules" :key="module.name" class="bg-white rounded-xl border-2 border-gray-300 shadow-lg overflow-hidden">
                     <div class="bg-gradient-to-r from-yellow-400 to-yellow-500 px-6 py-4">
                         <h2 class="text-lg font-bold text-gray-900">{{ module.name }}</h2>
                     </div>
@@ -227,10 +283,10 @@ const generateReport = async () => {
                                     <td class="px-6 py-3 text-sm text-gray-700">{{ item[module.accField] }}</td>
                                     <td class="px-6 py-3 text-sm text-gray-700">{{ formatDate(item.acquisition_date) }}</td>
                                     <td class="px-6 py-3 text-sm text-gray-700">{{ formatMaturityDate(item.maturity_date) }}</td>
-                                    <td class="px-6 py-3 text-sm font-semibold text-gray-900 text-right">{{ formatCurrency(item.beginning_balance) }}</td>
-                                    <td class="px-6 py-3 text-sm text-green-600 font-semibold text-right">{{ formatCurrency(item.collection) }}</td>
-                                    <td class="px-6 py-3 text-sm text-red-600 font-semibold text-right">{{ formatCurrency(item.disbursement) }}</td>
-                                    <td class="px-6 py-3 text-sm text-blue-600 font-semibold text-right">{{ formatCurrency(item.ending_balance) }}</td>
+                                    <td class="px-6 py-3 text-sm font-semibold text-gray-900 text-right">{{ formatCurrency(getRollingBeginningBalance(item)) }}</td>
+                                    <td class="px-6 py-3 text-sm text-green-600 font-semibold text-right">{{ formatCurrency(getCollectionAmount(item)) }}</td>
+                                    <td class="px-6 py-3 text-sm text-red-600 font-semibold text-right">{{ formatCurrency(getDisbursementAmount(item)) }}</td>
+                                    <td class="px-6 py-3 text-sm text-blue-600 font-semibold text-right">{{ formatCurrency(getEndingBalance(item)) }}</td>
                                 </tr>
                             </tbody>
                         </table>
