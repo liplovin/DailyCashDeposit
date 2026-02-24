@@ -420,6 +420,7 @@ const withdrawTimeDeposit = async (timeDeposit) => {
                             <tr class="border-b-2 border-gray-300">
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Time Deposit Name</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Account Number</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Acquisition Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Ending Balance</th>
@@ -443,6 +444,7 @@ const withdrawTimeDeposit = async (timeDeposit) => {
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ timeDeposit.account_number }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ timeDeposit.acquisition_date ? new Date(timeDeposit.acquisition_date).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: '2-digit' }) : '—' }}</td>
                                 <td class="px-6 py-4 text-sm font-mono border-r border-gray-200" :class="timeDeposit.maturity_date ? 'text-gray-700' : 'text-green-600 font-bold'">
                                     {{ formatMaturityDate(timeDeposit.maturity_date) }}
                                 </td>

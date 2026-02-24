@@ -443,6 +443,7 @@ const withdrawGovernmentSecurity = async (security) => {
                             <tr class="border-b-2 border-gray-300">
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Government Security Name</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Reference Number</th>
+                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Acquisition Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Ending Balance</th>
@@ -466,6 +467,7 @@ const withdrawGovernmentSecurity = async (security) => {
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ security.reference_number }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ security.acquisition_date ? new Date(security.acquisition_date).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: '2-digit' }) : '—' }}</td>
                                 <td class="px-6 py-4 text-sm font-mono border-r border-gray-200" :class="security.maturity_date ? 'text-gray-700' : 'text-green-600 font-bold'">
                                     {{ formatMaturityDate(security.maturity_date) }}
                                 </td>
