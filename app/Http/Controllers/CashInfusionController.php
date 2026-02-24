@@ -26,9 +26,12 @@ class CashInfusionController extends Controller
             'account_number' => 'required|string|unique:cash_infusions,account_number',
             'beginning_balance' => 'required|numeric|min:0',
             'maturity_date' => 'required|date_format:m/d/Y',
+            'acquisition_date' => 'required|date_format:m/d/Y',
+            'explanation' => 'required|string|max:1000',
         ]);
 
         $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
+        $validated['acquisition_date'] = $this->convertDateFormat($validated['acquisition_date']);
         CashInfusion::create($validated);
 
         return redirect('/treasury/cash-infusion')->with('success', 'Cash Infusion created successfully.');
@@ -43,9 +46,12 @@ class CashInfusionController extends Controller
             'account_number' => 'required|string|unique:cash_infusions,account_number,' . $id,
             'beginning_balance' => 'required|numeric|min:0',
             'maturity_date' => 'required|date_format:m/d/Y',
+            'acquisition_date' => 'required|date_format:m/d/Y',
+            'explanation' => 'required|string|max:1000',
         ]);
 
         $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
+        $validated['acquisition_date'] = $this->convertDateFormat($validated['acquisition_date']);
         $cashInfusion->update($validated);
 
         return redirect('/treasury/cash-infusion')->with('success', 'Cash Infusion updated successfully.');

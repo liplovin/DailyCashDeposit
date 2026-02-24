@@ -15,11 +15,11 @@ const props = defineProps({
 
 const emit = defineEmits(['close']);
 
-const activeTab = ref('renewals');
+const activeTab = ref('details');
 
 watch(() => props.isOpen, (newVal) => {
     if (newVal) {
-        activeTab.value = 'renewals';
+        activeTab.value = 'details';
     }
 });
 
@@ -80,6 +80,17 @@ const differenceInDays = (date1, date2) => {
                 <div class="sticky top-16 bg-white border-b border-gray-200 px-6 z-10">
                     <div class="flex space-x-8">
                         <button
+                            @click="activeTab = 'details'"
+                            :class="[
+                                'py-3 px-1 border-b-2 font-medium text-sm transition-colors',
+                                activeTab === 'details'
+                                    ? 'border-blue-600 text-blue-600'
+                                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                            ]"
+                        >
+                            Details
+                        </button>
+                        <button
                             @click="activeTab = 'renewals'"
                             :class="[
                                 'py-3 px-1 border-b-2 font-medium text-sm transition-colors',
@@ -117,6 +128,41 @@ const differenceInDays = (date1, date2) => {
 
                 <!-- Content -->
                 <div class="p-6">
+                    <!-- Details Tab -->
+                    <div v-if="activeTab === 'details'" class="space-y-6">
+                        <div class="grid grid-cols-2 gap-6">
+                            <!-- Infusion Name -->
+                            <div class="bg-blue-50 rounded-lg p-6 border border-blue-200">
+                                <p class="text-xs text-gray-600 font-bold uppercase tracking-widest mb-2">Infusion Name</p>
+                                <p class="text-lg font-bold text-gray-900">{{ cashInfusion.cash_infusion_name || '—' }}</p>
+                            </div>
+
+                            <!-- Account Number -->
+                            <div class="bg-blue-50 rounded-lg p-6 border border-blue-200">
+                                <p class="text-xs text-gray-600 font-bold uppercase tracking-widest mb-2">Account Number</p>
+                                <p class="text-lg font-bold text-gray-900">{{ cashInfusion.account_number || '—' }}</p>
+                            </div>
+
+                            <!-- Acquisition Date -->
+                            <div class="bg-green-50 rounded-lg p-6 border border-green-200">
+                                <p class="text-xs text-gray-600 font-bold uppercase tracking-widest mb-2">Acquisition Date</p>
+                                <p class="text-lg font-bold text-green-700">{{ formatDate(cashInfusion.acquisition_date) }}</p>
+                            </div>
+
+                            <!-- Maturity Date -->
+                            <div class="bg-blue-100 rounded-lg p-6 border border-blue-300">
+                                <p class="text-xs text-gray-600 font-bold uppercase tracking-widest mb-2">Maturity Date</p>
+                                <p class="text-lg font-bold text-blue-700">{{ formatDate(cashInfusion.maturity_date) }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Explanation -->
+                        <div class="bg-white rounded-lg p-6 border border-gray-200">
+                            <p class="text-xs text-gray-600 font-bold uppercase tracking-widest mb-3">Explanation</p>
+                            <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap break-words">{{ cashInfusion.explanation?.trim() || '—' }}</p>
+                        </div>
+                    </div>
+
                     <!-- Renewal History Tab -->
                     <div v-if="activeTab === 'renewals'">
                         <div v-if="cashInfusion?.renewals && cashInfusion.renewals.length > 0" class="space-y-4">

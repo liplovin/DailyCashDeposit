@@ -26,9 +26,12 @@ class InvestmentController extends Controller
             'reference_number' => 'required|string',
             'beginning_balance' => 'required|numeric|min:0',
             'maturity_date' => 'required|date_format:m/d/Y',
+            'acquisition_date' => 'required|date_format:m/d/Y',
+            'explanation' => 'required|string|max:1000',
         ]);
 
         $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
+        $validated['acquisition_date'] = $this->convertDateFormat($validated['acquisition_date']);
         Investment::create($validated);
 
         return redirect('/treasury/investment')->with('success', 'Investment created successfully.');
@@ -43,9 +46,12 @@ class InvestmentController extends Controller
             'reference_number' => 'required|string',
             'beginning_balance' => 'required|numeric|min:0',
             'maturity_date' => 'required|date_format:m/d/Y',
+            'acquisition_date' => 'required|date_format:m/d/Y',
+            'explanation' => 'required|string|max:1000',
         ]);
 
         $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
+        $validated['acquisition_date'] = $this->convertDateFormat($validated['acquisition_date']);
         $investment->update($validated);
 
         return redirect('/treasury/investment')->with('success', 'Investment updated successfully.');

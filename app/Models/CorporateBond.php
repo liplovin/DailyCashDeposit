@@ -19,6 +19,8 @@ class CorporateBond extends Model
         'disbursement',
         'disbursement_date',
         'ending_balance',
+        'acquisition_date',
+        'explanation',
     ];
 
     protected $casts = [

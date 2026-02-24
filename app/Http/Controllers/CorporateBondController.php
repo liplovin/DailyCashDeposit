@@ -26,9 +26,12 @@ class CorporateBondController extends Controller
             'account_number' => 'required|string|unique:corporate_bonds,account_number',
             'beginning_balance' => 'required|numeric|min:0',
             'maturity_date' => 'required|date_format:m/d/Y',
+            'acquisition_date' => 'required|date_format:m/d/Y',
+            'explanation' => 'required|string|max:1000',
         ]);
 
         $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
+        $validated['acquisition_date'] = $this->convertDateFormat($validated['acquisition_date']);
         CorporateBond::create($validated);
 
         return redirect('/treasury/corporate-bonds')->with('success', 'Corporate Bond created successfully.');
@@ -43,9 +46,12 @@ class CorporateBondController extends Controller
             'account_number' => 'required|string|unique:corporate_bonds,account_number,' . $id,
             'beginning_balance' => 'required|numeric|min:0',
             'maturity_date' => 'required|date_format:m/d/Y',
+            'acquisition_date' => 'required|date_format:m/d/Y',
+            'explanation' => 'required|string|max:1000',
         ]);
 
         $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
+        $validated['acquisition_date'] = $this->convertDateFormat($validated['acquisition_date']);
         $corporateBond->update($validated);
 
         return redirect('/treasury/corporate-bonds')->with('success', 'Corporate Bond updated successfully.');

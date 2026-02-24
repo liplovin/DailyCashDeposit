@@ -21,6 +21,18 @@
         <div class="flex space-x-8">
           <button
             type="button"
+            @click="activeTab = 'details'"
+            :class="[
+              'py-3 px-1 border-b-2 font-medium text-sm transition-colors',
+              activeTab === 'details'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
+            ]"
+          >
+            Details
+          </button>
+          <button
+            type="button"
             @click="activeTab = 'renewals'"
             :class="[
               'py-3 px-1 border-b-2 font-medium text-sm transition-colors',
@@ -60,6 +72,41 @@
 
       <!-- Content -->
       <div class="p-6">
+        <!-- Details Tab -->
+        <div v-if="activeTab === 'details'" class="space-y-6">
+          <div class="grid grid-cols-2 gap-6">
+            <!-- Bond Name -->
+            <div class="bg-blue-50 rounded-lg p-6 border border-blue-200">
+              <p class="text-xs text-gray-600 font-bold uppercase tracking-widest mb-2">Bond Name</p>
+              <p class="text-lg font-bold text-gray-900">{{ corporateBond.corporate_bond_name || '—' }}</p>
+            </div>
+
+            <!-- Account Number -->
+            <div class="bg-blue-50 rounded-lg p-6 border border-blue-200">
+              <p class="text-xs text-gray-600 font-bold uppercase tracking-widest mb-2">Account Number</p>
+              <p class="text-lg font-bold text-gray-900">{{ corporateBond.account_number || '—' }}</p>
+            </div>
+
+            <!-- Acquisition Date -->
+            <div class="bg-green-50 rounded-lg p-6 border border-green-200">
+              <p class="text-xs text-gray-600 font-bold uppercase tracking-widest mb-2">Acquisition Date</p>
+              <p class="text-lg font-bold text-green-700">{{ formatDate(corporateBond.acquisition_date) }}</p>
+            </div>
+
+            <!-- Maturity Date -->
+            <div class="bg-blue-100 rounded-lg p-6 border border-blue-300">
+              <p class="text-xs text-gray-600 font-bold uppercase tracking-widest mb-2">Maturity Date</p>
+              <p class="text-lg font-bold text-blue-700">{{ formatDate(corporateBond.maturity_date) }}</p>
+            </div>
+          </div>
+
+          <!-- Explanation -->
+          <div class="bg-white rounded-lg p-6 border border-gray-200">
+            <p class="text-xs text-gray-600 font-bold uppercase tracking-widest mb-3">Explanation</p>
+            <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap break-words">{{ corporateBond.explanation?.trim() || '—' }}</p>
+          </div>
+        </div>
+
         <!-- Renewal History Tab -->
         <div v-if="activeTab === 'renewals'">
           <div v-if="corporateBond && corporateBond.renewals && corporateBond.renewals.length > 0" class="space-y-4">
@@ -232,7 +279,7 @@
 <script setup>
 import { ref } from 'vue';
 
-const activeTab = ref('renewals');
+const activeTab = ref('details');
 
 defineProps({
   isOpen: {

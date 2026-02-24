@@ -19,6 +19,8 @@ return new class extends Migration
             $table->date('disbursement_date')->nullable();
             $table->decimal('ending_balance', 15, 2)->default(0);
             $table->date('maturity_date')->nullable();
+            $table->date('acquisition_date')->nullable();
+            $table->text('explanation')->nullable();
             $table->timestamps();
         });
     }
