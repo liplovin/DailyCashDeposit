@@ -30,6 +30,10 @@ const selectedAccount = computed(() => {
     return props.operatingAccounts.find(acc => acc.id === parseInt(selectedAccountId.value));
 });
 
+const activeAccounts = computed(() => {
+    return props.operatingAccounts.filter(account => account.maturity_date !== null);
+});
+
 const form = ref({
     collections: [
         {
@@ -366,7 +370,7 @@ watch(() => selectedAccountId.value, (newValue) => {
                         class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all bg-white text-gray-900 font-medium"
                     >
                         <option value="">-- Choose Account --</option>
-                        <option v-for="account in operatingAccounts" :key="account.id" :value="account.id">
+                        <option v-for="account in activeAccounts" :key="account.id" :value="account.id">
                             {{ account.operating_account_name }}
                         </option>
                     </select>
