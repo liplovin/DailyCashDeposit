@@ -1,7 +1,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { usePage } from '@inertiajs/vue3';
-import { Calendar, Download, FileText, File } from 'lucide-vue-next';
+import { Calendar, Download, FileText, File, Lock } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -12,6 +12,8 @@ const selectedDate = ref(new Date().toISOString().split('T')[0]);
 const isGenerating = ref(false);
 const isGeneratingPDF = ref(false);
 const selectedModule = ref('all');
+const showPdfDateModal = ref(false);
+const pdfReportDate = ref(new Date().toISOString().split('T')[0]);
 
 const props = defineProps({
     collaterals: {
@@ -185,12 +187,20 @@ const generateReport = async () => {
     }
 };
 
+const showPdfModal = () => {
+    showPdfDateModal.value = true;
+};
+
+const closePdfModal = () => {
+    showPdfDateModal.value = false;
+};
+
 const generatePDF = async () => {
     try {
         isGeneratingPDF.value = true;
         
         const response = await axios.post('/admin/reports/generate-pdf', {
-            date: selectedDate.value
+            date: pdfReportDate.value
         }, {
             responseType: 'blob'
         });
@@ -199,7 +209,7 @@ const generatePDF = async () => {
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `Daily_Deposit_Report_${selectedDate.value}.pdf`);
+        link.setAttribute('download', `Daily_Deposit_Report_${pdfReportDate.value}.pdf`);
         document.body.appendChild(link);
         link.click();
         link.parentNode.removeChild(link);
@@ -208,9 +218,11 @@ const generatePDF = async () => {
         Swal.fire({
             icon: 'success',
             title: 'Report Generated',
-            text: `PDF report for ${selectedDate.value} has been downloaded successfully`,
+            text: `PDF report for ${pdfReportDate.value} has been downloaded successfully`,
             timer: 2000
         });
+        
+        closePdfModal();
     } catch (error) {
         console.error('Error generating PDF:', error);
         Swal.fire({
@@ -266,16 +278,21 @@ const generatePDF = async () => {
 
                     <!-- Generate Report Buttons -->
                     <div class="flex gap-4 md:col-span-2">
+                        <div class="flex-1 relative group">
+                            <button
+                                disabled
+                                class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gray-300 text-gray-600 font-bold rounded-lg shadow-lg cursor-not-allowed opacity-60 hover:opacity-75 transition-all group-hover:bg-gray-400"
+                            >
+                                <Lock class="h-5 w-5" />
+                                <span>CSV Report</span>
+                            </button>
+                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-4 py-2 bg-gray-900 text-white text-sm font-semibold rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-lg z-10">
+                                Contact us to get this feature
+                                <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                            </div>
+                        </div>
                         <button
-                            @click="generateReport"
-                            :disabled="isGenerating || isGeneratingPDF"
-                            class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 font-bold rounded-lg shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <Download class="h-5 w-5" />
-                            <span>{{ isGenerating ? 'Generating...' : 'CSV Report' }}</span>
-                        </button>
-                        <button
-                            @click="generatePDF"
+                            @click="showPdfModal"
                             :disabled="isGeneratingPDF || isGenerating"
                             class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-red-400 to-red-500 hover:from-red-500 hover:to-red-600 text-white font-bold rounded-lg shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
@@ -338,6 +355,43 @@ const generatePDF = async () => {
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PDF Date Modal -->
+            <div v-if="showPdfDateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div class="bg-white rounded-xl p-8 max-w-md w-full shadow-2xl">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-6">Select Report Date</h3>
+                    <p class="text-gray-600 text-sm mb-4">Choose a date to see all collections and disbursements that occurred on that date</p>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Report Date</label>
+                        <div class="relative">
+                            <Calendar class="absolute left-4 top-3 h-5 w-5 text-gray-400" />
+                            <input
+                                v-model="pdfReportDate"
+                                type="date"
+                                :max="new Date().toISOString().split('T')[0]"
+                                class="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200"
+                            />
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-3">
+                        <button
+                            @click="closePdfModal"
+                            class="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-900 font-bold rounded-lg transition-all duration-200"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            @click="generatePDF"
+                            :disabled="isGeneratingPDF"
+                            class="flex-1 px-4 py-3 bg-gradient-to-r from-red-400 to-red-500 hover:from-red-500 hover:to-red-600 text-white font-bold rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {{ isGeneratingPDF ? 'Generating...' : 'Generate PDF' }}
+                        </button>
                     </div>
                 </div>
             </div>

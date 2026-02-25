@@ -110,8 +110,10 @@
         @endif
         <h1>DAILY DEPOSIT REPORT</h1>
         <div class="report-info">
-            <p>Report Date: <strong>{{ $reportDate }}</strong></p>
-            <p>Generated: {{ date('F d, Y h:i A') }}</p>
+            <p>Report Date: <strong>{{ $reportDate }}</strong></p>            @if(isset($transactionDate))
+                <p>Transaction Date: <strong>{{ date('F d, Y', strtotime($transactionDate)) }}</strong></p>
+                <p style=\"font-size: 10px; color: #666;\">Showing all deposits with collections and disbursements for the transaction date</p>
+            @endif            <p>Generated: {{ date('F d, Y h:i A') }}</p>
         </div>
     </div>
 
