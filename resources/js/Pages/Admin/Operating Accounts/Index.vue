@@ -103,15 +103,18 @@ const getEndingBalance = (account) => {
 // Filter accounts by search and withdrawal status
 const filteredAccounts = computed(() => {
     return operatingAccounts.value.filter(account => {
-        // Filter by withdrawn status - check if account has withdrawals
+        // Filter by withdrawn status - check if account has 0 or null balance
         if (showWithdrawn.value) {
-            // Show only withdrawn accounts (have withdrawal records)
-            if (!account.withdrawals || account.withdrawals.length === 0) {
+            // Show only fully withdrawn accounts (beginning_balance = 0)
+            const balance = parseFloat(account.beginning_balance);
+            const isZero = balance === 0 || account.beginning_balance === null || account.beginning_balance === '';
+            if (!isZero) {
                 return false;
             }
         } else {
-            // Show only active accounts (no withdrawal records)
-            if (account.withdrawals && account.withdrawals.length > 0) {
+            // Show only active accounts (beginning_balance > 0)
+            const balance = parseFloat(account.beginning_balance);
+            if (balance <= 0) {
                 return false;
             }
         }

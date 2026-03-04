@@ -58,13 +58,19 @@ const formatCurrency = (value) => {
 const filteredOperatingAccounts = computed(() => {
     let filtered = props.operatingAccounts;
     
-    // Filter by withdrawn status - check if account has withdrawals
+    // Filter by withdrawn status - check if account has 0 or null balance
     if (showWithdrawn.value) {
-        // Show only withdrawn accounts (have withdrawal records)
-        filtered = filtered.filter(account => account.withdrawals && account.withdrawals.length > 0);
+        // Show only fully withdrawn accounts (beginning_balance = 0 or null)
+        filtered = filtered.filter(account => {
+            const balance = parseFloat(account.beginning_balance);
+            return balance === 0 || account.beginning_balance === null || account.beginning_balance === '';
+        });
     } else {
-        // Show only active accounts (no withdrawal records)
-        filtered = filtered.filter(account => !account.withdrawals || account.withdrawals.length === 0);
+        // Show only active accounts (beginning_balance > 0)
+        filtered = filtered.filter(account => {
+            const balance = parseFloat(account.beginning_balance);
+            return balance > 0;
+        });
     }
     
     if (searchQuery.value.trim()) {
