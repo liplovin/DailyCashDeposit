@@ -17,14 +17,16 @@ class DatabaseSeeder extends Seeder
         // Seed users
         $this->call(UserSeeder::class);
 
-        $this->call(OperatingAccountSeeder::class);
         $this->call(CollateralSeeder::class);
+        $this->call(TimeDepositSeeder::class);
+        $this->call(GovernmentSecuritySeeder::class);
+        $this->call(OtherInvestmentSeeder::class);
+        $this->call(OperatingAccountSeeder::class);
+        $this->call(DollarSeeder::class);
         $this->call(CorporateBondSeeder::class);
         $this->call(CashInfusionSeeder::class);
-        $this->call(DollarSeeder::class);
-        $this->call(GovernmentSecuritySeeder::class);
         $this->call(InvestmentSeeder::class);
-        $this->call(OtherInvestmentSeeder::class);
-        $this->call(TimeDepositSeeder::class);
+
+
     }
 }

@@ -19,25 +19,25 @@ class OperatingAccountSeeder extends Seeder
         OperatingAccount::create([
             'operating_account_name' => 'BDO - Valero',
             'account_number' => '1380062436',
-            'beginning_balance' => 1788906.09,
+            'beginning_balance' => 3583065.57,
         ]);
 
         OperatingAccount::create([
             'operating_account_name' => 'BPI-SALCEDO',
             'account_number' => '003773-0407-52',
-            'beginning_balance' => 582509.91,
+            'beginning_balance' => 646958.66,
         ]);
 
         OperatingAccount::create([
             'operating_account_name' => 'China Bank - HO(settlement Bank)',
             'account_number' => '303-0885917',
-            'beginning_balance' => 1313065.91,
+            'beginning_balance' => 2423315.91,
         ]);
 
         OperatingAccount::create([
             'operating_account_name' => 'DBP - Makati Ave.',
             'account_number' => '0405-018364-530',
-            'beginning_balance' => 1232516.60,
+            'beginning_balance' => 524436.16,
         ]);
 
         OperatingAccount::create([
@@ -48,7 +48,7 @@ class OperatingAccountSeeder extends Seeder
 
         OperatingAccount::create([
             'operating_account_name' => 'ROBINSONS BANK',
-            'account_number' => '104030000000000',
+            'account_number' => '1.0403E+14',
             'beginning_balance' => 609425.39,
         ]);
 
@@ -61,7 +61,7 @@ class OperatingAccountSeeder extends Seeder
         OperatingAccount::create([
             'operating_account_name' => 'Metrobank',
             'account_number' => '292-7-29254395-2',
-            'beginning_balance' => 2011290.63,
+            'beginning_balance' => 3735027.27,
         ]);
 
         OperatingAccount::create([
@@ -97,35 +97,9 @@ class OperatingAccountSeeder extends Seeder
         OperatingAccount::create([
             'operating_account_name' => 'UBP - HV DE LA COSTA',
             'account_number' => '00-213-000492-7',
-            'beginning_balance' => 13170983.48,
+            'beginning_balance' => 19929103.42,
         ]);
 
-        // TEST RECORDS FOR ACTIONS COLUMN VISIBILITY
-        // Created TODAY - Should show Edit/Delete buttons
-        OperatingAccount::create([
-            'operating_account_name' => '[TEST] Today Creation',
-            'account_number' => 'TEST-OA-TODAY',
-            'beginning_balance' => 5000000.00,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
 
-        // Created YESTERDAY - Should hide Edit/Delete buttons
-        OperatingAccount::create([
-            'operating_account_name' => '[TEST] Yesterday Creation',
-            'account_number' => 'TEST-OA-YESTERDAY',
-            'beginning_balance' => 3500000.00,
-            'created_at' => now()->subDay(),
-            'updated_at' => now()->subDay(),
-        ]);
-
-        // Created 2 DAYS AGO - Should hide Edit/Delete buttons
-        OperatingAccount::create([
-            'operating_account_name' => '[TEST] 2 Days Old',
-            'account_number' => 'TEST-OA-2DAYS',
-            'beginning_balance' => 2000000.00,
-            'created_at' => now()->subDays(2),
-            'updated_at' => now()->subDays(2),
-        ]);
     }
 }

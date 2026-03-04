@@ -15,38 +15,26 @@ class OtherInvestmentSeeder extends Seeder
      */
     public function run(): void
     {
-        // TEST RECORDS FOR ACTIONS COLUMN VISIBILITY
-        // Created TODAY - Should show Edit/Delete buttons
         OtherInvestment::create([
-            'other_investment_name' => '[TEST] Today Creation',
-            'account_number' => 'TEST-OI-TODAY',
-            'beginning_balance' => 5000000.00,
-            'acquisition_date' => '2023-05-23',
-            'maturity_date' => '2026-05-23',
-            'created_at' => now(),
-            'updated_at' => now(),
+            'other_investment_name' => 'MBTC (UITF)',
+            'account_number' => 'null',
+            'beginning_balance' => 2139232.02,
+
         ]);
 
-        // Created YESTERDAY - Should hide Edit/Delete buttons
-        OtherInvestment::create([
-            'other_investment_name' => '[TEST] Yesterday Creation',
-            'account_number' => 'TEST-OI-YESTERDAY',
-            'beginning_balance' => 3500000.00,
-            'acquisition_date' => '2023-04-15',
-            'maturity_date' => '2026-04-15',
-            'created_at' => now()->subDay(),
-            'updated_at' => now()->subDay(),
+      OtherInvestment::create([
+            'other_investment_name' => 'PS BANK (ESCROW)',
+            'account_number' => '881-161-000378',
+            'beginning_balance' => 1290098.17,
+            'maturity_date' => '2026-03-02',
+
         ]);
 
-        // Created 2 DAYS AGO - Should hide Edit/Delete buttons
         OtherInvestment::create([
-            'other_investment_name' => '[TEST] 2 Days Old',
-            'account_number' => 'TEST-OI-2DAYS',
-            'beginning_balance' => 2000000.00,
-            'acquisition_date' => '2023-03-20',
-            'maturity_date' => '2026-03-20',
-            'created_at' => now()->subDays(2),
-            'updated_at' => now()->subDays(2),
+            'other_investment_name' => 'CHINABANK - TRUST FUND',
+            'account_number' => '01532103TA01',
+            'beginning_balance' => 12948559.46,
+
         ]);
     }
 }

@@ -15,38 +15,18 @@ class DollarSeeder extends Seeder
      */
     public function run(): void
     {
-        // TEST RECORDS FOR ACTIONS COLUMN VISIBILITY
-        // Created TODAY - Should show Edit/Delete buttons
         Dollar::create([
-            'dollar_name' => '[TEST] Today Creation',
-            'account_number' => 'TEST-DOLLAR-TODAY',
-            'beginning_balance' => 5000000.00,
-            'acquisition_date' => '2023-05-23',
-            'maturity_date' => '2026-05-23',
-            'created_at' => now(),
-            'updated_at' => now(),
+            'dollar_name' => 'EAST WEST BANK-$ TD',
+            'account_number' => '3000-01-17392-1',
+            'beginning_balance' => 46953.45,
+            'maturity_date' => '2026-03-30',
         ]);
-
-        // Created YESTERDAY - Should hide Edit/Delete buttons
-        Dollar::create([
-            'dollar_name' => '[TEST] Yesterday Creation',
-            'account_number' => 'TEST-DOLLAR-YESTERDAY',
-            'beginning_balance' => 3500000.00,
-            'acquisition_date' => '2023-04-15',
-            'maturity_date' => '2026-04-15',
-            'created_at' => now()->subDay(),
-            'updated_at' => now()->subDay(),
+           Dollar::create([
+            'dollar_name' => 'EAST WEST BANK-$ TD',
+            'account_number' => '3000-01-37505-2',
+            'beginning_balance' => 8595.34,
+            'maturity_date' => '2026-03-30',
         ]);
-
-        // Created 2 DAYS AGO - Should hide Edit/Delete buttons
-        Dollar::create([
-            'dollar_name' => '[TEST] 2 Days Old',
-            'account_number' => 'TEST-DOLLAR-2DAYS',
-            'beginning_balance' => 2000000.00,
-            'acquisition_date' => '2023-03-20',
-            'maturity_date' => '2026-03-20',
-            'created_at' => now()->subDays(2),
-            'updated_at' => now()->subDays(2),
-        ]);
+        
     }
 }
