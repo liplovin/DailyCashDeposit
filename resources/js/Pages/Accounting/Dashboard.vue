@@ -1,7 +1,10 @@
 ﻿<script setup>
 import AccountingLayout from '@/Layouts/AccountingLayout.vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed, ref, onMounted, onUnmounted } from 'vue';
+
+const page = usePage();
+const user = computed(() => page.props.auth.user);
 import { Wallet, CheckCircle, Clock, ChevronLeft, ChevronRight, Calculator } from 'lucide-vue-next';
 
 const currentDate = ref(new Date());
@@ -211,7 +214,7 @@ onUnmounted(() => {
         <!-- Welcome Card -->
         <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl shadow-sm border border-blue-200 p-8 mb-8">
             <h1 class="text-3xl font-bold text-gray-900 mb-2">
-                {{ getGreeting }}, Accounting User!
+                {{ getGreeting }}, {{ user.name }}!
             </h1>
             <p class="text-gray-700">
                 Manage operating account disbursements and track processed transactions. Monitor all financial activities in one place.
