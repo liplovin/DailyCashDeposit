@@ -256,7 +256,7 @@ const menuItems = [
             <!-- Footer -->
             <div class="border-t border-gray-200 bg-gray-50 px-8 py-4">
                 <p class="text-center text-sm text-gray-600">
-                    © {{ new Date().getFullYear() }} Crafted by John Philip Pera & Robert Janipin
+                    © {{ new Date().getFullYear() }} Crafted by John Philip Pera & Robert Janipin | Team Leader - Archie San Pedro
                 </p>
             </div>
         </div>
