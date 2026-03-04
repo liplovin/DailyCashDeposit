@@ -8,9 +8,9 @@ import { Search, Calendar, Eye, EyeOff } from 'lucide-vue-next';
 const page = usePage();
 const operatingAccounts = computed(() => page.props.operatingAccounts || []);
 const searchQuery = ref('');
+const showWithdrawn = ref(false);
 const showViewModal = ref(false);
 const selectedAccount = ref(null);
-const showWithdrawn = ref(false);
 
 // Set default date to today
 const getTodayDate = () => {
@@ -41,31 +41,6 @@ const formatDate = (date) => {
         month: 'short',
         day: 'numeric'
     }).format(new Date(date));
-};
-
-// Format maturity date with withdrawal status
-const formatMaturityDate = (dateString) => {
-    if (!dateString) return '✓ Withdrawn';
-    const date = new Date(dateString);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    date.setHours(0, 0, 0, 0);
-    
-    const diffTime = date - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    const formattedDate = new Intl.DateTimeFormat('en-US', options).format(date);
-    
-    if (diffDays < 0) {
-        return `${formattedDate} (Overdue by ${Math.abs(diffDays)} days)`;
-    } else if (diffDays === 0) {
-        return `${formattedDate} (Due Today)`;
-    } else if (diffDays <= 30) {
-        return `${formattedDate} (${diffDays} days remaining)`;
-    }
-    
-    return formattedDate;
 };
 
 // Calculate total collection for an account
@@ -125,18 +100,22 @@ const getEndingBalance = (account) => {
     return parseFloat(account.beginning_balance || 0) + collection;
 };
 
-// Filter accounts by search and date
+// Filter accounts by search and withdrawal status
 const filteredAccounts = computed(() => {
-    let accounts = operatingAccounts.value;
-    
-    // Filter by withdrawn status - show ONLY withdrawn when toggled
-    if (showWithdrawn.value) {
-        accounts = accounts.filter(account => account.maturity_date === null);
-    } else {
-        accounts = accounts.filter(account => account.maturity_date !== null);
-    }
-    
-    return accounts.filter(account => {
+    return operatingAccounts.value.filter(account => {
+        // Filter by withdrawn status - check if account has withdrawals
+        if (showWithdrawn.value) {
+            // Show only withdrawn accounts (have withdrawal records)
+            if (!account.withdrawals || account.withdrawals.length === 0) {
+                return false;
+            }
+        } else {
+            // Show only active accounts (no withdrawal records)
+            if (account.withdrawals && account.withdrawals.length > 0) {
+                return false;
+            }
+        }
+        
         const matchesSearch = !searchQuery.value.trim() || 
             account.operating_account_name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
             account.account_number.toLowerCase().includes(searchQuery.value.toLowerCase());
@@ -278,19 +257,19 @@ const viewOperatingAccount = (account) => {
                         </div>
                     </div>
 
-                    <!-- Show Withdrawn Filter -->
+                    <!-- Withdrawn Filter -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Filter</label>
                         <button
                             @click="showWithdrawn = !showWithdrawn"
                             :class="[
-                                'w-full flex items-center justify-center space-x-2 px-4 py-2 rounded-lg font-semibold transition-all duration-200 border-2',
+                                'w-full flex items-center justify-center space-x-2 px-4 py-2 rounded-lg font-semibold transition-all duration-200 border',
                                 showWithdrawn
                                     ? 'bg-green-100 border-green-400 text-green-700 shadow-md hover:bg-green-200'
                                     : 'bg-white border-gray-300 text-gray-700 hover:border-yellow-400 hover:bg-yellow-50'
                             ]"
                         >
-                            <component :is="showWithdrawn ? Eye : EyeOff" class="h-5 w-5" />
+                            <component :is="showWithdrawn ? 'Eye' : 'EyeOff'" class="h-5 w-5" />
                             <span>{{ showWithdrawn ? 'Withdrawn Only' : 'Active' }}</span>
                         </button>
                     </div>
@@ -305,8 +284,6 @@ const viewOperatingAccount = (account) => {
                             <tr class="bg-gradient-to-r from-yellow-400 to-yellow-500">
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border border-yellow-600">Operating Account Name</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border border-yellow-600">Account Number</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border border-yellow-600">Acquisition Date</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border border-yellow-600">Maturity Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border border-yellow-600">Beginning Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border border-yellow-600">Collection</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border border-yellow-600">Disbursement</th>
@@ -316,7 +293,7 @@ const viewOperatingAccount = (account) => {
                         </thead>
                         <tbody>
                             <tr v-if="filteredAccounts.length === 0">
-                                <td colspan="9" class="px-6 py-8 text-center text-gray-500 border border-gray-200">
+                                <td colspan="7" class="px-6 py-8 text-center text-gray-500 border border-gray-200">
                                     No operating accounts found.
                                 </td>
                             </tr>
@@ -332,12 +309,6 @@ const viewOperatingAccount = (account) => {
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-700 font-mono border border-gray-200">
                                     {{ account.account_number }}
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-700 border border-gray-200">
-                                    {{ formatDate(account.acquisition_date) }}
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-700 border border-gray-200">
-                                    {{ formatMaturityDate(account.maturity_date) }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border border-gray-200">
                                     {{ formatCurrency(getRollingBeginningBalance(account, selectedDate)) }}
@@ -363,10 +334,7 @@ const viewOperatingAccount = (account) => {
                         </tbody>
                         <tfoot>
                             <tr class="bg-yellow-50 font-bold border border-gray-200">
-                                <td class="px-6 py-4 text-sm text-gray-900 border border-gray-200">TOTAL</td>
-                                <td class="px-6 py-4 text-sm text-gray-900 border border-gray-200"></td>
-                                <td class="px-6 py-4 text-sm text-gray-900 border border-gray-200"></td>
-                                <td class="px-6 py-4 text-sm text-gray-900 border border-gray-200"></td>
+                                <td colspan="2" class="px-6 py-4 text-sm text-gray-900 border border-gray-200">TOTAL</td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border border-gray-200">
                                     {{ formatCurrency(totalBeginningBalance) }}
                                 </td>

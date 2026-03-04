@@ -83,13 +83,13 @@
               </div>
 
               <div class="grid grid-cols-2 gap-4">
-                <div class="bg-green-50 rounded-lg p-4 border border-green-200">
-                  <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Acquisition Date</p>
-                  <p class="text-sm font-medium text-gray-900">{{ formatDate(operatingAccount.acquisition_date) }}</p>
+                <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Beginning Balance</p>
+                  <p class="text-sm font-medium text-gray-900">{{ formatCurrency(operatingAccount.beginning_balance) }}</p>
                 </div>
-                <div class="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
-                  <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Maturity Date</p>
-                  <p class="text-sm font-medium text-gray-900">{{ formatDate(operatingAccount.maturity_date) }}</p>
+                <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">Ending Balance</p>
+                  <p class="text-sm font-medium text-gray-900">{{ formatCurrency(operatingAccount.ending_balance) }}</p>
                 </div>
               </div>
 

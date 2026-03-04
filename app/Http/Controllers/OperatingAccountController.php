@@ -40,14 +40,8 @@ class OperatingAccountController extends Controller
             'operating_account_name' => 'required|string|max:255',
             'account_number' => 'required|string|unique:operating_accounts,account_number',
             'beginning_balance' => 'required|numeric|min:0',
-            'maturity_date' => 'required|date_format:m/d/Y',
-            'acquisition_date' => 'required|date_format:m/d/Y',
             'explanation' => 'required|string|max:1000',
         ]);
-
-        // Convert mm/dd/yyyy to Y-m-d format for storage
-        $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
-        $validated['acquisition_date'] = $this->convertDateFormat($validated['acquisition_date']);
 
         OperatingAccount::create($validated);
 
@@ -65,32 +59,12 @@ class OperatingAccountController extends Controller
             'operating_account_name' => 'required|string|max:255',
             'account_number' => 'required|string|unique:operating_accounts,account_number,' . $id,
             'beginning_balance' => 'required|numeric|min:0',
-            'maturity_date' => 'required|date_format:m/d/Y',
-            'acquisition_date' => 'required|date_format:m/d/Y',
             'explanation' => 'required|string|max:1000',
         ]);
-
-        // Convert mm/dd/yyyy to Y-m-d format for storage
-        $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
-        $validated['acquisition_date'] = $this->convertDateFormat($validated['acquisition_date']);
 
         $operatingAccount->update($validated);
 
         return redirect('/treasury/operating-accounts')->with('success', 'Operating Account updated successfully.');
-    }
-
-    private function convertDateFormat($dateString)
-    {
-        // Convert mm/dd/yyyy to Y-m-d
-        $parts = explode('/', $dateString);
-        if (count($parts) === 3) {
-            $month = $parts[0];
-            $day = $parts[1];
-            $year = $parts[2];
-
-            return $year . '-' . $month . '-' . $day;
-        }
-        return $dateString;
     }
 
     /**
@@ -102,37 +76,6 @@ class OperatingAccountController extends Controller
         $operatingAccount->delete();
 
         return redirect('/treasury/operating-accounts')->with('success', 'Operating Account deleted successfully.');
-    }
-
-    /**
-     * Renew the operating account maturity date.
-     */
-    public function renew(Request $request, $id)
-    {
-        $operatingAccount = OperatingAccount::findOrFail($id);
-
-        $validated = $request->validate([
-            'new_acquisition_date' => 'required|date',
-            'new_maturity_date' => 'required|date|after:today',
-            'explanation' => 'required|string|max:1000',
-        ]);
-
-        // Create renewal record
-        OperatingAccountRenewal::create([
-            'operating_account_id' => $id,
-            'previous_maturity_date' => $operatingAccount->maturity_date,
-            'new_acquisition_date' => $validated['new_acquisition_date'],
-            'new_maturity_date' => $validated['new_maturity_date'],
-            'explanation' => $validated['explanation'],
-        ]);
-
-        // Update the maturity date and acquisition date
-        $operatingAccount->update([
-            'acquisition_date' => $validated['new_acquisition_date'],
-            'maturity_date' => $validated['new_maturity_date'],
-        ]);
-
-        return redirect('/treasury/operating-accounts')->with('success', 'Operating Account renewed successfully.');
     }
 
     /**
@@ -161,15 +104,6 @@ class OperatingAccountController extends Controller
         $operatingAccount->update([
             'beginning_balance' => $newBalance,
         ]);
-
-        // If fully withdrawn, set maturity date to null and zero out balances
-        if ($newBalance <= 0) {
-            $operatingAccount->update([
-                'maturity_date' => null,
-                'beginning_balance' => 0,
-                'ending_balance' => 0
-            ]);
-        }
 
         return redirect('/treasury/operating-accounts')->with('success', 'Operating Account withdrawal recorded successfully.');
     }

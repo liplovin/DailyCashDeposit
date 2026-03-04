@@ -2,7 +2,6 @@
 import TreasuryLayout from '@/Layouts/TreasuryLayout.vue';
 import CreateOperatingAccountModal from './Create.vue';
 import EditOperatingAccountModal from './Edit.vue';
-import RenewOperatingAccountModal from './Renew.vue';
 import WithdrawOperatingAccountModal from './Withdraw.vue';
 import AddBalanceOperatingAccountModal from './AddBalance.vue';
 import ViewOperatingAccountModal from './View.vue';
@@ -41,7 +40,6 @@ const filterDate = ref(getTodayDate());
 const showWithdrawn = ref(false);
 const showModal = ref(false);
 const showEditModal = ref(false);
-const showRenewModal = ref(false);
 const showWithdrawModal = ref(false);
 const showAddBalanceModal = ref(false);
 const showViewModal = ref(false);
@@ -60,11 +58,13 @@ const formatCurrency = (value) => {
 const filteredOperatingAccounts = computed(() => {
     let filtered = props.operatingAccounts;
     
-    // Filter by withdrawn status - show ONLY withdrawn when toggled
+    // Filter by withdrawn status - check if account has withdrawals
     if (showWithdrawn.value) {
-        filtered = filtered.filter(account => account.maturity_date === null);
+        // Show only withdrawn accounts (have withdrawal records)
+        filtered = filtered.filter(account => account.withdrawals && account.withdrawals.length > 0);
     } else {
-        filtered = filtered.filter(account => account.maturity_date !== null);
+        // Show only active accounts (no withdrawal records)
+        filtered = filtered.filter(account => !account.withdrawals || account.withdrawals.length === 0);
     }
     
     if (searchQuery.value.trim()) {
@@ -174,16 +174,6 @@ const closeEditModal = () => {
     selectedOperatingAccount.value = null;
 };
 
-const openRenewModal = (account) => {
-    selectedOperatingAccount.value = account;
-    showRenewModal.value = true;
-};
-
-const closeRenewModal = () => {
-    showRenewModal.value = false;
-    selectedOperatingAccount.value = null;
-};
-
 const openWithdrawModal = (account) => {
     selectedOperatingAccount.value = account;
     showWithdrawModal.value = true;
@@ -275,16 +265,6 @@ const getDaysRemaining = (dateString) => {
     return diffDays;
 };
 
-const isMaturityActionVisible = (dateString) => {
-    const daysRemaining = getDaysRemaining(dateString);
-    return daysRemaining !== null && daysRemaining <= 30;
-};
-
-const isOverdueOrDueToday = (dateString) => {
-    const daysRemaining = getDaysRemaining(dateString);
-    return daysRemaining !== null && daysRemaining <= 0;
-};
-
 const isCreatedToday = (createdAtString) => {
     if (!createdAtString) return false;
     const createdDate = new Date(createdAtString);
@@ -293,30 +273,6 @@ const isCreatedToday = (createdAtString) => {
     createdDate.setHours(0, 0, 0, 0);
     
     return createdDate.getTime() === today.getTime();
-};
-
-const formatMaturityDate = (dateString) => {
-    if (!dateString) return '✓ Withdrawn';
-    const date = new Date(dateString);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    date.setHours(0, 0, 0, 0);
-    
-    const diffTime = date - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    const formattedDate = new Intl.DateTimeFormat('en-US', options).format(date);
-    
-    if (diffDays < 0) {
-        return `${formattedDate} (Overdue by ${Math.abs(diffDays)} days)`;
-    } else if (diffDays === 0) {
-        return `${formattedDate} (Due Today)`;
-    } else if (diffDays <= 30) {
-        return `${formattedDate} (${diffDays} days remaining)`;
-    }
-    
-    return formattedDate;
 };
 
 const totalBeginningBalance = computed(() => {
@@ -457,12 +413,9 @@ const totalEndingBalance = computed(() => {
                             <tr class="border-b-2 border-gray-300">
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Operating Account Name</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Account Number</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Acquisition Date</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Ending Balance</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Action</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">Actions</th>
+                                <th class="px-6 py-4 text-center text-sm font-bold text-white">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -471,7 +424,7 @@ const totalEndingBalance = computed(() => {
                                 :key="account.id"
                                 :class="[
                                     'border-b border-gray-200 hover:bg-yellow-50 transition-colors duration-150',
-                                    isOverdueOrDueToday(account.maturity_date) ? 'blink-red' : (index % 2 === 0 ? 'bg-white' : 'bg-gray-50')
+                                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                                 ]"
                             >
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">
@@ -481,78 +434,65 @@ const totalEndingBalance = computed(() => {
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ account.account_number }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ account.acquisition_date ? new Date(account.acquisition_date).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: '2-digit' }) : '—' }}</td>
-                                <td class="px-6 py-4 text-sm font-mono border-r border-gray-200" :class="account.maturity_date ? 'text-gray-700' : 'text-green-600 font-bold'">
-                                    {{ formatMaturityDate(account.maturity_date) }}
-                                </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(account, filterDate)) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(account, filterDate) + getTotalCollectionByDate(account) - getTotalDisbursementByDate(account)) }}</td>
-                                <td class="px-6 py-4 text-sm border-r border-gray-200">
-                                    <div class="relative">
-                                        <button
-                                            @click.stop="toggleDropdown(account.id)"
-                                            :class="[
-                                                'inline-flex items-center space-x-1 px-3 py-2 text-xs font-semibold rounded-lg transition-all duration-200',
-                                                openDropdownId === account.id 
-                                                    ? 'bg-yellow-600 text-white' 
-                                                    : 'bg-yellow-500 text-white hover:bg-yellow-600'
-                                            ]"
-                                        >
-                                            <span>Actions</span>
-                                            <ChevronDown :class="['h-4 w-4', openDropdownId === account.id ? 'rotate-180' : '']" style="transition: transform 0.2s" />
-                                        </button>
-                                        <div 
-                                            v-if="openDropdownId === account.id"
-                                            @click.stop
-                                            class="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48 overflow-hidden"
-                                        >
+                                <td class="px-6 py-4 text-sm">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <div class="relative">
                                             <button
-                                                v-if="isMaturityActionVisible(account.maturity_date)"
-                                                @click="openRenewModal(account); toggleDropdown(null)"
-                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                                @click.stop="toggleDropdown(account.id)"
+                                                :class="[
+                                                    'inline-flex items-center space-x-1 px-3 py-2 text-xs font-semibold rounded-lg transition-all duration-200',
+                                                    openDropdownId === account.id 
+                                                        ? 'bg-yellow-600 text-white' 
+                                                        : 'bg-yellow-500 text-white hover:bg-yellow-600'
+                                                ]"
                                             >
-                                                ✓ Renew
+                                                <span>Actions</span>
+                                                <ChevronDown :class="['h-4 w-4', openDropdownId === account.id ? 'rotate-180' : '']" style="transition: transform 0.2s" />
+                                            </button>
+                                            <div 
+                                                v-if="openDropdownId === account.id"
+                                                @click.stop
+                                                class="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48 overflow-hidden"
+                                            >
+                                                <button
+                                                    @click="openWithdrawModal(account); toggleDropdown(null)"
+                                                    class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                                >
+                                                    ↓ Withdraw
+                                                </button>
+                                                <button
+                                                    @click="addBalance(account); toggleDropdown(null)"
+                                                    class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                                >
+                                                    + Add Balance
+                                                </button>
+                                                <button
+                                                    @click="viewOperatingAccount(account); toggleDropdown(null)"
+                                                    class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                                >
+                                                    👁 View
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div v-if="isCreatedToday(account.created_at)" class="flex items-center gap-1">
+                                            <button
+                                                @click="openEditModal(account)"
+                                                class="inline-flex items-center justify-center w-8 h-8 text-blue-600 hover:bg-blue-100 rounded-lg transition-all duration-200"
+                                                title="Edit"
+                                            >
+                                                <Edit2 class="h-4 w-4" />
                                             </button>
                                             <button
-                                                @click="openWithdrawModal(account); toggleDropdown(null)"
-                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                                                @click="deleteOperatingAccount(account)"
+                                                class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:bg-red-100 rounded-lg transition-all duration-200"
+                                                title="Delete"
                                             >
-                                                ↓ Withdraw
-                                            </button>
-                                            <button
-                                                v-if="account.maturity_date !== null"
-                                                @click="addBalance(account); toggleDropdown(null)"
-                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
-                                            >
-                                                + Add
-                                            </button>
-                                            <button
-                                                @click="viewOperatingAccount(account); toggleDropdown(null)"
-                                                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
-                                            >
-                                                👁 View
+                                                <Trash2 class="h-4 w-4" />
                                             </button>
                                         </div>
                                     </div>
-                                </td>
-                                <td class="px-6 py-4 text-sm">
-                                    <div v-if="isCreatedToday(account.created_at)" class="flex items-center space-x-2">
-                                        <button
-                                            @click="openEditModal(account)"
-                                            class="inline-flex items-center justify-center space-x-1 w-9 h-9 text-blue-600 hover:bg-blue-100 rounded-lg transition-all duration-200"
-                                            title="Edit"
-                                        >
-                                            <Edit2 class="h-4 w-4" />
-                                        </button>
-                                        <button
-                                            @click="deleteOperatingAccount(account)"
-                                            class="inline-flex items-center justify-center space-x-1 w-9 h-9 text-red-600 hover:bg-red-100 rounded-lg transition-all duration-200"
-                                            title="Delete"
-                                        >
-                                            <Trash2 class="h-4 w-4" />
-                                        </button>
-                                    </div>
-                                    <div v-else class="text-xs text-gray-500">—</div>
                                 </td>
                             </tr>
                         </tbody>
@@ -560,11 +500,9 @@ const totalEndingBalance = computed(() => {
                             <tr class="bg-yellow-50 font-bold border-b-2 border-gray-300">
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">TOTAL</td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
-                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">{{ formatCurrency(totalBeginningBalance) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 border-r border-gray-300">{{ formatCurrency(totalEndingBalance) }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
-                                <td class="px-6 py-4 text-sm text-gray-900"></td>
+                                <td class="px-6 py-4 text-sm text-gray-900 text-center"></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -579,9 +517,6 @@ const totalEndingBalance = computed(() => {
 
             <!-- Edit Modal -->
             <EditOperatingAccountModal :isOpen="showEditModal" :operatingAccount="selectedOperatingAccount" :existingOperatingAccounts="props.operatingAccounts" @close="closeEditModal" />
-
-            <!-- Renew Modal -->
-            <RenewOperatingAccountModal :isOpen="showRenewModal" :operatingAccount="selectedOperatingAccount" @close="closeRenewModal" />
 
             <!-- Withdraw Modal -->
             <WithdrawOperatingAccountModal :isOpen="showWithdrawModal" :operatingAccount="selectedOperatingAccount" @close="closeWithdrawModal" />
