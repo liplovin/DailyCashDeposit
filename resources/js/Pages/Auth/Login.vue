@@ -32,7 +32,7 @@ const submit = () => {
 
 <template>
     <div class="h-screen w-screen bg-gradient-to-br from-gray-900 via-slate-800 to-gray-900 overflow-hidden flex">
-        <Head title="Login - Daily Bank Deposit Management System" />
+        <Head title="Login - Daily Bank Position Management System" />
 
         <!-- Loading Screen Overlay -->
         <div v-if="form.processing" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex flex-col justify-center items-center z-50">
@@ -71,7 +71,7 @@ const submit = () => {
                 <div class="mb-8 drop-shadow-2xl">
                     <img src="/logoonly.png" alt="Bank Deposit Logo" class="w-40 h-40">
                 </div>
-                <h1 class="text-4xl font-bold text-white mb-4 text-center">Daily Bank Deposit</h1>
+                <h1 class="text-4xl font-bold text-white mb-4 text-center">Daily Bank Position</h1>
                 <h2 class="text-2xl font-semibold text-yellow-100 mb-6 text-center">Management System</h2>
                 
                 <!-- Features -->
@@ -127,9 +127,9 @@ const submit = () => {
                 <!-- Mobile Logo (shown on small screens) -->
                 <div class="lg:hidden text-center mb-10">
                     <div class="flex justify-center mb-6">
-                        <img src="/logoonly.png" alt="Bank Deposit Logo" class="w-32 h-32">
+                        <img src="/logoonly.png" alt="Bank Position Logo" class="w-32 h-32">
                     </div>
-                    <h1 class="text-2xl font-bold text-white">Daily Bank Deposit</h1>
+                    <h1 class="text-2xl font-bold text-white">Daily Bank Position</h1>
                     <p class="text-yellow-300 mt-1 font-medium">Management System</p>
                 </div>
 
