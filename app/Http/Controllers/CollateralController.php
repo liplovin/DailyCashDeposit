@@ -162,10 +162,11 @@ class CollateralController extends Controller
     public function renew(Request $request, $id)
     {
         $validated = $request->validate([
-            'maturity_date' => 'required|date|after:today',
+            'new_acquisition_date' => 'required|date',
+            'new_maturity_date' => 'required|date|after:today',
             'explanation' => 'required|string',
         ], [
-            'maturity_date.after' => 'New maturity date must be in the future',
+            'new_maturity_date.after' => 'New maturity date must be in the future',
         ]);
 
         $collateral = Collateral::findOrFail($id);
@@ -176,12 +177,14 @@ class CollateralController extends Controller
         CollateralRenewal::create([
             'collateral_id' => $collateral->id,
             'previous_maturity_date' => $previousMaturityDate,
-            'new_maturity_date' => $validated['maturity_date'],
+            'new_acquisition_date' => $validated['new_acquisition_date'],
+            'new_maturity_date' => $validated['new_maturity_date'],
             'explanation' => $validated['explanation'],
         ]);
         
-        // Update maturity date
-        $collateral->maturity_date = $validated['maturity_date'];
+        // Update maturity date and acquisition date
+        $collateral->acquisition_date = $validated['new_acquisition_date'];
+        $collateral->maturity_date = $validated['new_maturity_date'];
         $collateral->save();
 
         return redirect()->back()->with('success', 'Collateral renewed successfully!');

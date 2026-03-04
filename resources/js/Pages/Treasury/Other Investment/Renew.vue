@@ -18,7 +18,8 @@ const props = defineProps({
 const emit = defineEmits(['close']);
 
 const form = ref({
-    maturity_date: '',
+    new_acquisition_date: '',
+    new_maturity_date: '',
     explanation: ''
 });
 
@@ -29,7 +30,8 @@ const isSubmitting = ref(false);
 watch(() => props.otherInvestment, (newInvestment) => {
     if (newInvestment && props.isOpen) {
         form.value = {
-            maturity_date: formatDateForInput(newInvestment.maturity_date),
+            new_acquisition_date: formatDateForInput(newInvestment.maturity_date),
+            new_maturity_date: '',
             explanation: ''
         };
         errors.value = {};
@@ -47,7 +49,8 @@ const formatDateForInput = (dateString) => {
 
 const closeModal = () => {
     form.value = {
-        maturity_date: '',
+        new_acquisition_date: '',
+        new_maturity_date: '',
         explanation: ''
     };
     errors.value = {};
@@ -58,30 +61,43 @@ const handleSubmit = () => {
     errors.value = {};
 
     // Validation
-    if (!form.value.maturity_date.trim()) {
-        errors.value.maturity_date = 'Maturity date is required';
+    if (!form.value.new_acquisition_date.trim()) {
+        errors.value.new_acquisition_date = 'New acquisition date is required';
+    }
+
+    if (!form.value.new_maturity_date.trim()) {
+        errors.value.new_maturity_date = 'New maturity date is required';
     }
 
     if (!form.value.explanation.trim()) {
         errors.value.explanation = 'Explanation is required';
     }
 
-    // Check if new date is in the future
-    if (form.value.maturity_date) {
-        const selectedDate = new Date(form.value.maturity_date);
+    // Check if new maturity date is in the future
+    if (form.value.new_maturity_date) {
+        const selectedDate = new Date(form.value.new_maturity_date);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         if (selectedDate <= today) {
-            errors.value.maturity_date = 'New maturity date must be in the future';
+            errors.value.new_maturity_date = 'New maturity date must be in the future';
+        }
+    }
+
+    // Check if new acquisition date is before new maturity date
+    if (form.value.new_acquisition_date && form.value.new_maturity_date && !errors.value.new_acquisition_date && !errors.value.new_maturity_date) {
+        const acqDate = new Date(form.value.new_acquisition_date);
+        const matDate = new Date(form.value.new_maturity_date);
+        if (acqDate >= matDate) {
+            errors.value.new_acquisition_date = 'Acquisition date must be before maturity date';
         }
     }
 
     // Check if new date is after current maturity date
-    if (form.value.maturity_date && props.otherInvestment?.maturity_date) {
-        const selectedDate = new Date(form.value.maturity_date);
+    if (form.value.new_maturity_date && props.otherInvestment?.maturity_date && !errors.value.new_maturity_date) {
+        const selectedDate = new Date(form.value.new_maturity_date);
         const currentDate = new Date(props.otherInvestment.maturity_date);
         if (selectedDate <= currentDate) {
-            errors.value.maturity_date = 'New maturity date must be after current maturity date';
+            errors.value.new_maturity_date = 'New maturity date must be after current maturity date';
         }
     }
 
@@ -92,7 +108,8 @@ const handleSubmit = () => {
     router.post(
         `/treasury/other-investment/${props.otherInvestment.id}/renew`,
         {
-            new_maturity_date: form.value.maturity_date,
+            new_acquisition_date: form.value.new_acquisition_date,
+            new_maturity_date: form.value.new_maturity_date,
             explanation: form.value.explanation
         },
         {
@@ -167,18 +184,32 @@ const handleSubmit = () => {
                         </p>
                     </div>
 
+                    <!-- New Acquisition Date Field -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">
+                            New Acquisition Date <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            v-model="form.new_acquisition_date"
+                            type="date"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900"
+                            :class="{ 'border-red-500 focus:ring-red-500': errors.new_acquisition_date }"
+                        />
+                        <p v-if="errors.new_acquisition_date" class="text-red-500 text-sm mt-1">{{ errors.new_acquisition_date }}</p>
+                    </div>
+
                     <!-- New Maturity Date Field -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-900 mb-2">
                             New Maturity Date <span class="text-red-500">*</span>
                         </label>
                         <input
-                            v-model="form.maturity_date"
+                            v-model="form.new_maturity_date"
                             type="date"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900"
-                            :class="{ 'border-red-500 focus:ring-red-500': errors.maturity_date }"
+                            :class="{ 'border-red-500 focus:ring-red-500': errors.new_maturity_date }"
                         />
-                        <p v-if="errors.maturity_date" class="text-red-500 text-sm mt-1">{{ errors.maturity_date }}</p>
+                        <p v-if="errors.new_maturity_date" class="text-red-500 text-sm mt-1">{{ errors.new_maturity_date }}</p>
                     </div>
 
                     <!-- Explanation Field -->

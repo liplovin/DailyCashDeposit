@@ -9,6 +9,7 @@ class CorporateBondRenewal extends Model
     protected $fillable = [
         'corporate_bond_id',
         'previous_maturity_date',
+        'new_acquisition_date',
         'new_maturity_date',
         'explanation',
     ];

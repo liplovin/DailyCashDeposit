@@ -9,6 +9,7 @@ class CollateralRenewal extends Model
     protected $fillable = [
         'collateral_id',
         'previous_maturity_date',
+        'new_acquisition_date',
         'new_maturity_date',
         'explanation',
     ];

@@ -158,6 +158,7 @@ class GovernmentSecurityController extends Controller
     public function renew(Request $request, $id)
     {
         $validated = $request->validate([
+            'new_acquisition_date' => 'required|date',
             'new_maturity_date' => 'required|date|after:today',
             'explanation' => 'nullable|string',
         ]);
@@ -173,12 +174,16 @@ class GovernmentSecurityController extends Controller
         GovernmentSecurityRenewal::create([
             'government_security_id' => $id,
             'previous_maturity_date' => $governmentSecurity->maturity_date,
+            'new_acquisition_date' => $validated['new_acquisition_date'],
             'new_maturity_date' => $validated['new_maturity_date'],
             'explanation' => $validated['explanation']
         ]);
 
-        // Update maturity date
-        $governmentSecurity->update(['maturity_date' => $validated['new_maturity_date']]);
+        // Update maturity date and acquisition date
+        $governmentSecurity->update([
+            'acquisition_date' => $validated['new_acquisition_date'],
+            'maturity_date' => $validated['new_maturity_date']
+        ]);
 
         return redirect()->back()->with('success', 'Government Security renewed successfully!');
     }

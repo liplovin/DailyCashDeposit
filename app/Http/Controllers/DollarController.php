@@ -189,6 +189,7 @@ class DollarController extends Controller
     {
         try {
             $validated = $request->validate([
+                'new_acquisition_date' => 'required|date',
                 'new_maturity_date' => 'required|date|after:today',
                 'explanation' => 'required|string|max:1000',
             ]);
@@ -199,12 +200,14 @@ class DollarController extends Controller
             // Create renewal record
             $dollar->renewals()->create([
                 'previous_maturity_date' => $previousMaturityDate,
+                'new_acquisition_date' => $validated['new_acquisition_date'],
                 'new_maturity_date' => $validated['new_maturity_date'],
                 'explanation' => $validated['explanation'],
             ]);
 
-            // Update maturity date
+            // Update maturity date and acquisition date
             $dollar->update([
+                'acquisition_date' => $validated['new_acquisition_date'],
                 'maturity_date' => $validated['new_maturity_date']
             ]);
 

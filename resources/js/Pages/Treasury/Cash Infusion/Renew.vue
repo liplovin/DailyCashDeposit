@@ -18,6 +18,7 @@ const props = defineProps({
 const emit = defineEmits(['close']);
 
 const form = ref({
+    new_acquisition_date: '',
     new_maturity_date: '',
     explanation: ''
 });
@@ -29,7 +30,8 @@ const isSubmitting = ref(false);
 watch(() => props.cashInfusion, (newCashInfusion) => {
     if (newCashInfusion && props.isOpen) {
         form.value = {
-            new_maturity_date: formatDateForInput(newCashInfusion.maturity_date),
+            new_acquisition_date: formatDateForInput(newCashInfusion.maturity_date),
+            new_maturity_date: '',
             explanation: ''
         };
         errors.value = {};
@@ -47,6 +49,7 @@ const formatDateForInput = (dateString) => {
 
 const closeModal = () => {
     form.value = {
+        new_acquisition_date: '',
         new_maturity_date: '',
         explanation: ''
     };
@@ -58,6 +61,10 @@ const handleSubmit = () => {
     errors.value = {};
 
     // Validation
+    if (!form.value.new_acquisition_date.trim()) {
+        errors.value.new_acquisition_date = 'New acquisition date is required';
+    }
+
     if (!form.value.new_maturity_date.trim()) {
         errors.value.new_maturity_date = 'New maturity date is required';
     }
@@ -66,7 +73,7 @@ const handleSubmit = () => {
         errors.value.explanation = 'Explanation is required';
     }
 
-    // Check if new date is in the future
+    // Check if new maturity date is in the future
     if (form.value.new_maturity_date) {
         const newDate = new Date(form.value.new_maturity_date);
         const today = new Date();
@@ -78,7 +85,17 @@ const handleSubmit = () => {
         }
     }
 
-    // Check if new date is after current maturity date
+    // Check if new acquisition date is before new maturity date
+    if (form.value.new_acquisition_date && form.value.new_maturity_date && !errors.value.new_acquisition_date && !errors.value.new_maturity_date) {
+        const acqDate = new Date(form.value.new_acquisition_date);
+        const matDate = new Date(form.value.new_maturity_date);
+        
+        if (acqDate >= matDate) {
+            errors.value.new_acquisition_date = 'Acquisition date must be before maturity date';
+        }
+    }
+
+    // Check if new maturity date is after current maturity date
     if (form.value.new_maturity_date && props.cashInfusion?.maturity_date && !errors.value.new_maturity_date) {
         const newDate = new Date(form.value.new_maturity_date);
         const currentDate = new Date(props.cashInfusion.maturity_date);
@@ -97,6 +114,7 @@ const handleSubmit = () => {
     router.post(
         `/treasury/cash-infusion/${props.cashInfusion.id}/renew`,
         {
+            new_acquisition_date: form.value.new_acquisition_date,
             new_maturity_date: form.value.new_maturity_date,
             explanation: form.value.explanation
         },
@@ -170,6 +188,20 @@ const handleSubmit = () => {
                             <span class="text-gray-600">Current Maturity:</span> 
                             {{ new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(cashInfusion.maturity_date)) }}
                         </p>
+                    </div>
+
+                    <!-- New Maturity Date Field -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">
+                            New Acquisition Date <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            v-model="form.new_acquisition_date"
+                            type="date"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900"
+                            :class="{ 'border-red-500 focus:ring-red-500': errors.new_acquisition_date }"
+                        />
+                        <p v-if="errors.new_acquisition_date" class="text-red-500 text-sm mt-1">{{ errors.new_acquisition_date }}</p>
                     </div>
 
                     <!-- New Maturity Date Field -->

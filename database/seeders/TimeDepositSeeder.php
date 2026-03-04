@@ -20,6 +20,7 @@ class TimeDepositSeeder extends Seeder
             'time_deposit_name' => 'AMALGAMATED',
             'account_number' => 'FXTN 0330',
             'beginning_balance' => 100000000.00,
+            'acquisition_date' => '2024-01-04',
             'maturity_date' => '2027-01-04',
         ]);
 
@@ -27,6 +28,7 @@ class TimeDepositSeeder extends Seeder
             'time_deposit_name' => 'AMALGAMATED',
             'account_number' => 'FXTN 1072',
             'beginning_balance' => 10234128.63,
+            'acquisition_date' => '2023-09-02',
             'maturity_date' => '2026-09-02',
         ]);
 
@@ -34,6 +36,7 @@ class TimeDepositSeeder extends Seeder
             'time_deposit_name' => 'LANDBANK',
             'account_number' => 'TD',
             'beginning_balance' => 1037527.80,
+            'acquisition_date' => '2023-02-24',
             'maturity_date' => '2026-02-24',
         ]);
 
@@ -41,6 +44,7 @@ class TimeDepositSeeder extends Seeder
             'time_deposit_name' => 'Metrobank',
             'account_number' => '3030000724-1834212',
             'beginning_balance' => 10000000.00,
+            'acquisition_date' => '2023-02-02',
             'maturity_date' => '2026-02-02',
         ]);
 
@@ -48,6 +52,7 @@ class TimeDepositSeeder extends Seeder
             'time_deposit_name' => 'Metrobank',
             'account_number' => '3030000724-1807227',
             'beginning_balance' => 104340.09,
+            'acquisition_date' => '2023-01-05',
             'maturity_date' => '2026-01-05',
         ]);
 
@@ -55,6 +60,7 @@ class TimeDepositSeeder extends Seeder
             'time_deposit_name' => 'AMALGAMATED',
             'account_number' => 'FXTN 0764',
             'beginning_balance' => 10231827.50,
+            'acquisition_date' => '2023-03-05',
             'maturity_date' => '2026-03-05',
         ]);
 
@@ -62,6 +68,7 @@ class TimeDepositSeeder extends Seeder
             'time_deposit_name' => 'AMALGAMATED',
             'account_number' => 'PH000057860',
             'beginning_balance' => 10000000.00,
+            'acquisition_date' => '2023-01-15',
             'maturity_date' => '2026-01-15',
         ]);
 
@@ -71,6 +78,7 @@ class TimeDepositSeeder extends Seeder
             'time_deposit_name' => '[TEST] Today Creation',
             'account_number' => 'TEST-TODAY-001',
             'beginning_balance' => 5000000.00,
+            'acquisition_date' => '2023-05-23',
             'maturity_date' => '2026-05-23',
             'created_at' => now(),
             'updated_at' => now(),
@@ -81,6 +89,7 @@ class TimeDepositSeeder extends Seeder
             'time_deposit_name' => '[TEST] Yesterday Creation',
             'account_number' => 'TEST-YESTERDAY-001',
             'beginning_balance' => 3500000.00,
+            'acquisition_date' => '2023-04-15',
             'maturity_date' => '2026-04-15',
             'created_at' => now()->subDay(),
             'updated_at' => now()->subDay(),
@@ -91,6 +100,7 @@ class TimeDepositSeeder extends Seeder
             'time_deposit_name' => '[TEST] 2 Days Old',
             'account_number' => 'TEST-2DAYS-001',
             'beginning_balance' => 2000000.00,
+            'acquisition_date' => '2023-03-20',
             'maturity_date' => '2026-03-20',
             'created_at' => now()->subDays(2),
             'updated_at' => now()->subDays(2),

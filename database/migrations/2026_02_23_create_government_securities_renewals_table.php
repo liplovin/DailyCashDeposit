@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('government_security_id');
             $table->date('previous_maturity_date');
+            $table->date('new_acquisition_date')->nullable();
             $table->date('new_maturity_date');
             $table->text('explanation')->nullable();
             $table->timestamps();

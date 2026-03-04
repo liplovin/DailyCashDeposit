@@ -146,6 +146,7 @@ class InvestmentController extends Controller
     public function renew(Request $request, $id)
     {
         $validated = $request->validate([
+            'new_acquisition_date' => 'required|date',
             'new_maturity_date' => 'required|date|after:today',
             'explanation' => 'required|string|max:1000',
         ]);
@@ -157,12 +158,16 @@ class InvestmentController extends Controller
         InvestmentRenewal::create([
             'investment_id' => $investment->id,
             'previous_maturity_date' => $previousMaturityDate,
+            'new_acquisition_date' => $validated['new_acquisition_date'],
             'new_maturity_date' => $validated['new_maturity_date'],
             'explanation' => $validated['explanation'],
         ]);
 
-        // Update maturity date
-        $investment->update(['maturity_date' => $validated['new_maturity_date']]);
+        // Update maturity date and acquisition date
+        $investment->update([
+            'acquisition_date' => $validated['new_acquisition_date'],
+            'maturity_date' => $validated['new_maturity_date']
+        ]);
 
         return redirect()->back()->with('success', 'Investment renewed successfully.');
     }

@@ -152,6 +152,7 @@ class CorporateBondController extends Controller
     public function renew(Request $request, $id)
     {
         $validated = $request->validate([
+            'new_acquisition_date' => 'required|date',
             'new_maturity_date' => 'required|date',
             'explanation' => 'required|string|max:1000',
         ]);
@@ -163,12 +164,16 @@ class CorporateBondController extends Controller
         CorporateBondRenewal::create([
             'corporate_bond_id' => $corporateBond->id,
             'previous_maturity_date' => $previousMaturityDate,
+            'new_acquisition_date' => $validated['new_acquisition_date'],
             'new_maturity_date' => $validated['new_maturity_date'],
             'explanation' => $validated['explanation'],
         ]);
 
-        // Update maturity date
-        $corporateBond->update(['maturity_date' => $validated['new_maturity_date']]);
+        // Update maturity date and acquisition date
+        $corporateBond->update([
+            'acquisition_date' => $validated['new_acquisition_date'],
+            'maturity_date' => $validated['new_maturity_date']
+        ]);
 
         return redirect()->back()->with('success', 'Corporate bond renewed successfully!');
     }

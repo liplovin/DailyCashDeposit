@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('operating_account_id')->constrained('operating_accounts')->cascadeOnDelete();
             $table->date('previous_maturity_date');
+            $table->date('new_acquisition_date')->nullable();
             $table->date('new_maturity_date');
             $table->text('explanation');
             $table->timestamps();

@@ -163,6 +163,7 @@ class OtherInvestmentController extends Controller
         $otherInvestment = OtherInvestment::findOrFail($id);
 
         $validated = $request->validate([
+            'new_acquisition_date' => 'required|date',
             'new_maturity_date' => 'required|date|after:today',
             'explanation' => 'required|string|max:1000',
         ]);
@@ -171,12 +172,14 @@ class OtherInvestmentController extends Controller
         OtherInvestmentRenewal::create([
             'other_investment_id' => $id,
             'previous_maturity_date' => $otherInvestment->maturity_date,
+            'new_acquisition_date' => $validated['new_acquisition_date'],
             'new_maturity_date' => $validated['new_maturity_date'],
             'explanation' => $validated['explanation'],
         ]);
 
-        // Update maturity date
+        // Update maturity date and acquisition date
         $otherInvestment->update([
+            'acquisition_date' => $validated['new_acquisition_date'],
             'maturity_date' => $validated['new_maturity_date'],
         ]);
 

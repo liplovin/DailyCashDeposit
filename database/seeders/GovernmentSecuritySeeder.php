@@ -20,6 +20,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'FXTO118317-7.71',
             'beginning_balance' => 20053043.23,
+            'acquisition_date' => '2028-01-18',
             'maturity_date' => '2031-01-18',
         ]);
 
@@ -27,6 +28,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'FXTO427307-753',
             'beginning_balance' => 11859695.56,
+            'acquisition_date' => '2027-04-27',
             'maturity_date' => '2030-04-27',
         ]);
 
@@ -34,6 +36,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'FXTN 7-71',
             'beginning_balance' => 4614498.32,
+            'acquisition_date' => '2028-01-18',
             'maturity_date' => '2031-01-18',
         ]);
 
@@ -41,6 +44,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'FXTN-7',
             'beginning_balance' => 5083158.06,
+            'acquisition_date' => '2028-01-18',
             'maturity_date' => '2031-01-18',
         ]);
 
@@ -48,6 +52,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'FXTO42228-7-64',
             'beginning_balance' => 7681017.92,
+            'acquisition_date' => '2025-02-22',
             'maturity_date' => '2028-02-22',
         ]);
 
@@ -55,6 +60,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'RTB022825-5-18',
             'beginning_balance' => 6116672.27,
+            'acquisition_date' => '2026-02-18',
             'maturity_date' => '2029-02-18',
         ]);
 
@@ -62,6 +68,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'FXTO50427-0046',
             'beginning_balance' => 9874432.95,
+            'acquisition_date' => '2026-05-19',
             'maturity_date' => '2029-05-19',
         ]);
 
@@ -69,6 +76,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'FXTO214267-7-62',
             'beginning_balance' => 5124000.63,
+            'acquisition_date' => '2026-02-28',
             'maturity_date' => '2029-02-28',
         ]);
 
@@ -76,6 +84,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'FXTO72730-7-70',
             'beginning_balance' => 20233839.01,
+            'acquisition_date' => '2024-09-04',
             'maturity_date' => '2027-09-04',
         ]);
 
@@ -83,6 +92,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'FXTO51829-7-67',
             'beginning_balance' => 20475071.26,
+            'acquisition_date' => '2023-02-14',
             'maturity_date' => '2026-02-14',
         ]);
 
@@ -90,6 +100,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'FXTO51829-7-67',
             'beginning_balance' => 6180860.15,
+            'acquisition_date' => '2027-01-27',
             'maturity_date' => '2030-01-27',
         ]);
 
@@ -97,6 +108,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'RTB022829-5-18',
             'beginning_balance' => 16225463.08,
+            'acquisition_date' => '2026-05-19',
             'maturity_date' => '2029-05-19',
         ]);
 
@@ -104,6 +116,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'FXTO214267-762',
             'beginning_balance' => 6153226.14,
+            'acquisition_date' => '2023-08-04',
             'maturity_date' => '2026-08-04',
         ]);
 
@@ -111,6 +124,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'FXTO020426',
             'beginning_balance' => 4498241.02,
+            'acquisition_date' => '2023-02-14',
             'maturity_date' => '2026-02-14',
         ]);
 
@@ -118,6 +132,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'FXTO72730-2031',
             'beginning_balance' => 9309374.14,
+            'acquisition_date' => '2023-03-04',
             'maturity_date' => '2026-03-04',
         ]);
 
@@ -125,6 +140,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'FXTO11831-7.71',
             'beginning_balance' => 5165083.54,
+            'acquisition_date' => '2023-04-06',
             'maturity_date' => '2026-04-06',
         ]);
 
@@ -132,6 +148,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'RTB 5-18',
             'beginning_balance' => 6147646.01,
+            'acquisition_date' => '2026-02-28',
             'maturity_date' => '2029-02-28',
         ]);
 
@@ -139,6 +156,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'FXTN 7-65',
             'beginning_balance' => 5137713.08,
+            'acquisition_date' => '2027-04-27',
             'maturity_date' => '2030-04-27',
         ]);
 
@@ -146,6 +164,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'TBLO50826',
             'beginning_balance' => 11513362.50,
+            'acquisition_date' => '2023-05-06',
             'maturity_date' => '2026-05-06',
         ]);
 
@@ -153,6 +172,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'RTB062227-R5-14',
             'beginning_balance' => 9883690.36,
+            'acquisition_date' => '2024-06-27',
             'maturity_date' => '2027-06-27',
         ]);
 
@@ -160,6 +180,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'RTB022829-5-18',
             'beginning_balance' => 3665089.13,
+            'acquisition_date' => '2027-02-28',
             'maturity_date' => '2030-02-28',
         ]);
 
@@ -167,6 +188,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'RTB082030-5-19',
             'beginning_balance' => 4496400.00,
+            'acquisition_date' => '2027-08-20',
             'maturity_date' => '2030-08-20',
         ]);
 
@@ -174,6 +196,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'RTB082030-5-19',
             'beginning_balance' => 3695036.00,
+            'acquisition_date' => '2027-08-30',
             'maturity_date' => '2030-08-30',
         ]);
 
@@ -181,6 +204,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'RTB082030-5-19',
             'beginning_balance' => 5824360.00,
+            'acquisition_date' => '2027-08-30',
             'maturity_date' => '2030-08-30',
         ]);
 
@@ -188,6 +212,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'RTB082030-5-19',
             'beginning_balance' => 371554.00,
+            'acquisition_date' => '2027-08-30',
             'maturity_date' => '2030-08-30',
         ]);
 
@@ -195,6 +220,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'RTB082030-5-19',
             'beginning_balance' => 1550000.00,
+            'acquisition_date' => '2027-08-20',
             'maturity_date' => '2030-08-20',
         ]);
 
@@ -202,6 +228,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'RTB082030-5-19',
             'beginning_balance' => 860000.00,
+            'acquisition_date' => '2027-08-20',
             'maturity_date' => '2030-08-20',
         ]);
 
@@ -209,6 +236,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'RTB082030-5-19',
             'beginning_balance' => 2900000.00,
+            'acquisition_date' => '2027-08-20',
             'maturity_date' => '2030-08-20',
         ]);
 
@@ -216,6 +244,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'RTB082030-5-19',
             'beginning_balance' => 10065057.00,
+            'acquisition_date' => '2027-08-20',
             'maturity_date' => '2030-08-20',
         ]);
 
@@ -223,6 +252,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'RTB082030-5-19',
             'beginning_balance' => 8779557.26,
+            'acquisition_date' => '2027-08-20',
             'maturity_date' => '2030-08-20',
         ]);
 
@@ -230,6 +260,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'FXTO13279-7-68',
             'beginning_balance' => 41671577.18,
+            'acquisition_date' => '2025-10-13',
             'maturity_date' => '2028-10-13',
         ]);
 
@@ -237,6 +268,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'FXTO42730-7-69',
             'beginning_balance' => 14155770.79,
+            'acquisition_date' => '2027-04-27',
             'maturity_date' => '2030-04-27',
         ]);
 
@@ -244,6 +276,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'FXTO70930-1063',
             'beginning_balance' => 21001872.12,
+            'acquisition_date' => '2027-04-27',
             'maturity_date' => '2030-04-27',
         ]);
 
@@ -251,6 +284,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'FXTO42730-7-69',
             'beginning_balance' => 2122263.13,
+            'acquisition_date' => '2027-04-27',
             'maturity_date' => '2030-04-27',
         ]);
 
@@ -258,6 +292,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => 'Metrobank',
             'reference_number' => 'FXTO51829-7-67',
             'beginning_balance' => 23325329.70,
+            'acquisition_date' => '2023-02-14',
             'maturity_date' => '2026-02-14',
         ]);
 
@@ -267,6 +302,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => '[TEST] Today Creation',
             'reference_number' => 'TEST-GOV-TODAY',
             'beginning_balance' => 5000000.00,
+            'acquisition_date' => '2023-05-23',
             'maturity_date' => '2026-05-23',
             'created_at' => now(),
             'updated_at' => now(),
@@ -277,6 +313,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => '[TEST] Yesterday Creation',
             'reference_number' => 'TEST-GOV-YESTERDAY',
             'beginning_balance' => 3500000.00,
+            'acquisition_date' => '2023-04-15',
             'maturity_date' => '2026-04-15',
             'created_at' => now()->subDay(),
             'updated_at' => now()->subDay(),
@@ -287,6 +324,7 @@ class GovernmentSecuritySeeder extends Seeder
             'government_security_name' => '[TEST] 2 Days Old',
             'reference_number' => 'TEST-GOV-2DAYS',
             'beginning_balance' => 2000000.00,
+            'acquisition_date' => '2023-03-20',
             'maturity_date' => '2026-03-20',
             'created_at' => now()->subDays(2),
             'updated_at' => now()->subDays(2),

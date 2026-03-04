@@ -20,6 +20,7 @@ class OperatingAccountSeeder extends Seeder
             'operating_account_name' => 'BDO - Valero',
             'account_number' => '1380062436',
             'beginning_balance' => 1788906.09,
+            'acquisition_date' => '2023-12-31',
             'maturity_date' => '2026-12-31',
         ]);
 
@@ -27,6 +28,7 @@ class OperatingAccountSeeder extends Seeder
             'operating_account_name' => 'BPI-SALCEDO',
             'account_number' => '003773-0407-52',
             'beginning_balance' => 582509.91,
+            'acquisition_date' => '2023-09-30',
             'maturity_date' => '2026-09-30',
         ]);
 
@@ -34,6 +36,7 @@ class OperatingAccountSeeder extends Seeder
             'operating_account_name' => 'China Bank - HO(settlement Bank)',
             'account_number' => '303-0885917',
             'beginning_balance' => 1313065.91,
+            'acquisition_date' => '2024-03-15',
             'maturity_date' => '2027-03-15',
         ]);
 
@@ -41,6 +44,7 @@ class OperatingAccountSeeder extends Seeder
             'operating_account_name' => 'DBP - Makati Ave.',
             'account_number' => '0405-018364-530',
             'beginning_balance' => 1232516.60,
+            'acquisition_date' => '2023-06-30',
             'maturity_date' => '2026-06-30',
         ]);
 
@@ -48,6 +52,7 @@ class OperatingAccountSeeder extends Seeder
             'operating_account_name' => 'LBP - Salcedo (Premium)',
             'account_number' => '1792-1005-85',
             'beginning_balance' => 438577.28,
+            'acquisition_date' => '2024-02-28',
             'maturity_date' => '2027-02-28',
         ]);
 
@@ -55,6 +60,7 @@ class OperatingAccountSeeder extends Seeder
             'operating_account_name' => 'ROBINSONS BANK',
             'account_number' => '104030000000000',
             'beginning_balance' => 609425.39,
+            'acquisition_date' => '2023-08-15',
             'maturity_date' => '2026-08-15',
         ]);
 
@@ -62,6 +68,7 @@ class OperatingAccountSeeder extends Seeder
             'operating_account_name' => 'Security Bank',
             'account_number' => '39072176',
             'beginning_balance' => 130580.22,
+            'acquisition_date' => '2023-11-30',
             'maturity_date' => '2026-11-30',
         ]);
 
@@ -69,6 +76,7 @@ class OperatingAccountSeeder extends Seeder
             'operating_account_name' => 'Metrobank',
             'account_number' => '292-7-29254395-2',
             'beginning_balance' => 2011290.63,
+            'acquisition_date' => '2024-01-31',
             'maturity_date' => '2027-01-31',
         ]);
 
@@ -76,6 +84,7 @@ class OperatingAccountSeeder extends Seeder
             'operating_account_name' => 'UBP - Cag.de Oro (Agency)',
             'account_number' => '00-213-000498-8',
             'beginning_balance' => 263683.93,
+            'acquisition_date' => '2023-10-30',
             'maturity_date' => '2026-10-30',
         ]);
 
@@ -83,6 +92,7 @@ class OperatingAccountSeeder extends Seeder
             'operating_account_name' => 'UBP - Cebu Br.',
             'account_number' => '00-213-000496-4',
             'beginning_balance' => 289827.11,
+            'acquisition_date' => '2023-07-31',
             'maturity_date' => '2026-07-31',
         ]);
 
@@ -90,6 +100,7 @@ class OperatingAccountSeeder extends Seeder
             'operating_account_name' => 'UBP - Davao Br.',
             'account_number' => '00-213-000495-2',
             'beginning_balance' => 115966.48,
+            'acquisition_date' => '2023-09-15',
             'maturity_date' => '2026-09-15',
         ]);
 
@@ -97,6 +108,7 @@ class OperatingAccountSeeder extends Seeder
             'operating_account_name' => 'UBP - Dumaguete Br.',
             'account_number' => '00-213-00067-05',
             'beginning_balance' => 448468.37,
+            'acquisition_date' => '2024-04-30',
             'maturity_date' => '2027-04-30',
         ]);
 
@@ -104,6 +116,7 @@ class OperatingAccountSeeder extends Seeder
             'operating_account_name' => 'UBP - Iloilo ( Agency)',
             'account_number' => '00-213-000497-6',
             'beginning_balance' => 174582.49,
+            'acquisition_date' => '2023-12-15',
             'maturity_date' => '2026-12-15',
         ]);
 
@@ -111,6 +124,7 @@ class OperatingAccountSeeder extends Seeder
             'operating_account_name' => 'UBP - HV DE LA COSTA',
             'account_number' => '00-213-000492-7',
             'beginning_balance' => 13170983.48,
+            'acquisition_date' => '2024-05-31',
             'maturity_date' => '2027-05-31',
         ]);
 
@@ -120,6 +134,7 @@ class OperatingAccountSeeder extends Seeder
             'operating_account_name' => '[TEST] Today Creation',
             'account_number' => 'TEST-OA-TODAY',
             'beginning_balance' => 5000000.00,
+            'acquisition_date' => '2023-05-23',
             'maturity_date' => '2026-05-23',
             'created_at' => now(),
             'updated_at' => now(),
@@ -130,6 +145,7 @@ class OperatingAccountSeeder extends Seeder
             'operating_account_name' => '[TEST] Yesterday Creation',
             'account_number' => 'TEST-OA-YESTERDAY',
             'beginning_balance' => 3500000.00,
+            'acquisition_date' => '2023-04-15',
             'maturity_date' => '2026-04-15',
             'created_at' => now()->subDay(),
             'updated_at' => now()->subDay(),
@@ -140,6 +156,7 @@ class OperatingAccountSeeder extends Seeder
             'operating_account_name' => '[TEST] 2 Days Old',
             'account_number' => 'TEST-OA-2DAYS',
             'beginning_balance' => 2000000.00,
+            'acquisition_date' => '2023-03-20',
             'maturity_date' => '2026-03-20',
             'created_at' => now()->subDays(2),
             'updated_at' => now()->subDays(2),

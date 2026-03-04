@@ -112,6 +112,7 @@ class OperatingAccountController extends Controller
         $operatingAccount = OperatingAccount::findOrFail($id);
 
         $validated = $request->validate([
+            'new_acquisition_date' => 'required|date',
             'new_maturity_date' => 'required|date|after:today',
             'explanation' => 'required|string|max:1000',
         ]);
@@ -120,12 +121,14 @@ class OperatingAccountController extends Controller
         OperatingAccountRenewal::create([
             'operating_account_id' => $id,
             'previous_maturity_date' => $operatingAccount->maturity_date,
+            'new_acquisition_date' => $validated['new_acquisition_date'],
             'new_maturity_date' => $validated['new_maturity_date'],
             'explanation' => $validated['explanation'],
         ]);
 
-        // Update the maturity date
+        // Update the maturity date and acquisition date
         $operatingAccount->update([
+            'acquisition_date' => $validated['new_acquisition_date'],
             'maturity_date' => $validated['new_maturity_date'],
         ]);
 

@@ -152,6 +152,7 @@ class CashInfusionController extends Controller
     public function renew(Request $request, $id)
     {
         $validated = $request->validate([
+            'new_acquisition_date' => 'required|date',
             'new_maturity_date' => 'required|date|after:today',
             'explanation' => 'required|string|max:1000',
         ]);
@@ -163,12 +164,16 @@ class CashInfusionController extends Controller
         CashInfusionRenewal::create([
             'cash_infusion_id' => $cashInfusion->id,
             'previous_maturity_date' => $previousMaturityDate,
+            'new_acquisition_date' => $validated['new_acquisition_date'],
             'new_maturity_date' => $validated['new_maturity_date'],
             'explanation' => $validated['explanation'],
         ]);
 
-        // Update maturity date
-        $cashInfusion->update(['maturity_date' => $validated['new_maturity_date']]);
+        // Update maturity date and acquisition date
+        $cashInfusion->update([
+            'acquisition_date' => $validated['new_acquisition_date'],
+            'maturity_date' => $validated['new_maturity_date']
+        ]);
 
         return redirect()->back()->with('success', 'Cash Infusion renewed successfully.');
     }

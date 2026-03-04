@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('corporate_bond_id')->constrained('corporate_bonds')->onDelete('cascade');
             $table->date('previous_maturity_date');
+            $table->date('new_acquisition_date')->nullable();
             $table->date('new_maturity_date');
             $table->text('explanation');
             $table->timestamps();

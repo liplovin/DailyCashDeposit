@@ -12,6 +12,7 @@ class InvestmentRenewal extends Model
     protected $fillable = [
         'investment_id',
         'previous_maturity_date',
+        'new_acquisition_date',
         'new_maturity_date',
         'explanation',
     ];

@@ -162,10 +162,11 @@ class TimeDepositController extends Controller
     public function renew(Request $request, $id)
     {
         $validated = $request->validate([
-            'maturity_date' => 'required|date|after:today',
+            'new_acquisition_date' => 'required|date',
+            'new_maturity_date' => 'required|date|after:today',
             'explanation' => 'required|string',
         ], [
-            'maturity_date.after' => 'New maturity date must be in the future',
+            'new_maturity_date.after' => 'New maturity date must be in the future',
         ]);
 
         $timeDeposit = TimeDeposit::findOrFail($id);
@@ -176,12 +177,14 @@ class TimeDepositController extends Controller
         TimeDepositRenewal::create([
             'time_deposit_id' => $timeDeposit->id,
             'previous_maturity_date' => $previousMaturityDate,
-            'new_maturity_date' => $validated['maturity_date'],
+            'new_acquisition_date' => $validated['new_acquisition_date'],
+            'new_maturity_date' => $validated['new_maturity_date'],
             'explanation' => $validated['explanation'],
         ]);
         
-        // Update maturity date
-        $timeDeposit->maturity_date = $validated['maturity_date'];
+        // Update maturity date and acquisition date
+        $timeDeposit->acquisition_date = $validated['new_acquisition_date'];
+        $timeDeposit->maturity_date = $validated['new_maturity_date'];
         $timeDeposit->save();
 
         return redirect()->back()->with('success', 'Time deposit renewed successfully!');

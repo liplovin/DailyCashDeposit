@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('cash_infusion_id')->constrained()->cascadeOnDelete();
             $table->date('previous_maturity_date')->nullable();
+            $table->date('new_acquisition_date')->nullable();
             $table->date('new_maturity_date');
             $table->text('explanation');
             $table->timestamps();

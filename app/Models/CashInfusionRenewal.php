@@ -12,6 +12,7 @@ class CashInfusionRenewal extends Model
     protected $fillable = [
         'cash_infusion_id',
         'previous_maturity_date',
+        'new_acquisition_date',
         'new_maturity_date',
         'explanation',
     ];

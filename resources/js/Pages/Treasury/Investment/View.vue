@@ -175,10 +175,14 @@ const differenceInDays = (date1, date2) => {
                                         <div v-if="index < investment.renewals.length - 1" class="absolute left-2 top-6 w-0.5 h-12 bg-blue-200"></div>
 
                                         <div class="ml-8 flex-1 bg-gray-50 rounded-lg p-4 border border-gray-200">
-                                            <div class="grid grid-cols-2 gap-4 mb-3">
+                                            <div class="grid grid-cols-3 gap-4 mb-3">
                                                 <div>
                                                     <p class="text-xs text-gray-500 font-semibold">Previous Maturity Date</p>
                                                     <p class="text-sm font-medium text-gray-900">{{ formatDate(renewal.previous_maturity_date) }}</p>
+                                                </div>
+                                                <div>
+                                                    <p class="text-xs text-gray-500 font-semibold">New Acquisition Date</p>
+                                                    <p class="text-sm font-medium text-green-600">{{ formatDate(renewal.new_acquisition_date) }}</p>
                                                 </div>
                                                 <div>
                                                     <p class="text-xs text-gray-500 font-semibold">New Maturity Date</p>
