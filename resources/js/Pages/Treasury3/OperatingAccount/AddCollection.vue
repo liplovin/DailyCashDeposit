@@ -1,6 +1,6 @@
 <script setup>
 import { X } from 'lucide-vue-next';
-import { router, usePage } from '@inertiajs/vue3';
+import { router } from '@inertiajs/vue3';
 import { ref, computed, watch, nextTick } from 'vue';
 import Swal from 'sweetalert2';
 import { Upload, Plus } from 'lucide-vue-next';
@@ -256,23 +256,9 @@ const handleSubmit = () => {
         }
     });
     
-    const page = usePage();
-    const csrfToken = page.props.csrf_token || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    
-    if (!csrfToken) {
-        Swal.fire({
-            title: 'Error!',
-            text: 'CSRF token not found. Please refresh the page and try again.',
-            icon: 'error',
-            confirmButtonColor: '#F59E0B'
-        });
-        isSubmitting.value = false;
-        return;
-    }
-    
     axios.post(`/treasury3/operating-account/${selectedAccount.value.id}/collection`, formData, {
         headers: {
-            'X-CSRF-TOKEN': csrfToken
+            'Content-Type': 'multipart/form-data'
         }
     })
     .then(response => {
