@@ -4,7 +4,6 @@ import { router } from '@inertiajs/vue3';
 import { ref, computed, watch, nextTick } from 'vue';
 import Swal from 'sweetalert2';
 import { Upload, Plus } from 'lucide-vue-next';
-import axios from 'axios';
 
 const props = defineProps({
     isOpen: {
@@ -247,7 +246,6 @@ const handleSubmit = () => {
         const cleanAmount = collection.collection_amount.toString().replace(/,/g, '');
         formData.append(`collections[${index}][collection_amount]`, cleanAmount);
         
-        // Only append files if they exist
         if (collection.deposit_slip) {
             formData.append(`collections[${index}][deposit_slip]`, collection.deposit_slip);
         }
@@ -256,11 +254,8 @@ const handleSubmit = () => {
         }
     });
     
-    axios.post(`/treasury3/operating-account/${selectedAccount.value.id}/collection`, formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data'
-        }
-    })
+    // Use window.axios - CSRF token will be added by bootstrap interceptor
+    window.axios.post(`/treasury3/operating-account/${selectedAccount.value.id}/collection`, formData)
     .then(response => {
         if (response.data.success) {
             Swal.fire({
@@ -286,9 +281,20 @@ const handleSubmit = () => {
     })
     .catch(error => {
         console.error('Collection submission error:', error);
+        
+        let errorMessage = 'Failed to save collections. Please try again.';
+        
+        if (error.response?.status === 419) {
+            errorMessage = 'Session expired. Please refresh the page and try again.';
+        } else if (error.response?.data?.message) {
+            errorMessage = error.response.data.message;
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+        
         Swal.fire({
             title: 'Error!',
-            text: error.response?.data?.message || error.message || 'Failed to save collections. Please try again.',
+            text: errorMessage,
             icon: 'error',
             confirmButtonColor: '#F59E0B'
         });
