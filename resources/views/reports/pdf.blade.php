@@ -169,7 +169,7 @@
     <!-- Footer -->
     <div class="footer">
         <p><strong>INTRASTRATA ASSURANCE CORPORATION</strong></p>
-        <p style="font-size: 8px;">Generated: {{ date('F d, Y \a\t h:i A') }} | Daily Deposit Management System</p>
+        <p style="font-size: 8px;">Generated: {{ date('F d, Y') }} at {{ date('h:i A') }} | Daily Deposit Management System</p>
     </div>
 </body>
 </html>

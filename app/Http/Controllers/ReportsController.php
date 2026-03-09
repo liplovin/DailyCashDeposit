@@ -39,7 +39,7 @@ class ReportsController extends Controller
                 ],
                 [
                     'name' => 'Operating Accounts',
-                    'data' => \App\Models\OperatingAccount::with(['collections', 'disbursements', 'renewals', 'withdrawals'])->where('maturity_date', '!=', null)->get()->toArray(),
+                    'data' => \App\Models\OperatingAccount::with(['collections', 'disbursements', 'renewals', 'withdrawals'])->get()->toArray(),
                     'key' => 'operating_account_name',
                     'accField' => 'account_number'
                 ],
@@ -208,7 +208,7 @@ class ReportsController extends Controller
             ];
             
             // Operating Accounts
-            $operatingAccounts = \App\Models\OperatingAccount::where('maturity_date', '!=', null)->get()->toArray();
+            $operatingAccounts = \App\Models\OperatingAccount::get()->toArray();
             $modules[] = [
                 'name' => 'Operating Accounts',
                 'data' => $filterTransactionsByDate($operatingAccounts, $date),
