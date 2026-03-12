@@ -110,12 +110,22 @@
         @endif
         <h1>DAILY DEPOSIT REPORT</h1>
         <div class="report-info">
-            <p>Report Date: <strong>{{ $reportDate }}</strong></p>            @if(isset($transactionDate))
-                <p>Transaction Date: <strong>{{ date('F d, Y', strtotime($transactionDate)) }}</strong></p>
-                <p style=\"font-size: 10px; color: #666;\">Showing all deposits with collections and disbursements for the transaction date</p>
-            @endif            <p>Generated: {{ date('F d, Y h:i A') }}</p>
+            <p>Report Generated: <strong>{{ $reportDate }}</strong></p>
+            @if(isset($transactionDate))
+                <p>Filter Date: <strong>{{ date('F d, Y', strtotime($transactionDate)) }}</strong></p>
+                <p style="font-size: 10px; color: #666;">Showing all deposits with collections and disbursements for the filtered date</p>
+            @endif
+            <p style="font-size: 9px; color: #999;">Generated: {{ date('F d, Y h:i A') }}</p>
         </div>
     </div>
+
+    <!-- Filter Information -->
+    @if(isset($transactionDate))
+        <div style="background-color: #FEF3C7; border: 2px solid #FCD34D; padding: 10px; margin-bottom: 20px; border-radius: 4px;">
+            <p style="margin: 0; font-weight: bold; color: #1a3a52;">Filter Applied: {{ date('F d, Y', strtotime($transactionDate)) }}</p>
+            <p style="margin: 5px 0 0 0; font-size: 10px; color: #666;">All collections and disbursements shown are for the selected filter date</p>
+        </div>
+    @endif
 
     <!-- Module Details -->
     @foreach($modules as $module)

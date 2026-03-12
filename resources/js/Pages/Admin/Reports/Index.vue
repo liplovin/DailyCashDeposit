@@ -81,6 +81,20 @@ const displayedModules = computed(() => {
 });
 
 const getCollectionAmount = (item) => {
+    // Check if item has collections relationship array (for Operating Accounts)
+    if (item.collections && Array.isArray(item.collections) && item.collections.length > 0) {
+        if (!selectedDate.value) {
+            return item.collections.reduce((sum, col) => sum + parseFloat(col.collection_amount || 0), 0);
+        }
+        return item.collections
+            .filter(col => {
+                const colDate = new Date(col.created_at).toISOString().split('T')[0];
+                return colDate === selectedDate.value;
+            })
+            .reduce((sum, col) => sum + parseFloat(col.collection_amount || 0), 0);
+    }
+    
+    // Check if item has flat collection properties (for other modules)
     if (!selectedDate.value) {
         return item.collection || 0;
     }
@@ -89,6 +103,20 @@ const getCollectionAmount = (item) => {
 };
 
 const getDisbursementAmount = (item) => {
+    // Check if item has disbursements relationship array (for Operating Accounts)
+    if (item.disbursements && Array.isArray(item.disbursements) && item.disbursements.length > 0) {
+        if (!selectedDate.value) {
+            return item.disbursements.reduce((sum, dis) => sum + parseFloat(dis.amount || 0), 0);
+        }
+        return item.disbursements
+            .filter(dis => {
+                const disDate = new Date(dis.created_at).toISOString().split('T')[0];
+                return disDate === selectedDate.value;
+            })
+            .reduce((sum, dis) => sum + parseFloat(dis.amount || 0), 0);
+    }
+    
+    // Check if item has flat disbursement properties (for other modules)
     if (!selectedDate.value) {
         return item.disbursement || 0;
     }
@@ -103,14 +131,40 @@ const getRollingBeginningBalance = (item) => {
     
     let balance = parseFloat(item.beginning_balance || 0);
     
-    const collectionDate = item.collection_date ? new Date(item.collection_date).toISOString().split('T')[0] : null;
-    if (collectionDate && collectionDate < selectedDate.value) {
-        balance += parseFloat(item.collection || 0);
+    // Handle Operating Accounts with relationship arrays
+    if (item.collections && Array.isArray(item.collections)) {
+        item.collections
+            .filter(col => {
+                const colDate = new Date(col.created_at).toISOString().split('T')[0];
+                return colDate < selectedDate.value;
+            })
+            .forEach(col => {
+                balance += parseFloat(col.collection_amount || 0);
+            });
+    } else {
+        // Handle flat properties for other modules
+        const collectionDate = item.collection_date ? new Date(item.collection_date).toISOString().split('T')[0] : null;
+        if (collectionDate && collectionDate < selectedDate.value) {
+            balance += parseFloat(item.collection || 0);
+        }
     }
     
-    const disbursementDate = item.disbursement_date ? new Date(item.disbursement_date).toISOString().split('T')[0] : null;
-    if (disbursementDate && disbursementDate < selectedDate.value) {
-        balance -= parseFloat(item.disbursement || 0);
+    // Handle disbursements
+    if (item.disbursements && Array.isArray(item.disbursements)) {
+        item.disbursements
+            .filter(dis => {
+                const disDate = new Date(dis.created_at).toISOString().split('T')[0];
+                return disDate < selectedDate.value;
+            })
+            .forEach(dis => {
+                balance -= parseFloat(dis.amount || 0);
+            });
+    } else {
+        // Handle flat properties for other modules
+        const disbursementDate = item.disbursement_date ? new Date(item.disbursement_date).toISOString().split('T')[0] : null;
+        if (disbursementDate && disbursementDate < selectedDate.value) {
+            balance -= parseFloat(item.disbursement || 0);
+        }
     }
     
     return balance;

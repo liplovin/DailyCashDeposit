@@ -126,41 +126,78 @@ class ReportsController extends Controller
                     $newItem = $item;
                     
                     // Calculate beginning balance for this date
-                    // Start with original beginning balance
                     $balance = floatval($item['beginning_balance'] ?? 0);
                     
-                    // Add all collections BEFORE this date
-                    if (isset($item['collection_date'])) {
-                        $collectionDate = date('Y-m-d', strtotime($item['collection_date']));
-                        if ($collectionDate < $date) {
-                            $balance += floatval($item['collection'] ?? 0);
+                    // Handle both flat properties and relationship arrays
+                    
+                    // For Operating Accounts with collections array
+                    if (isset($item['collections']) && is_array($item['collections'])) {
+                        foreach ($item['collections'] as $collection) {
+                            $collectionDate = date('Y-m-d', strtotime($collection['created_at'] ?? ''));
+                            if ($collectionDate < $date) {
+                                $balance += floatval($collection['collection_amount'] ?? 0);
+                            }
+                        }
+                    } else {
+                        // For other modules with flat properties
+                        if (isset($item['collection_date'])) {
+                            $collectionDate = date('Y-m-d', strtotime($item['collection_date']));
+                            if ($collectionDate < $date) {
+                                $balance += floatval($item['collection'] ?? 0);
+                            }
                         }
                     }
                     
-                    // Subtract all disbursements BEFORE this date
-                    if (isset($item['disbursement_date'])) {
-                        $disbursementDate = date('Y-m-d', strtotime($item['disbursement_date']));
-                        if ($disbursementDate < $date) {
-                            $balance -= floatval($item['disbursement'] ?? 0);
+                    // For Operating Accounts with disbursements array
+                    if (isset($item['disbursements']) && is_array($item['disbursements'])) {
+                        foreach ($item['disbursements'] as $disbursement) {
+                            $disbursementDate = date('Y-m-d', strtotime($disbursement['created_at'] ?? ''));
+                            if ($disbursementDate < $date) {
+                                $balance -= floatval($disbursement['amount'] ?? 0);
+                            }
+                        }
+                    } else {
+                        // For other modules with flat properties
+                        if (isset($item['disbursement_date'])) {
+                            $disbursementDate = date('Y-m-d', strtotime($item['disbursement_date']));
+                            if ($disbursementDate < $date) {
+                                $balance -= floatval($item['disbursement'] ?? 0);
+                            }
                         }
                     }
                     
                     $newItem['beginning_balance'] = $balance;
                     
-                    // Filter collection by date
-                    if (isset($item['collection_date'])) {
-                        $collectionDate = date('Y-m-d', strtotime($item['collection_date']));
-                        $newItem['collection'] = ($collectionDate === $date) ? (floatval($item['collection']) ?? 0) : 0;
+                    // Calculate collection for this date
+                    $newItem['collection'] = 0;
+                    if (isset($item['collections']) && is_array($item['collections'])) {
+                        foreach ($item['collections'] as $collection) {
+                            $collectionDate = date('Y-m-d', strtotime($collection['created_at'] ?? ''));
+                            if ($collectionDate === $date) {
+                                $newItem['collection'] += floatval($collection['collection_amount'] ?? 0);
+                            }
+                        }
                     } else {
-                        $newItem['collection'] = 0;
+                        if (isset($item['collection_date'])) {
+                            $collectionDate = date('Y-m-d', strtotime($item['collection_date']));
+                            $newItem['collection'] = ($collectionDate === $date) ? (floatval($item['collection']) ?? 0) : 0;
+                        }
                     }
                     
-                    // Filter disbursement by date
-                    if (isset($item['disbursement_date'])) {
-                        $disbursementDate = date('Y-m-d', strtotime($item['disbursement_date']));
-                        $newItem['disbursement'] = ($disbursementDate === $date) ? (floatval($item['disbursement']) ?? 0) : 0;
+                    // Calculate disbursement for this date
+                    $newItem['disbursement'] = 0;
+                    if (isset($item['disbursements']) && is_array($item['disbursements'])) {
+                        foreach ($item['disbursements'] as $disbursement) {
+                            $disbursementDate = date('Y-m-d', strtotime($disbursement['created_at'] ?? ''));
+                            if ($disbursementDate === $date) {
+                                $newItem['disbursement'] += floatval($disbursement['amount'] ?? 0);
+                            }
+                        }
                     } else {
-                        $newItem['disbursement'] = 0;
+                        if (isset($item['disbursement_date'])) {
+                            $disbursementDate = date('Y-m-d', strtotime($item['disbursement_date']));
+                            $newItem['disbursement'] = ($disbursementDate === $date) ? (floatval($item['disbursement']) ?? 0) : 0;
+                        }
                     }
                     
                     // Calculate ending balance
@@ -208,7 +245,7 @@ class ReportsController extends Controller
             ];
             
             // Operating Accounts
-            $operatingAccounts = \App\Models\OperatingAccount::get()->toArray();
+            $operatingAccounts = \App\Models\OperatingAccount::with(['collections', 'disbursements'])->get()->toArray();
             $modules[] = [
                 'name' => 'Operating Accounts',
                 'data' => $filterTransactionsByDate($operatingAccounts, $date),
