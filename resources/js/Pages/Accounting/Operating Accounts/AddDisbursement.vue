@@ -81,15 +81,22 @@ const handleAmountInput = (event, index) => {
 };
 
 const validateDuplicateCheckNumbers = async () => {
-    const checkNumbers = form.value.disbursements.map(d => d.check_number);
-    const uniqueCheckNumbers = new Set(checkNumbers);
+    // Allow same check number on different dates (e.g., multiple "DEBIT ACCT" entries)
+    // Only prevent same check number on the same date
+    const checkNumbersByDate = {};
     
-    if (uniqueCheckNumbers.size !== checkNumbers.length) {
-        const duplicates = checkNumbers.filter((item, index) => checkNumbers.indexOf(item) !== index);
-        return {
-            valid: false,
-            message: `Duplicate check number found: "${duplicates[0]}". Each check number must be unique.`
-        };
+    for (let i = 0; i < form.value.disbursements.length; i++) {
+        const disbursement = form.value.disbursements[i];
+        const key = disbursement.check_number + '_' + disbursement.date;
+        
+        if (checkNumbersByDate[key]) {
+            return {
+                valid: false,
+                message: `Duplicate check number "${disbursement.check_number}" found for the same date. Each check number must be unique per date.`
+            };
+        }
+        
+        checkNumbersByDate[key] = true;
     }
     
     try {
@@ -101,7 +108,7 @@ const validateDuplicateCheckNumbers = async () => {
         if (!response.data.valid) {
             return {
                 valid: false,
-                message: response.data.message || 'Duplicate check number found in database.'
+                message: response.data.message || 'Validation error.'
             };
         }
     } catch (error) {
@@ -176,9 +183,7 @@ const removeDisbursement = (index) => {
 
 const handleCheckNumberInput = (event, index) => {
     let value = event.target.value;
-    value = value.replace(/[^\d]/g, '');
     form.value.disbursements[index].check_number = value;
-    event.target.value = value;
 };
 
 const getTotalAmount = () => {
@@ -274,7 +279,6 @@ const handleKeyDown = (e) => {
                                     :value="disbursement.check_number"
                                     @input="handleCheckNumberInput($event, index)"
                                     type="text"
-                                    inputmode="numeric"
                                     placeholder="Enter check number"
                                     class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all text-sm text-gray-900"
                                 />

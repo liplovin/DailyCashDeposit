@@ -10,29 +10,30 @@ use Illuminate\Support\Facades\DB;
 class OperatingAccountDisbursementController extends Controller
 {
     /**
-     * Validate disbursements for duplicate check numbers.
+     * Validate disbursements for duplicate check numbers within the same submission.
      */
     public function validate(Request $request)
     {
         $disbursements = $request->input('disbursements', []);
+        $operatingAccountId = $request->input('operating_account_id');
         
         if (empty($disbursements)) {
             return response()->json(['valid' => true]);
         }
 
-        // Extract check numbers from disbursements array
-        $checkNumbers = array_column($disbursements, 'check_number');
-        
-        // Check for duplicates in database
-        $duplicates = OperatingAccountDisbursement::whereIn('check_number', $checkNumbers)
-            ->pluck('check_number')
-            ->toArray();
-
-        if (!empty($duplicates)) {
-            return response()->json([
-                'valid' => false,
-                'message' => 'Duplicate check number found in database: ' . implode(', ', $duplicates)
-            ]);
+        // Check for duplicates within the current submission only (same date and same account)
+        $checkNumbersByDate = [];
+        foreach ($disbursements as $disbursement) {
+            $key = $disbursement['check_number'] . '_' . $disbursement['date'];
+            
+            if (isset($checkNumbersByDate[$key])) {
+                return response()->json([
+                    'valid' => false,
+                    'message' => 'Duplicate check number "' . $disbursement['check_number'] . '" for the same date. Each check number must be unique per date.'
+                ]);
+            }
+            
+            $checkNumbersByDate[$key] = true;
         }
 
         return response()->json(['valid' => true]);

@@ -4,7 +4,7 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 
 defineProps({
     canResetPassword: {
@@ -23,9 +23,34 @@ const form = useForm({
 
 const showPassword = ref(false);
 
+// Get CSRF token from meta tag
+const getCsrfToken = () => {
+    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+};
+
+onMounted(() => {
+    // Update form with CSRF token when component mounts
+    const token = getCsrfToken();
+    if (token) {
+        form._token = token;
+    }
+});
+
 const submit = () => {
+    // Ensure token is current before submitting
+    const token = getCsrfToken();
+    if (token) {
+        form._token = token;
+    }
+    
     form.post(route('login'), {
         onFinish: () => form.reset('password'),
+        onError: (errors) => {
+            // Handle 419 CSRF token error by reloading page
+            if (errors.message && errors.message.includes('419')) {
+                window.location.reload();
+            }
+        }
     });
 };
 </script>

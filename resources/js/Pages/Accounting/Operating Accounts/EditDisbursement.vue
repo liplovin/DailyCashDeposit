@@ -76,9 +76,7 @@ const handleAmountInput = (event) => {
 
 const handleCheckNumberInput = (event) => {
     let value = event.target.value;
-    value = value.replace(/[^\d]/g, '');
     form.value.check_number = value;
-    event.target.value = value;
 };
 
 const handleSubmit = async () => {
@@ -230,12 +228,11 @@ const handleClose = () => {
                                 :value="form.check_number"
                                 @input="handleCheckNumberInput"
                                 type="text"
-                                inputmode="numeric"
                                 placeholder="Enter check number"
                                 class="w-full px-4 py-3.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200 font-mono text-lg group-hover:border-yellow-400"
                             />
                         </div>
-                        <p class="text-xs text-gray-600 mt-2">✓ Numbers only</p>
+                        <p class="text-xs text-gray-600 mt-2">✓ Numbers, letters, and symbols allowed</p>
                     </div>
 
                     <div>
