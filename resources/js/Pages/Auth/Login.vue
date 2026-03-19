@@ -250,7 +250,7 @@ const submit = () => {
                 <!-- Footer -->
                 <div class="mt-8 pt-6 border-t border-gray-700">
                     <p class="text-center text-xs text-gray-500">
-                        For issues or support, please contact <span class="text-yellow-400 font-semibold">IT Support</span>
+                        For issues or support, please contact <span class="text-yellow-400 font-semibold">IT Department</span>
                     </p>
                 </div>
             </div>
