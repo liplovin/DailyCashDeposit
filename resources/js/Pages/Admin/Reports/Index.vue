@@ -80,6 +80,12 @@ const displayedModules = computed(() => {
     return activeModules.value.filter(module => module.name === selectedModule.value);
 });
 
+const getModuleTotal = (module) => {
+    return module.data.reduce((sum, item) => {
+        return sum + parseFloat(getEndingBalance(item) || 0);
+    }, 0);
+};
+
 const getCollectionAmount = (item) => {
     // Check if item has collections relationship array (for Operating Accounts)
     if (item.collections && Array.isArray(item.collections) && item.collections.length > 0) {
@@ -175,6 +181,15 @@ const getEndingBalance = (item) => {
     const collection = parseFloat(getCollectionAmount(item) || 0);
     const disbursement = parseFloat(getDisbursementAmount(item) || 0);
     return beginning + collection - disbursement;
+};
+
+const getModuleTotals = (module) => {
+    return {
+        beginningBalance: module.data.reduce((sum, item) => sum + parseFloat(getRollingBeginningBalance(item) || 0), 0),
+        collection: module.data.reduce((sum, item) => sum + parseFloat(getCollectionAmount(item) || 0), 0),
+        disbursement: module.data.reduce((sum, item) => sum + parseFloat(getDisbursementAmount(item) || 0), 0),
+        endingBalance: module.data.reduce((sum, item) => sum + parseFloat(getEndingBalance(item) || 0), 0)
+    };
 };
 
 const formatCurrency = (value) => {
@@ -359,13 +374,14 @@ const generatePDF = async () => {
 
             <!-- Module Summaries -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div v-for="module in displayedModules" :key="module.name" class="bg-white rounded-lg border-2 border-gray-200 p-4 shadow">
+                <div v-for="module in displayedModules" :key="module.name" class="bg-gradient-to-br from-white to-gray-50 rounded-lg border-2 border-yellow-300 p-4 shadow hover:shadow-lg transition-shadow">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm text-gray-600 font-semibold">{{ module.name }}</p>
-                            <p class="text-2xl font-bold text-gray-900">{{ module.data.length }}</p>
+                            <p class="text-2xl font-bold text-gray-900 mb-1">{{ module.data.length }}</p>
+                            <p class="text-xs text-gray-500 font-medium">Total: <span class="font-bold text-yellow-600">{{ formatCurrency(getModuleTotal(module)) }}</span></p>
                         </div>
-                        <FileText class="h-8 w-8 text-yellow-500 opacity-50" />
+                        <FileText class="h-8 w-8 text-yellow-500 opacity-70" />
                     </div>
                 </div>
             </div>
@@ -406,6 +422,13 @@ const generatePDF = async () => {
                                     <td class="px-6 py-3 text-sm text-green-600 font-semibold text-right">{{ formatCurrency(getCollectionAmount(item)) }}</td>
                                     <td class="px-6 py-3 text-sm text-red-600 font-semibold text-right">{{ formatCurrency(getDisbursementAmount(item)) }}</td>
                                     <td class="px-6 py-3 text-sm text-blue-600 font-semibold text-right">{{ formatCurrency(getEndingBalance(item)) }}</td>
+                                </tr>
+                                <tr v-if="module.data.length > 0" class="bg-gradient-to-r from-yellow-100 to-yellow-50 border-t-2 border-yellow-500 font-bold">
+                                    <td colspan="4" class="px-6 py-4 text-right text-gray-900">TOTAL:</td>
+                                    <td class="px-6 py-4 text-right text-gray-900">{{ formatCurrency(getModuleTotals(module).beginningBalance) }}</td>
+                                    <td class="px-6 py-4 text-right text-green-700">{{ formatCurrency(getModuleTotals(module).collection) }}</td>
+                                    <td class="px-6 py-4 text-right text-red-700">{{ formatCurrency(getModuleTotals(module).disbursement) }}</td>
+                                    <td class="px-6 py-4 text-right text-blue-700">{{ formatCurrency(getModuleTotals(module).endingBalance) }}</td>
                                 </tr>
                             </tbody>
                         </table>

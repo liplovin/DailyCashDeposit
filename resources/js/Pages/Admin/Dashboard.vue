@@ -2,7 +2,7 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
-import { TrendingUp, TrendingDown, Calendar, Users, FileText, BarChart3 } from 'lucide-vue-next';
+import { TrendingUp, TrendingDown, Calendar, Users, FileText, BarChart3, X } from 'lucide-vue-next';
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
@@ -21,6 +21,7 @@ const props = defineProps({
 });
 
 const filterDate = ref(new Date().toISOString().split('T')[0]);
+const showNoActivityModal = ref(true);
 
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', {
@@ -192,6 +193,16 @@ const stats = [
     { label: 'Active Collections', value: Object.values(dashboardData.value).filter(m => m.collection > 0).length, icon: TrendingUp, color: 'text-green-600' },
     { label: 'Active Disbursements', value: Object.values(dashboardData.value).filter(m => m.disbursement > 0).length, icon: TrendingDown, color: 'text-red-600' }
 ];
+
+const isToday = computed(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return filterDate.value === today;
+});
+
+const hasNoActivity = computed(() => {
+    if (!isToday.value) return false;
+    return totalCollection.value === 0 && totalDisbursement.value === 0;
+});
 </script>
 
 <template>
@@ -329,6 +340,45 @@ const stats = [
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- No Activity Modal -->
+        <div v-if="showNoActivityModal && hasNoActivity" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click="showNoActivityModal = false">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden" @click.stop>
+                <!-- Header -->
+                <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-6 text-white">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold">No Activity Today</h2>
+                            <p class="text-blue-100 text-sm mt-1">{{ filterDate }}</p>
+                        </div>
+                        <button @click="showNoActivityModal = false" class="p-1 hover:bg-blue-700 rounded-lg transition-colors">
+                            <X class="h-6 w-6" />
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Body -->
+                <div class="px-6 py-8">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Calendar class="h-8 w-8 text-blue-600" />
+                        </div>
+                        <p class="text-gray-700 text-lg font-semibold">No Collections or Disbursements Yet</p>
+                        <p class="text-gray-500 text-sm mt-2">No activities recorded for today</p>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-center">
+                    <button
+                        @click="showNoActivityModal = false"
+                        class="px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold rounded-lg transition-all duration-200"
+                    >
+                        OK
+                    </button>
                 </div>
             </div>
         </div>
