@@ -54,6 +54,8 @@ Route::middleware('auth')->group(function () {
 
     Route::put('password', [PasswordController::class, 'update'])->name('password.update');
 
+    // Logout route WITHOUT CSRF (already authenticated)
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
-        ->name('logout');
+        ->name('logout')
+        ->withoutMiddleware('Illuminate\Foundation\Http\Middleware\VerifyCsrfToken');
 });

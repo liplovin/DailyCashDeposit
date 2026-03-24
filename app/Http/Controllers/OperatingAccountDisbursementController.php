@@ -14,29 +14,45 @@ class OperatingAccountDisbursementController extends Controller
      */
     public function validate(Request $request)
     {
-        $disbursements = $request->input('disbursements', []);
-        $operatingAccountId = $request->input('operating_account_id');
-        
-        if (empty($disbursements)) {
-            return response()->json(['valid' => true]);
-        }
-
-        // Check for duplicates within the current submission only (same date and same account)
-        $checkNumbersByDate = [];
-        foreach ($disbursements as $disbursement) {
-            $key = $disbursement['check_number'] . '_' . $disbursement['date'];
+        try {
+            $disbursements = $request->input('disbursements', []);
+            $operatingAccountId = $request->input('operating_account_id');
             
-            if (isset($checkNumbersByDate[$key])) {
-                return response()->json([
-                    'valid' => false,
-                    'message' => 'Duplicate check number "' . $disbursement['check_number'] . '" for the same date. Each check number must be unique per date.'
-                ]);
+            if (empty($disbursements)) {
+                return response()->json(['valid' => true]);
             }
-            
-            $checkNumbersByDate[$key] = true;
-        }
 
-        return response()->json(['valid' => true]);
+            // Check for duplicates within the current submission only (same date and same account)
+            $checkNumbersByDate = [];
+            foreach ($disbursements as $disbursement) {
+                // Handle both array and object formats
+                $checkNumber = is_array($disbursement) ? $disbursement['check_number'] ?? null : $disbursement->check_number ?? null;
+                $date = is_array($disbursement) ? $disbursement['date'] ?? null : $disbursement->date ?? null;
+                
+                if (!$checkNumber || !$date) {
+                    continue; // Skip invalid entries
+                }
+                
+                $key = (string)$checkNumber . '_' . (string)$date;
+                
+                if (isset($checkNumbersByDate[$key])) {
+                    return response()->json([
+                        'valid' => false,
+                        'message' => 'Duplicate check number "' . htmlspecialchars($checkNumber) . '" for the same date. Each check number must be unique per date.'
+                    ]);
+                }
+                
+                $checkNumbersByDate[$key] = true;
+            }
+
+            return response()->json(['valid' => true]);
+        } catch (\Exception $e) {
+            \Log::error('Disbursement validation error: ' . $e->getMessage());
+            return response()->json([
+                'valid' => false,
+                'message' => 'Validation error: ' . $e->getMessage()
+            ], 400);
+        }
     }
 
     /**

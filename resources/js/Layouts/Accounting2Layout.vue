@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { usePage, router } from '@inertiajs/vue3';
+import { usePage, router, useForm } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
 import { Home, LogOut, Menu } from 'lucide-vue-next';
@@ -8,6 +8,7 @@ import { Home, LogOut, Menu } from 'lucide-vue-next';
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 const sidebarOpen = ref(true);
+const logoutForm = useForm({});
 
 const currentRoute = computed(() => page.url);
 
@@ -34,7 +35,7 @@ const handleMenuClick = (item) => {
             confirmButtonText: 'Yes, logout'
         }).then((result) => {
             if (result.isConfirmed) {
-                router.post('/logout');
+                logoutForm.post('/logout');
             }
         });
     } else if (item.route) {

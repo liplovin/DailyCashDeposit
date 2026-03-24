@@ -13,8 +13,7 @@ use App\Http\Controllers\InvestmentController;
 use App\Http\Controllers\OperatingAccountController;
 use App\Http\Controllers\ReportsController;
 use App\Models\Collateral;
-use App\Models\TimeDeposit;
-use App\Models\GovernmentSecurity;
+use App\Models\TimeDeposit;use Illuminate\Http\Request;use App\Models\GovernmentSecurity;
 use App\Models\OtherInvestment;
 use App\Models\Dollar;
 use App\Models\CorporateBond;
@@ -479,6 +478,25 @@ Route::middleware('auth')->group(function () {
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
     Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+});
+
+// Debug endpoint to check CSRF token
+Route::get('/debug/csrf', function () {
+    return response()->json([
+        'csrf_token' => csrf_token(),
+        'session_id' => session()->getId(),
+        'session_driver' => config('session.driver'),
+    ]);
+});
+
+// Test CSRF token verification
+Route::post('/debug/csrf-test', function (Request $request) {
+    return response()->json([
+        'success' => true,
+        'message' => 'CSRF token verified!',
+        'csrf_token' => csrf_token(),
+        'session_id' => session()->getId(),
+    ]);
 });
 
 require __DIR__.'/auth.php';

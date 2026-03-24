@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch, onMounted } from 'vue';
-import { usePage, router } from '@inertiajs/vue3';
+import { usePage, router, useForm } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
 import { Home, Users, LogOut, Menu, Wallet, BarChart3, Shield, Clock, FileText, TrendingUp, Banknote, DollarSign, Coins, ArrowUpRight, PiggyBank } from 'lucide-vue-next';
@@ -9,6 +9,7 @@ import BackToTopButton from '@/Components/BackToTopButton.vue';
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 const sidebarOpen = ref(true);
+const logoutForm = useForm({});
 
 // Initialize sidebar state from localStorage
 onMounted(() => {
@@ -59,7 +60,7 @@ const handleMenuClick = (item) => {
             confirmButtonText: 'Yes, logout'
         }).then((result) => {
             if (result.isConfirmed) {
-                router.post('/logout');
+                logoutForm.post('/logout');
             }
         });
     } else if (item.route) {

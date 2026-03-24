@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Session\TokenMismatchException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -24,5 +25,17 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (TokenMismatchException $e, $request) {
+            \Log::error('CSRF Token Mismatch', [
+                'url' => $request->url(),
+                'method' => $request->method(),
+                'has_token' => $request->has('_token'),
+                'has_header' => $request->hasHeader('X-CSRF-TOKEN'),
+                'session_id' => session()->getId(),
+                'session_token' => session()->get('_token'),
+                'request_token' => $request->input('_token') ?? $request->header('X-CSRF-TOKEN'),
+            ]);
+            
+            return response()->view('errors.419', [], 419);
+        });
     })->create();

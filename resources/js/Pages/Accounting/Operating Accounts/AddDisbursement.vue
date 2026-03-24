@@ -112,10 +112,11 @@ const validateDuplicateCheckNumbers = async () => {
             };
         }
     } catch (error) {
-        console.error('Validation error:', error);
+        console.error('Validation error:', error.response?.data || error.message);
+        const errorMessage = error.response?.data?.message || error.message || 'Error validating disbursements. Please try again.';
         return {
             valid: false,
-            message: 'Error validating disbursements. Please try again.'
+            message: errorMessage
         };
     }
     
