@@ -37,6 +37,9 @@ const form = ref({
     collections: [
         {
             collection_amount: '',
+            assured: '',
+            policy_number: '',
+            broker_agent: '',
             deposit_slip: null,
             check: null
         }
@@ -84,6 +87,10 @@ const handleAmountInput = (event, index) => {
     }
     
     form.value.collections[index].collection_amount = formattedValue;
+};
+
+const handlePolicyNumberInput = (event, index) => {
+    form.value.collections[index].policy_number = event.target.value.toUpperCase();
 };
 
 const handleFileUpload = (event, index) => {
@@ -161,6 +168,9 @@ const removeCheckFile = (index) => {
 const addCollection = () => {
     form.value.collections.push({
         collection_amount: '',
+        assured: '',
+        policy_number: '',
+        broker_agent: '',
         deposit_slip: null,
         check: null
     });
@@ -245,6 +255,9 @@ const handleSubmit = () => {
     form.value.collections.forEach((collection, index) => {
         const cleanAmount = collection.collection_amount.toString().replace(/,/g, '');
         formData.append(`collections[${index}][collection_amount]`, cleanAmount);
+        formData.append(`collections[${index}][assured]`, collection.assured || '');
+        formData.append(`collections[${index}][policy_number]`, collection.policy_number || '');
+        formData.append(`collections[${index}][broker_agent]`, collection.broker_agent || '');
         
         if (collection.deposit_slip) {
             formData.append(`collections[${index}][deposit_slip]`, collection.deposit_slip);
@@ -308,6 +321,9 @@ const closeModal = () => {
         collections: [
             {
                 collection_amount: '',
+                assured: '',
+                policy_number: '',
+                broker_agent: '',
                 deposit_slip: null,
                 check: null
             }
@@ -425,6 +441,55 @@ watch(() => selectedAccountId.value, (newValue) => {
                                     </p>
                                 </div>
 
+                                <!-- Assured Field -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                        Assured <span class="text-gray-500 text-xs">(Optional)</span>
+                                    </label>
+                                    <input
+                                        v-model="collection.assured"
+                                        type="text"
+                                        placeholder="Enter assured name"
+                                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all bg-white"
+                                    />
+                                    <p v-if="errors[index]?.assured" class="mt-1 text-xs text-red-600">
+                                        {{ errors[index].assured }}
+                                    </p>
+                                </div>
+
+                                <!-- Policy Number Field -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                        Policy Number <span class="text-gray-500 text-xs">(Optional)</span>
+                                    </label>
+                                    <input
+                                        :value="collection.policy_number"
+                                        @input="handlePolicyNumberInput($event, index)"
+                                        type="text"
+                                        placeholder="Enter policy number"
+                                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all bg-white uppercase"
+                                    />
+                                    <p v-if="errors[index]?.policy_number" class="mt-1 text-xs text-red-600">
+                                        {{ errors[index].policy_number }}
+                                    </p>
+                                </div>
+
+                                <!-- Broker Agent Field -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                        Broker Agent <span class="text-gray-500 text-xs">(Optional)</span>
+                                    </label>
+                                    <input
+                                        v-model="collection.broker_agent"
+                                        type="text"
+                                        placeholder="Enter broker agent name"
+                                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all bg-white"
+                                    />
+                                    <p v-if="errors[index]?.broker_agent" class="mt-1 text-xs text-red-600">
+                                        {{ errors[index].broker_agent }}
+                                    </p>
+                                </div>
+
                                 <!-- Deposit Slip Upload -->
                                 <div>
                                     <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -539,6 +604,14 @@ watch(() => selectedAccountId.value, (newValue) => {
                                 <div class="flex justify-between items-center">
                                     <span class="text-gray-700">Amount:</span>
                                     <span class="font-bold text-lg text-yellow-600">₱{{ collection.collection_amount || '0.00' }}</span>
+                                </div>
+                                <div v-if="collection.assured" class="flex justify-between items-center pt-2 border-t border-gray-100">
+                                    <span class="text-gray-700">Assured:</span>
+                                    <span class="font-medium text-gray-900">{{ collection.assured }}</span>
+                                </div>
+                                <div v-if="collection.policy_number" class="flex justify-between items-center pt-2 border-t border-gray-100">
+                                    <span class="text-gray-700">Policy #:</span>
+                                    <span class="font-medium text-gray-900">{{ collection.policy_number }}</span>
                                 </div>
                                 <div class="flex justify-between items-center pt-2 border-t border-gray-100">
                                     <span class="text-gray-700">Slip:</span>

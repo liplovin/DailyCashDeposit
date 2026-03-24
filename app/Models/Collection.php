@@ -12,6 +12,9 @@ class Collection extends Model
     protected $fillable = [
         'operating_account_id',
         'collection_amount',
+        'assured',
+        'policy_number',
+        'broker_agent',
         'deposit_slip',
         'check',
         'status',

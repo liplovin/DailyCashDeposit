@@ -176,6 +176,24 @@ const closeEditModal = () => {
                                 <span class="text-2xl font-bold text-yellow-600">₱{{ getTotalAmount(collection.collection_amount) }}</span>
                             </div>
 
+                            <!-- Assured -->
+                            <div v-if="collection.assured" class="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                <p class="text-xs font-semibold text-gray-600 mb-1 uppercase">Assured</p>
+                                <p class="text-sm text-gray-900 font-medium">{{ collection.assured }}</p>
+                            </div>
+
+                            <!-- Policy Number -->
+                            <div v-if="collection.policy_number" class="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                                <p class="text-xs font-semibold text-gray-600 mb-1 uppercase">Policy Number</p>
+                                <p class="text-sm text-gray-900 font-medium">{{ collection.policy_number }}</p>
+                            </div>
+
+                            <!-- Broker Agent -->
+                            <div v-if="collection.broker_agent" class="p-3 bg-pink-50 rounded-lg border border-pink-200">
+                                <p class="text-xs font-semibold text-gray-600 mb-1 uppercase">Broker Agent</p>
+                                <p class="text-sm text-gray-900 font-medium">{{ collection.broker_agent }}</p>
+                            </div>
+
                             <!-- Deposit Slip -->
                             <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
                                 <p class="text-xs font-semibold text-gray-600 mb-2 uppercase">Deposit Slip</p>

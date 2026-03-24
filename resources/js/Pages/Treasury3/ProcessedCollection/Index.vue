@@ -79,10 +79,20 @@ const filteredCollections = computed(() => {
     // Filter by search query
     if (searchQuery.value.trim()) {
         const query = searchQuery.value.toLowerCase();
-        filtered = filtered.filter(group => 
-            group.accountName.toLowerCase().includes(query) ||
-            group.timestamp.toLowerCase().includes(query)
-        );
+        filtered = filtered.filter(group => {
+            // Search in account name and timestamp
+            const accountMatch = group.accountName.toLowerCase().includes(query) ||
+                                group.timestamp.toLowerCase().includes(query);
+            
+            // Search in collection details (policy number, assured, and broker agent)
+            const collectionMatch = group.collections.some(collection =>
+                (collection.policy_number && collection.policy_number.toLowerCase().includes(query)) ||
+                (collection.assured && collection.assured.toLowerCase().includes(query)) ||
+                (collection.broker_agent && collection.broker_agent.toLowerCase().includes(query))
+            );
+            
+            return accountMatch || collectionMatch;
+        });
     }
     
     // Filter by specific date
@@ -146,7 +156,7 @@ const formatDateWithTime = (dateString) => {
                         <input
                             v-model="searchQuery"
                             type="text"
-                            placeholder="Search by account name or date..."
+                            placeholder="Search by account name, policy number, assured, broker agent, or date..."
                             class="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
                         />
                     </div>

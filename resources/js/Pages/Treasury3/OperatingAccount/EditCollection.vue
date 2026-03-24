@@ -18,6 +18,9 @@ const emit = defineEmits(['close', 'updated']);
 
 const form = ref({
     collection_amount: '',
+    assured: '',
+    policy_number: '',
+    broker_agent: '',
     deposit_slip: null,
     check: null
 });
@@ -66,6 +69,10 @@ const handleAmountInput = (event) => {
     form.value.collection_amount = decimalStr !== undefined 
         ? formattedInteger + '.' + decimalStr 
         : formattedInteger;
+};
+
+const handlePolicyNumberInput = (event) => {
+    form.value.policy_number = event.target.value.toUpperCase();
 };
 
 const handleFileUpload = (event) => {
@@ -179,6 +186,9 @@ const saveEdit = async () => {
     
     const formData = new FormData();
     formData.append('collection_amount', cleanAmount);
+    formData.append('assured', form.value.assured || '');
+    formData.append('policy_number', form.value.policy_number || '');
+    formData.append('broker_agent', form.value.broker_agent || '');
     if (form.value.deposit_slip) {
         formData.append('deposit_slip', form.value.deposit_slip);
     }
@@ -234,6 +244,9 @@ const closeModal = () => {
     emit('close');
     form.value = {
         collection_amount: '',
+        assured: '',
+        policy_number: '',
+        broker_agent: '',
         deposit_slip: null,
         check: null
     };
@@ -244,6 +257,9 @@ const closeModal = () => {
 const initializeForm = () => {
     if (props.collection) {
         form.value.collection_amount = props.collection.collection_amount.toString();
+        form.value.assured = props.collection.assured || '';
+        form.value.policy_number = props.collection.policy_number || '';
+        form.value.broker_agent = props.collection.broker_agent || '';
         form.value.deposit_slip = null;
         editFileNames.value = '';
     }
@@ -305,6 +321,41 @@ watch(() => props.isOpen, (newValue) => {
                             />
                         </div>
                         <p class="text-xs text-gray-600 mt-2">✓ Numbers only • Automatic comma formatting • Max 2 decimals</p>
+                    </div>
+
+                    <!-- Assured Field -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Assured</label>
+                        <input
+                            v-model="form.assured"
+                            type="text"
+                            placeholder="Enter assured name (optional)"
+                            class="w-full px-4 py-3.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900"
+                        />
+                    </div>
+
+                    <!-- Policy Number Field -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Policy Number</label>
+                        <input
+                            :value="form.policy_number"
+                            @input="handlePolicyNumberInput"
+                            type="text"
+                            placeholder="Enter policy number (optional)"
+                            class="w-full px-4 py-3.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 uppercase"
+                        />
+                        <p class="text-xs text-gray-600 mt-2">✓ Automatically converts to uppercase</p>
+                    </div>
+
+                    <!-- Broker Agent Field -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Broker Agent</label>
+                        <input
+                            v-model="form.broker_agent"
+                            type="text"
+                            placeholder="Enter broker agent name (optional)"
+                            class="w-full px-4 py-3.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900"
+                        />
                     </div>
 
                     <!-- File Upload Section -->

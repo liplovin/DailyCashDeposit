@@ -162,8 +162,24 @@ class OperatingAccountController extends Controller
             $collectionsData = [];
             $index = 0;
             while ($request->has("collections.$index.collection_amount")) {
+                $assured = $request->input("collections.$index.assured");
+                $policyNumber = $request->input("collections.$index.policy_number");
+                $brokerAgent = $request->input("collections.$index.broker_agent");
+                
+                // Log the values for debugging
+                \Log::info("Collection Data Received", [
+                    'index' => $index,
+                    'assured' => $assured,
+                    'policy_number' => $policyNumber,
+                    'broker_agent' => $brokerAgent,
+                    'amount' => $request->input("collections.$index.collection_amount"),
+                ]);
+                
                 $collectionsData[] = [
                     'collection_amount' => $request->input("collections.$index.collection_amount"),
+                    'assured' => $assured,
+                    'policy_number' => $policyNumber,
+                    'broker_agent' => $brokerAgent,
                     'deposit_slip' => $request->file("collections.$index.deposit_slip"),
                     'check' => $request->file("collections.$index.check"),
                 ];
@@ -230,6 +246,9 @@ class OperatingAccountController extends Controller
                 $collection = Collection::create([
                     'operating_account_id' => $operatingAccount->id,
                     'collection_amount' => $amount,
+                    'assured' => $collectionData['assured'],
+                    'policy_number' => $collectionData['policy_number'],
+                    'broker_agent' => $collectionData['broker_agent'],
                     'deposit_slip' => $filePath,
                     'check' => $checkPath,
                     'status' => 'pending',
@@ -370,6 +389,11 @@ class OperatingAccountController extends Controller
 
             $collection->collection_amount = $amount;
 
+            // Update assured, policy number, and broker agent
+            $collection->assured = $request->input('assured') ?? '';
+            $collection->policy_number = $request->input('policy_number') ?? '';
+            $collection->broker_agent = $request->input('broker_agent') ?? '';
+
             // Update deposit slip file if provided
             if ($request->hasFile('deposit_slip')) {
                 $file = $request->file('deposit_slip');
@@ -445,6 +469,9 @@ class OperatingAccountController extends Controller
             $validated = $request->validate([
                 'collections' => 'required|array',
                 'collections.*.collection_amount' => 'required|numeric|min:0',
+                'collections.*.assured' => 'nullable|string|max:255',
+                'collections.*.policy_number' => 'nullable|string|max:255',
+                'collections.*.broker_agent' => 'nullable|string|max:255',
                 'collections.*.deposit_slip' => 'nullable|file|mimes:jpeg,jpg,png,gif,pdf|max:5120',
                 'collections.*.check' => 'nullable|file|mimes:jpeg,jpg,png,gif,pdf|max:5120',
             ]);
@@ -460,6 +487,9 @@ class OperatingAccountController extends Controller
                     'operating_account_id' => $id,
                     'collection_date' => now(),
                     'collection_amount' => $amount,
+                    'assured' => $collectionData['assured'] ?? null,
+                    'policy_number' => $collectionData['policy_number'] ?? null,
+                    'broker_agent' => $collectionData['broker_agent'] ?? null,
                     'status' => 'pending',
                 ]);
 
