@@ -66,6 +66,8 @@ class OperatingAccountDisbursementController extends Controller
             'disbursements.*.check_number' => 'required|string',
             'disbursements.*.date' => 'required|date',
             'disbursements.*.amount' => 'required|numeric|min:0.01',
+            'disbursements.*.payment_for' => 'required|string|max:255',
+            'disbursements.*.payable_to' => 'required|string|max:255',
         ]);
 
         try {
@@ -77,6 +79,8 @@ class OperatingAccountDisbursementController extends Controller
                     'check_number' => $disbursement['check_number'],
                     'date' => $disbursement['date'],
                     'amount' => $disbursement['amount'],
+                    'payment_for' => $disbursement['payment_for'],
+                    'payable_to' => $disbursement['payable_to'],
                     'status' => 'pending',
                 ]);
             }
@@ -99,6 +103,8 @@ class OperatingAccountDisbursementController extends Controller
             'check_number' => 'required|string',
             'date' => 'required|date',
             'amount' => 'required|numeric|min:0.01',
+            'payment_for' => 'required|string|max:255',
+            'payable_to' => 'required|string|max:255',
         ]);
 
         try {

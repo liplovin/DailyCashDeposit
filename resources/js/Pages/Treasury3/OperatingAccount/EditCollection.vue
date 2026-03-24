@@ -182,13 +182,43 @@ const saveEdit = async () => {
         return;
     }
     
+    if (!form.value.assured || form.value.assured.trim() === '') {
+        Swal.fire({
+            title: 'Validation Error',
+            text: 'Assured is required',
+            icon: 'warning',
+            confirmButtonColor: '#3B82F6'
+        });
+        return;
+    }
+    
+    if (!form.value.policy_number || form.value.policy_number.trim() === '') {
+        Swal.fire({
+            title: 'Validation Error',
+            text: 'Policy Number is required',
+            icon: 'warning',
+            confirmButtonColor: '#3B82F6'
+        });
+        return;
+    }
+    
+    if (!form.value.broker_agent || form.value.broker_agent.trim() === '') {
+        Swal.fire({
+            title: 'Validation Error',
+            text: 'Broker Agent is required',
+            icon: 'warning',
+            confirmButtonColor: '#3B82F6'
+        });
+        return;
+    }
+    
     isEditing.value = true;
     
     const formData = new FormData();
     formData.append('collection_amount', cleanAmount);
-    formData.append('assured', form.value.assured || '');
-    formData.append('policy_number', form.value.policy_number || '');
-    formData.append('broker_agent', form.value.broker_agent || '');
+    formData.append('assured', form.value.assured);
+    formData.append('policy_number', form.value.policy_number);
+    formData.append('broker_agent', form.value.broker_agent);
     if (form.value.deposit_slip) {
         formData.append('deposit_slip', form.value.deposit_slip);
     }
@@ -325,23 +355,23 @@ watch(() => props.isOpen, (newValue) => {
 
                     <!-- Assured Field -->
                     <div>
-                        <label class="block text-sm font-bold text-gray-800 mb-3">Assured</label>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Assured <span class="text-red-600">*</span></label>
                         <input
                             v-model="form.assured"
                             type="text"
-                            placeholder="Enter assured name (optional)"
+                            placeholder="Enter assured name"
                             class="w-full px-4 py-3.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900"
                         />
                     </div>
 
                     <!-- Policy Number Field -->
                     <div>
-                        <label class="block text-sm font-bold text-gray-800 mb-3">Policy Number</label>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Policy Number <span class="text-red-600">*</span></label>
                         <input
                             :value="form.policy_number"
                             @input="handlePolicyNumberInput"
                             type="text"
-                            placeholder="Enter policy number (optional)"
+                            placeholder="Enter policy number"
                             class="w-full px-4 py-3.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 uppercase"
                         />
                         <p class="text-xs text-gray-600 mt-2">✓ Automatically converts to uppercase</p>
@@ -349,11 +379,11 @@ watch(() => props.isOpen, (newValue) => {
 
                     <!-- Broker Agent Field -->
                     <div>
-                        <label class="block text-sm font-bold text-gray-800 mb-3">Broker Agent</label>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Broker Agent <span class="text-red-600">*</span></label>
                         <input
                             v-model="form.broker_agent"
                             type="text"
-                            placeholder="Enter broker agent name (optional)"
+                            placeholder="Enter broker agent name"
                             class="w-full px-4 py-3.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900"
                         />
                     </div>

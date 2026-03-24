@@ -214,6 +214,21 @@ const handleSubmit = () => {
             hasErrors = true;
         }
         
+        if (!collection.assured || collection.assured.trim() === '') {
+            errors.value[index].assured = 'Assured is required';
+            hasErrors = true;
+        }
+        
+        if (!collection.policy_number || collection.policy_number.trim() === '') {
+            errors.value[index].policy_number = 'Policy Number is required';
+            hasErrors = true;
+        }
+        
+        if (!collection.broker_agent || collection.broker_agent.trim() === '') {
+            errors.value[index].broker_agent = 'Broker Agent is required';
+            hasErrors = true;
+        }
+        
         if (!collection.deposit_slip) {
             errors.value[index].deposit_slip = 'Deposit slip is required';
             hasErrors = true;
@@ -444,7 +459,7 @@ watch(() => selectedAccountId.value, (newValue) => {
                                 <!-- Assured Field -->
                                 <div>
                                     <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                        Assured <span class="text-gray-500 text-xs">(Optional)</span>
+                                        Assured <span class="text-red-600">*</span>
                                     </label>
                                     <input
                                         v-model="collection.assured"
@@ -460,13 +475,13 @@ watch(() => selectedAccountId.value, (newValue) => {
                                 <!-- Policy Number Field -->
                                 <div>
                                     <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                        Policy Number <span class="text-gray-500 text-xs">(Optional)</span>
+                                        Policy Number <span class="text-red-600">*</span>
                                     </label>
                                     <input
                                         :value="collection.policy_number"
                                         @input="handlePolicyNumberInput($event, index)"
                                         type="text"
-                                        placeholder="Enter policy number"
+                                        placeholder="ENTER POLICY NUMBER"
                                         class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all bg-white uppercase"
                                     />
                                     <p v-if="errors[index]?.policy_number" class="mt-1 text-xs text-red-600">
@@ -477,7 +492,7 @@ watch(() => selectedAccountId.value, (newValue) => {
                                 <!-- Broker Agent Field -->
                                 <div>
                                     <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                        Broker Agent <span class="text-gray-500 text-xs">(Optional)</span>
+                                        Broker Agent <span class="text-red-600">*</span>
                                     </label>
                                     <input
                                         v-model="collection.broker_agent"

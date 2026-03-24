@@ -166,6 +166,16 @@ const handleDeleteDisbursement = async (disbursementId, disbursementIndex) => {
                                 <span class="text-2xl font-bold text-blue-600">₱{{ formatAmount(disbursement.amount) }}</span>
                             </div>
 
+                            <div v-if="disbursement.payment_for" class="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                                <p class="text-xs font-semibold text-gray-600 mb-1 uppercase">Payment For</p>
+                                <p class="text-sm text-gray-900 font-medium">{{ disbursement.payment_for }}</p>
+                            </div>
+
+                            <div v-if="disbursement.payable_to" class="p-3 bg-pink-50 rounded-lg border border-pink-200">
+                                <p class="text-xs font-semibold text-gray-600 mb-1 uppercase">Payable TO</p>
+                                <p class="text-sm text-gray-900 font-medium">{{ disbursement.payable_to }}</p>
+                            </div>
+
                             <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
                                 <p class="text-xs font-semibold text-gray-600 mb-1 uppercase">Created</p>
                                 <p class="text-sm text-gray-900 font-medium">{{ formatDateFull(disbursement.created_at) }}</p>

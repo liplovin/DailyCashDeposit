@@ -67,10 +67,18 @@ const filteredDisbursements = computed(() => {
     // Filter by search query
     if (searchQuery.value.trim()) {
         const query = searchQuery.value.toLowerCase();
-        filtered = filtered.filter(group => 
-            group.operatingAccountName.toLowerCase().includes(query) ||
-            group.timestamp.toLowerCase().includes(query)
-        );
+        filtered = filtered.filter(group => {
+            const baseMatch = group.operatingAccountName.toLowerCase().includes(query) ||
+                             group.timestamp.toLowerCase().includes(query);
+            
+            const disbursementMatch = group.disbursements.some(d =>
+                (d.check_number && d.check_number.toLowerCase().includes(query)) ||
+                (d.payment_for && d.payment_for.toLowerCase().includes(query)) ||
+                (d.payable_to && d.payable_to.toLowerCase().includes(query))
+            );
+            
+            return baseMatch || disbursementMatch;
+        });
     }
     
     // Filter by specific date
@@ -148,7 +156,7 @@ const formatDateWithTime = (dateString) => {
                         <input
                             v-model="searchQuery"
                             type="text"
-                            placeholder="Search by operating account name or date..."
+                            placeholder="Search by account, check #, payment for, or payee..."
                             class="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
                         />
                     </div>

@@ -25,7 +25,9 @@ const form = ref({
         {
             check_number: '',
             date: '',
-            amount: ''
+            amount: '',
+            payment_for: '',
+            payable_to: ''
         }
     ]
 });
@@ -42,7 +44,7 @@ const activeAccounts = computed(() => {
 });
 
 const formValid = computed(() => {
-    return selectedOperatingAccount.value && form.value.disbursements.length > 0 && form.value.disbursements.every(d => d.check_number.trim() && d.date && d.amount);
+    return selectedOperatingAccount.value && form.value.disbursements.length > 0 && form.value.disbursements.every(d => d.check_number.trim() && d.date && d.amount && d.payment_for.trim() && d.payable_to.trim());
 });
 
 const handleAmountInput = (event, index) => {
@@ -172,7 +174,9 @@ const addDisbursement = () => {
     form.value.disbursements.push({
         check_number: '',
         date: '',
-        amount: ''
+        amount: '',
+        payment_for: '',
+        payable_to: ''
     });
     amountDisplays.value.push('');
 };
@@ -202,7 +206,9 @@ const handleClose = () => {
             {
                 check_number: '',
                 date: '',
-                amount: ''
+                amount: '',
+                payment_for: '',
+                payable_to: ''
             }
         ]
     };
@@ -275,33 +281,53 @@ const handleKeyDown = (e) => {
                             </div>
 
                             <div class="mb-3">
-                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Check Number</label>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Check Number <span class="text-red-600">*</span></label>
                                 <input
                                     :value="disbursement.check_number"
                                     @input="handleCheckNumberInput($event, index)"
                                     type="text"
                                     placeholder="Enter check number"
-                                    class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all text-sm text-gray-900"
+                                    class="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all text-sm text-gray-900"
                                 />
                             </div>
 
                             <div class="mb-3">
-                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Date</label>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Date <span class="text-red-600">*</span></label>
                                 <input
                                     v-model="disbursement.date"
                                     type="date"
-                                    class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all text-sm text-gray-900"
+                                    class="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all text-sm text-gray-900"
                                 />
                             </div>
 
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Amount</label>
+                            <div class="mb-3">
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Amount <span class="text-red-600">*</span></label>
                                 <input
                                     :value="amountDisplays[index]"
                                     @input="handleAmountInput($event, index)"
                                     type="text"
                                     placeholder="0.00"
-                                    class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all text-sm text-gray-900"
+                                    class="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all text-sm text-gray-900"
+                                />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Payment For <span class="text-red-600">*</span></label>
+                                <input
+                                    v-model="disbursement.payment_for"
+                                    type="text"
+                                    placeholder="Enter payment description"
+                                    class="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all text-sm text-gray-900"
+                                />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Payable TO <span class="text-red-600">*</span></label>
+                                <input
+                                    v-model="disbursement.payable_to"
+                                    type="text"
+                                    placeholder="Enter payee name"
+                                    class="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all text-sm text-gray-900"
                                 />
                             </div>
                         </div>
@@ -333,6 +359,14 @@ const handleKeyDown = (e) => {
                                 <div class="flex justify-between items-center">
                                     <span class="text-gray-700">Date:</span>
                                     <span class="font-bold text-gray-900">{{ disbursement.date || '-' }}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700">Payment For:</span>
+                                    <span class="font-bold text-gray-900">{{ disbursement.payment_for || '-' }}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700">Payable TO:</span>
+                                    <span class="font-bold text-gray-900">{{ disbursement.payable_to || '-' }}</span>
                                 </div>
                                 <div class="flex justify-between items-center pt-2 border-t border-gray-100">
                                     <span class="text-gray-700">Amount:</span>

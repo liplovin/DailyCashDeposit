@@ -158,13 +158,20 @@ class OperatingAccountController extends Controller
             $operatingAccount = OperatingAccount::findOrFail($operatingAccountId);
             $uploadedCollections = [];
             
-            // Get all collections from FormData
             $collectionsData = [];
             $index = 0;
             while ($request->has("collections.$index.collection_amount")) {
                 $assured = $request->input("collections.$index.assured");
                 $policyNumber = $request->input("collections.$index.policy_number");
                 $brokerAgent = $request->input("collections.$index.broker_agent");
+                
+                // Validate required fields
+                if (!$assured || !$policyNumber || !$brokerAgent) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Assured, Policy Number, and Broker Agent are required for each collection.',
+                    ], 422);
+                }
                 
                 // Log the values for debugging
                 \Log::info("Collection Data Received", [
@@ -389,10 +396,17 @@ class OperatingAccountController extends Controller
 
             $collection->collection_amount = $amount;
 
-            // Update assured, policy number, and broker agent
-            $collection->assured = $request->input('assured') ?? '';
-            $collection->policy_number = $request->input('policy_number') ?? '';
-            $collection->broker_agent = $request->input('broker_agent') ?? '';
+            // Update assured, policy number, and broker agent (all required)
+            if (!$request->input('assured') || !$request->input('policy_number') || !$request->input('broker_agent')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Assured, Policy Number, and Broker Agent are required fields.',
+                ], 422);
+            }
+            
+            $collection->assured = $request->input('assured');
+            $collection->policy_number = $request->input('policy_number');
+            $collection->broker_agent = $request->input('broker_agent');
 
             // Update deposit slip file if provided
             if ($request->hasFile('deposit_slip')) {
@@ -469,9 +483,9 @@ class OperatingAccountController extends Controller
             $validated = $request->validate([
                 'collections' => 'required|array',
                 'collections.*.collection_amount' => 'required|numeric|min:0',
-                'collections.*.assured' => 'nullable|string|max:255',
-                'collections.*.policy_number' => 'nullable|string|max:255',
-                'collections.*.broker_agent' => 'nullable|string|max:255',
+                'collections.*.assured' => 'required|string|max:255',
+                'collections.*.policy_number' => 'required|string|max:255',
+                'collections.*.broker_agent' => 'required|string|max:255',
                 'collections.*.deposit_slip' => 'nullable|file|mimes:jpeg,jpg,png,gif,pdf|max:5120',
                 'collections.*.check' => 'nullable|file|mimes:jpeg,jpg,png,gif,pdf|max:5120',
             ]);
@@ -487,9 +501,9 @@ class OperatingAccountController extends Controller
                     'operating_account_id' => $id,
                     'collection_date' => now(),
                     'collection_amount' => $amount,
-                    'assured' => $collectionData['assured'] ?? null,
-                    'policy_number' => $collectionData['policy_number'] ?? null,
-                    'broker_agent' => $collectionData['broker_agent'] ?? null,
+                    'assured' => $collectionData['assured'],
+                    'policy_number' => $collectionData['policy_number'],
+                    'broker_agent' => $collectionData['broker_agent'],
                     'status' => 'pending',
                 ]);
 

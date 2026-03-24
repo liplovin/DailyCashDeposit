@@ -11,6 +11,8 @@ class OperatingAccountDisbursement extends Model
         'check_number',
         'date',
         'amount',
+        'payment_for',
+        'payable_to',
         'status',
     ];
 

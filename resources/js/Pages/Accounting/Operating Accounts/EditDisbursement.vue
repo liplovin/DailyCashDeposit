@@ -20,7 +20,9 @@ const emit = defineEmits(['close', 'updated']);
 const form = ref({
     check_number: '',
     date: '',
-    amount: ''
+    amount: '',
+    payment_for: '',
+    payable_to: ''
 });
 
 const amountDisplay = ref('');
@@ -31,6 +33,8 @@ watch(() => props.disbursement, (newVal) => {
         form.value.check_number = newVal.check_number;
         form.value.date = newVal.date;
         form.value.amount = newVal.amount;
+        form.value.payment_for = newVal.payment_for || '';
+        form.value.payable_to = newVal.payable_to || '';
         amountDisplay.value = parseFloat(newVal.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 }, { deep: true });
@@ -122,13 +126,35 @@ const handleSubmit = async () => {
         return;
     }
 
+    if (!form.value.payment_for.trim()) {
+        Swal.fire({
+            title: 'Validation Error',
+            text: 'Payment For is required.',
+            icon: 'warning',
+            confirmButtonColor: '#D4A017'
+        });
+        return;
+    }
+
+    if (!form.value.payable_to.trim()) {
+        Swal.fire({
+            title: 'Validation Error',
+            text: 'Payable TO is required.',
+            icon: 'warning',
+            confirmButtonColor: '#D4A017'
+        });
+        return;
+    }
+
     isSubmitting.value = true;
 
     try {
         const response = await axios.put(`/accounting/operating-account-disbursement/${props.disbursement.id}`, {
             check_number: form.value.check_number,
             date: form.value.date,
-            amount: cleanAmount
+            amount: cleanAmount,
+            payment_for: form.value.payment_for,
+            payable_to: form.value.payable_to
         });
 
         if (response.data.message) {
@@ -174,7 +200,7 @@ const handleSubmit = async () => {
 };
 
 const handleClose = () => {
-    form.value = { check_number: '', date: '', amount: '' };
+    form.value = { check_number: '', date: '', amount: '', payment_for: '', payable_to: '' };
     amountDisplay.value = '';
     emit('close');
 };
@@ -218,6 +244,14 @@ const handleClose = () => {
                                 <span class="text-sm text-yellow-700">Amount:</span>
                                 <span class="text-lg font-bold text-yellow-900">₱{{ parseFloat(disbursement.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
                             </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-yellow-700">Payment For:</span>
+                                <span class="text-lg font-bold text-yellow-900">{{ disbursement.payment_for || '-' }}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-yellow-700">Payable TO:</span>
+                                <span class="text-lg font-bold text-yellow-900">{{ disbursement.payable_to || '-' }}</span>
+                            </div>
                         </div>
                     </div>
 
@@ -259,6 +293,26 @@ const handleClose = () => {
                             />
                         </div>
                         <p class="text-xs text-gray-600 mt-2">✓ Numbers only • Automatic comma formatting • Max 2 decimals</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Payment For <span class="text-red-600">*</span></label>
+                        <input
+                            v-model="form.payment_for"
+                            type="text"
+                            placeholder="Enter payment description"
+                            class="w-full px-4 py-3.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Payable TO <span class="text-red-600">*</span></label>
+                        <input
+                            v-model="form.payable_to"
+                            type="text"
+                            placeholder="Enter payee name"
+                            class="w-full px-4 py-3.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
+                        />
                     </div>
                 </div>
             </div>
