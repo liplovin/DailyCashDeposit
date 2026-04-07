@@ -2,7 +2,6 @@
 import { X } from 'lucide-vue-next';
 import { router } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
-import axios from 'axios';
 import Swal from 'sweetalert2';
 
 const props = defineProps({
@@ -102,9 +101,8 @@ const handleSubmit = () => {
             beginning_balance: balanceValue.toFixed(2),
             explanation: form.value.explanation
         };
-        
-        axios.put(`/treasury/operating-accounts/${props.operatingAccount.id}`, submitData)
-            .then((response) => {
+        router.put(`/treasury/operating-accounts/${props.operatingAccount.id}`, submitData, {
+            onSuccess: () => {
                 Swal.fire({
                     title: 'Updated!',
                     text: 'Operating Account has been updated successfully.',
@@ -115,21 +113,17 @@ const handleSubmit = () => {
                 });
                 closeModal();
                 isSubmitting.value = false;
-                router.reload();
-            })
-            .catch((error) => {
-                if (error.response?.data?.errors) {
-                    errors.value = error.response.data.errors;
-                } else if (error.response?.data?.message) {
-                    Swal.fire({
-                        title: 'Error!',
-                        text: error.response.data.message,
-                        icon: 'error',
-                        confirmButtonColor: '#F59E0B'
-                    });
+            },
+            onError: (err) => {
+                if (err.account_number) {
+                    errors.value.account_number = err.account_number;
+                }
+                if (err.beginning_balance) {
+                    errors.value.beginning_balance = err.beginning_balance;
                 }
                 isSubmitting.value = false;
-            });
+            }
+        });
     }
 };
 
