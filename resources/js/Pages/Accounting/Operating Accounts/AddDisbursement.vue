@@ -23,16 +23,27 @@ const selectedOperatingAccount = ref('');
 const form = ref({
     disbursements: [
         {
+            payment_type: 'CHECK',
             check_number: '',
             date: '',
             amount: '',
-            payment_for: '',
-            payable_to: ''
+            payments: [
+                {
+                    payment_for: '',
+                    payable_to: '',
+                    amount: ''
+                }
+            ]
         }
     ]
 });
 
-const amountDisplays = ref(['']);
+const amountDisplays = ref([
+    [''] // Main disbursement amount displays
+]);
+const paymentAmountDisplays = ref([
+    [''] // Payment entry amount displays
+]);
 
 const selectedOperatingAccountData = computed(() => {
     if (!selectedOperatingAccount.value) return null;
@@ -43,11 +54,37 @@ const activeAccounts = computed(() => {
     return props.operatingAccounts.filter(account => parseFloat(account.beginning_balance) > 0);
 });
 
+const calculateDisbursementAmount = (disbursementIndex) => {
+    const disbursement = form.value.disbursements[disbursementIndex];
+    if (!disbursement.payments || disbursement.payments.length === 0) return 0;
+    
+    return disbursement.payments.reduce((total, payment) => {
+        return total + (parseFloat(payment.amount) || 0);
+    }, 0);
+};
+
+const updateDisbursementAmount = (disbursementIndex) => {
+    const total = calculateDisbursementAmount(disbursementIndex);
+    form.value.disbursements[disbursementIndex].amount = total.toString();
+    amountDisplays.value[disbursementIndex] = total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
 const formValid = computed(() => {
-    return selectedOperatingAccount.value && form.value.disbursements.length > 0 && form.value.disbursements.every(d => d.check_number.trim() && d.date && d.amount && d.payment_for.trim() && d.payable_to.trim());
+    return selectedOperatingAccount.value && form.value.disbursements.length > 0 && form.value.disbursements.every(d => {
+        const hasValidPaymentType = d.payment_type && (d.payment_type === 'DEBIT' || d.payment_type === 'CHECK');
+        const hasValidCheckNumber = d.payment_type === 'DEBIT' || (d.payment_type === 'CHECK' && d.check_number.trim());
+        const hasValidDate = d.date;
+        const totalAmount = calculateDisbursementAmount(form.value.disbursements.indexOf(d));
+        const hasValidAmount = totalAmount > 0;
+        const hasValidPayments = d.payments.length > 0 && d.payments.every(p => 
+            p.payment_for.trim() && p.payable_to.trim() && (parseFloat(p.amount) || 0) > 0
+        );
+        
+        return hasValidPaymentType && hasValidCheckNumber && hasValidDate && hasValidAmount && hasValidPayments;
+    });
 });
 
-const handleAmountInput = (event, index) => {
+const handlePaymentAmountInput = (event, disbursementIndex, paymentIndex) => {
     let value = event.target.value;
     
     value = value.replace(/[^\d.]/g, '');
@@ -58,8 +95,12 @@ const handleAmountInput = (event, index) => {
     }
     
     if (value === '') {
-        form.value.disbursements[index].amount = '';
-        amountDisplays.value[index] = '';
+        form.value.disbursements[disbursementIndex].payments[paymentIndex].amount = '';
+        if (!paymentAmountDisplays.value[disbursementIndex]) {
+            paymentAmountDisplays.value[disbursementIndex] = [];
+        }
+        paymentAmountDisplays.value[disbursementIndex][paymentIndex] = '';
+        updateDisbursementAmount(disbursementIndex);
         return;
     }
     
@@ -78,17 +119,29 @@ const handleAmountInput = (event, index) => {
         formattedValue = integerPart;
     }
     
-    amountDisplays.value[index] = formattedValue;
-    form.value.disbursements[index].amount = value.replace(/,/g, '');
+    if (!paymentAmountDisplays.value[disbursementIndex]) {
+        paymentAmountDisplays.value[disbursementIndex] = [];
+    }
+    paymentAmountDisplays.value[disbursementIndex][paymentIndex] = formattedValue;
+    form.value.disbursements[disbursementIndex].payments[paymentIndex].amount = value.replace(/,/g, '');
+    
+    // Auto-update main disbursement amount
+    updateDisbursementAmount(disbursementIndex);
 };
 
 const validateDuplicateCheckNumbers = async () => {
     // Allow same check number on different dates (e.g., multiple "DEBIT ACCT" entries)
-    // Only prevent same check number on the same date
+    // Only prevent same check number on the same date (skip DEBIT as it can be duplicated)
     const checkNumbersByDate = {};
     
     for (let i = 0; i < form.value.disbursements.length; i++) {
         const disbursement = form.value.disbursements[i];
+        
+        // Skip validation for DEBIT payments - allow multiple DEBIT on same date
+        if (disbursement.payment_type === 'DEBIT') {
+            continue;
+        }
+        
         const key = disbursement.check_number + '_' + disbursement.date;
         
         if (checkNumbersByDate[key]) {
@@ -172,23 +225,61 @@ const handleSubmit = async () => {
 
 const addDisbursement = () => {
     form.value.disbursements.push({
+        payment_type: 'CHECK',
         check_number: '',
         date: '',
         amount: '',
-        payment_for: '',
-        payable_to: ''
+        payments: [
+            {
+                payment_for: '',
+                payable_to: '',
+                amount: ''
+            }
+        ]
     });
     amountDisplays.value.push('');
+    paymentAmountDisplays.value.push(['']);
 };
 
 const removeDisbursement = (index) => {
     form.value.disbursements.splice(index, 1);
     amountDisplays.value.splice(index, 1);
+    paymentAmountDisplays.value.splice(index, 1);
+};
+
+const addPaymentEntry = (disbursementIndex) => {
+    form.value.disbursements[disbursementIndex].payments.push({
+        payment_for: '',
+        payable_to: '',
+        amount: ''
+    });
+    if (!paymentAmountDisplays.value[disbursementIndex]) {
+        paymentAmountDisplays.value[disbursementIndex] = [];
+    }
+    paymentAmountDisplays.value[disbursementIndex].push('');
+};
+
+const removePaymentEntry = (disbursementIndex, paymentIndex) => {
+    form.value.disbursements[disbursementIndex].payments.splice(paymentIndex, 1);
+    if (paymentAmountDisplays.value[disbursementIndex]) {
+        paymentAmountDisplays.value[disbursementIndex].splice(paymentIndex, 1);
+    }
+    // Auto-update main disbursement amount
+    updateDisbursementAmount(disbursementIndex);
 };
 
 const handleCheckNumberInput = (event, index) => {
     let value = event.target.value;
     form.value.disbursements[index].check_number = value;
+};
+
+const handlePaymentTypeChange = (paymentType, index) => {
+    form.value.disbursements[index].payment_type = paymentType;
+    if (paymentType === 'DEBIT') {
+        form.value.disbursements[index].check_number = 'DEBIT';
+    } else {
+        form.value.disbursements[index].check_number = '';
+    }
 };
 
 const getTotalAmount = () => {
@@ -204,15 +295,22 @@ const handleClose = () => {
     form.value = {
         disbursements: [
             {
+                payment_type: 'CHECK',
                 check_number: '',
                 date: '',
                 amount: '',
-                payment_for: '',
-                payable_to: ''
+                payments: [
+                    {
+                        payment_for: '',
+                        payable_to: '',
+                        amount: ''
+                    }
+                ]
             }
         ]
     };
     amountDisplays.value = [''];
+    paymentAmountDisplays.value = [['']]; 
     emit('close');
 };
 
@@ -281,13 +379,48 @@ const handleKeyDown = (e) => {
                             </div>
 
                             <div class="mb-3">
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Payment Type <span class="text-red-600">*</span></label>
+                                <div class="flex gap-2">
+                                    <button
+                                        @click="handlePaymentTypeChange('DEBIT', index)"
+                                        :class="[
+                                            'flex-1 px-3 py-2.5 rounded-lg font-semibold text-sm transition-all border-2',
+                                            disbursement.payment_type === 'DEBIT'
+                                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-blue-600'
+                                                : 'bg-gray-100 text-gray-700 border-gray-300 hover:border-blue-400'
+                                        ]"
+                                    >
+                                        DEBIT
+                                    </button>
+                                    <button
+                                        @click="handlePaymentTypeChange('CHECK', index)"
+                                        :class="[
+                                            'flex-1 px-3 py-2.5 rounded-lg font-semibold text-sm transition-all border-2',
+                                            disbursement.payment_type === 'CHECK'
+                                                ? 'bg-gradient-to-r from-green-500 to-green-600 text-white border-green-600'
+                                                : 'bg-gray-100 text-gray-700 border-gray-300 hover:border-green-400'
+                                        ]"
+                                    >
+                                        CHECK
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div v-if="disbursement.payment_type === 'DEBIT'" class="mb-3">
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Payment Method</label>
+                                <div class="w-full px-3 py-2.5 border-2 border-blue-300 bg-blue-50 rounded-lg text-sm font-bold text-blue-700 text-center">
+                                    DEBIT
+                                </div>
+                            </div>
+
+                            <div v-else class="mb-3">
                                 <label class="block text-xs font-semibold text-gray-700 mb-1.5">Check Number <span class="text-red-600">*</span></label>
                                 <input
                                     :value="disbursement.check_number"
                                     @input="handleCheckNumberInput($event, index)"
                                     type="text"
-                                    placeholder="Enter check number"
-                                    class="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all text-sm text-gray-900"
+                                    placeholder="Enter check number (numbers only)"
+                                    class="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all text-sm text-gray-900"
                                 />
                             </div>
 
@@ -300,35 +433,66 @@ const handleKeyDown = (e) => {
                                 />
                             </div>
 
-                            <div class="mb-3">
-                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Amount <span class="text-red-600">*</span></label>
-                                <input
-                                    :value="amountDisplays[index]"
-                                    @input="handleAmountInput($event, index)"
-                                    type="text"
-                                    placeholder="0.00"
-                                    class="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all text-sm text-gray-900"
-                                />
+                            <div class="mb-3 p-3 bg-yellow-50 rounded-lg border-2 border-yellow-300">
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Total Disbursement Amount <span class="text-red-600">*</span></label>
+                                <div class="text-2xl font-bold text-yellow-700">
+                                    ₱{{ amountDisplays[index] || '0.00' }}
+                                </div>
+                                <p class="text-xs text-gray-600 mt-1">Auto-calculated from payment entries below</p>
                             </div>
 
-                            <div class="mb-3">
-                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Payment For <span class="text-red-600">*</span></label>
-                                <input
-                                    v-model="disbursement.payment_for"
-                                    type="text"
-                                    placeholder="Enter payment description"
-                                    class="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all text-sm text-gray-900"
-                                />
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Payable TO <span class="text-red-600">*</span></label>
-                                <input
-                                    v-model="disbursement.payable_to"
-                                    type="text"
-                                    placeholder="Enter payee name"
-                                    class="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all text-sm text-gray-900"
-                                />
+                            <div class="mb-4 space-y-3">
+                                <div class="flex items-center justify-between pb-2 border-b border-gray-200">
+                                    <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wide">Payment Entries</label>
+                                    <span class="text-xs font-semibold text-gray-600">{{ disbursement.payments.length }}</span>
+                                </div>
+                                <div v-for="(payment, paymentIndex) in disbursement.payments" :key="paymentIndex" class="bg-gray-50 p-3 rounded-md border border-gray-200 space-y-2">
+                                    <div class="flex items-center justify-between pb-2">
+                                        <p class="text-xs font-semibold text-gray-600">Payment {{ paymentIndex + 1 }}</p>
+                                        <button
+                                            v-if="disbursement.payments.length > 1"
+                                            @click="removePaymentEntry(index, paymentIndex)"
+                                            class="px-2 py-0.5 rounded text-xs bg-red-100 text-red-700 hover:bg-red-200 transition-colors font-semibold"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-gray-700 mb-1">Payment For <span class="text-red-600">*</span></label>
+                                        <input
+                                            v-model="payment.payment_for"
+                                            type="text"
+                                            placeholder="e.g., Salary, Supplies"
+                                            class="w-full px-2.5 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-200 transition-all text-xs text-gray-900"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-gray-700 mb-1">Payable TO <span class="text-red-600">*</span></label>
+                                        <input
+                                            v-model="payment.payable_to"
+                                            type="text"
+                                            placeholder="e.g., John Doe, ABC Company"
+                                            class="w-full px-2.5 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-200 transition-all text-xs text-gray-900"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-gray-700 mb-1">Amount <span class="text-red-600">*</span></label>
+                                        <input
+                                            :value="(paymentAmountDisplays[index] && paymentAmountDisplays[index][paymentIndex]) || ''"
+                                            @input="handlePaymentAmountInput($event, index, paymentIndex)"
+                                            type="text"
+                                            placeholder="0.00"
+                                            class="w-full px-2.5 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-200 transition-all text-xs text-gray-900 font-semibold"
+                                        />
+                                    </div>
+                                </div>
+                                <button
+                                    @click="addPaymentEntry(index)"
+                                    class="w-full px-3 py-2 rounded-md border border-dashed border-yellow-300 text-yellow-700 hover:bg-yellow-50 transition-colors font-semibold text-xs flex items-center justify-center gap-1 mt-2"
+                                >
+                                    <Plus class="h-3 w-3" />
+                                    Add Payment Entry
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -351,26 +515,36 @@ const handleKeyDown = (e) => {
                         </div>
                         <div v-for="(disbursement, index) in form.disbursements" :key="index" class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
                             <div class="text-sm font-bold text-gray-900 mb-3 pb-2 border-b border-gray-100">Disbursement {{ index + 1 }}</div>
-                            <div class="space-y-2.5 text-sm">
+                            <div class="space-y-2.5 text-sm mb-3">
                                 <div class="flex justify-between items-center">
-                                    <span class="text-gray-700">Check #:</span>
-                                    <span class="font-bold text-gray-900">{{ disbursement.check_number || '-' }}</span>
+                                    <span class="text-gray-700">Payment:</span>
+                                    <span v-if="disbursement.payment_type === 'DEBIT'" class="px-2 py-0.5 rounded text-xs font-bold text-white bg-blue-500">DEBIT</span>
+                                    <span v-else class="px-2 py-0.5 rounded text-xs font-bold text-gray-900 bg-green-200">{{ disbursement.check_number || '-' }}</span>
                                 </div>
                                 <div class="flex justify-between items-center">
                                     <span class="text-gray-700">Date:</span>
                                     <span class="font-bold text-gray-900">{{ disbursement.date || '-' }}</span>
                                 </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-gray-700">Payment For:</span>
-                                    <span class="font-bold text-gray-900">{{ disbursement.payment_for || '-' }}</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-gray-700">Payable TO:</span>
-                                    <span class="font-bold text-gray-900">{{ disbursement.payable_to || '-' }}</span>
-                                </div>
                                 <div class="flex justify-between items-center pt-2 border-t border-gray-100">
                                     <span class="text-gray-700">Amount:</span>
                                     <span class="font-bold text-lg text-yellow-600">₱{{ amountDisplays[index] || '0.00' }}</span>
+                                </div>
+                            </div>
+                            <div class="border-t border-gray-100 pt-2">
+                                <p class="text-xs font-semibold text-gray-600 mb-2">Payments:</p>
+                                <div v-for="(payment, paymentIndex) in disbursement.payments" :key="paymentIndex" class="text-xs bg-gray-50 p-2 rounded mb-1.5 space-y-1">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">For:</span>
+                                        <span class="font-semibold text-gray-900">{{ payment.payment_for || '-' }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">To:</span>
+                                        <span class="font-semibold text-gray-900">{{ payment.payable_to || '-' }}</span>
+                                    </div>
+                                    <div class="flex justify-between pt-1 border-t border-gray-200">
+                                        <span class="text-gray-600">Amount:</span>
+                                        <span class="font-bold text-yellow-600">₱{{ (paymentAmountDisplays[form.disbursements.indexOf(disbursement)] && paymentAmountDisplays[form.disbursements.indexOf(disbursement)][paymentIndex]) || '0.00' }}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

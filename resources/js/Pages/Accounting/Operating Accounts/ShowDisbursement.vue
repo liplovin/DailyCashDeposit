@@ -60,27 +60,21 @@ const handleDeleteDisbursement = async (disbursementId, disbursementIndex) => {
     if (result.isConfirmed) {
         isDeleting.value = true;
         try {
-            const response = await fetch(`/accounting/operating-account-disbursement/${disbursementId}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            const data = await response.json();
+            const response = await window.axios.delete(`/accounting/operating-account-disbursement/${disbursementId}`);
+            const data = response.data;
 
             if (data.message) {
-                Swal.fire({
+                await Swal.fire({
                     title: 'Deleted!',
                     text: 'Disbursement has been deleted successfully.',
                     icon: 'success',
                     confirmButtonColor: '#D4A017',
                     timer: 2000,
-                    timerProgressBar: true
-                }).then(() => {
-                    emit('refresh');
+                    timerProgressBar: true,
+                    didClose: true
                 });
+                emit('refresh');
+                emit('close');
             } else {
                 Swal.fire({
                     title: 'Error!',
@@ -166,14 +160,39 @@ const handleDeleteDisbursement = async (disbursementId, disbursementIndex) => {
                                 <span class="text-2xl font-bold text-blue-600">₱{{ formatAmount(disbursement.amount) }}</span>
                             </div>
 
-                            <div v-if="disbursement.payment_for" class="p-3 bg-purple-50 rounded-lg border border-purple-200">
-                                <p class="text-xs font-semibold text-gray-600 mb-1 uppercase">Payment For</p>
-                                <p class="text-sm text-gray-900 font-medium">{{ disbursement.payment_for }}</p>
+                            <!-- Payment Entries -->
+                            <div v-if="disbursement.payments && disbursement.payments.length > 0" class="space-y-2">
+                                <p class="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">Payment Details ({{ disbursement.payments.length }})</p>
+                                <div v-for="(payment, paymentIndex) in disbursement.payments" :key="payment.id" class="p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border-2 border-purple-200 space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs font-bold text-purple-700 uppercase">Payment {{ paymentIndex + 1 }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between bg-white p-2 rounded border border-purple-100">
+                                        <span class="text-xs font-semibold text-gray-600">For:</span>
+                                        <span class="text-sm font-medium text-gray-900">{{ payment.payment_for }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between bg-white p-2 rounded border border-pink-100">
+                                        <span class="text-xs font-semibold text-gray-600">To:</span>
+                                        <span class="text-sm font-medium text-gray-900">{{ payment.payable_to }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between bg-white p-2 rounded border border-yellow-100">
+                                        <span class="text-xs font-semibold text-gray-600">Amount:</span>
+                                        <span class="text-sm font-bold text-yellow-600">₱{{ formatAmount(payment.amount) }}</span>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div v-if="disbursement.payable_to" class="p-3 bg-pink-50 rounded-lg border border-pink-200">
-                                <p class="text-xs font-semibold text-gray-600 mb-1 uppercase">Payable TO</p>
-                                <p class="text-sm text-gray-900 font-medium">{{ disbursement.payable_to }}</p>
+                            <!-- Fallback for old single payment structure -->
+                            <div v-else-if="disbursement.payment_for || disbursement.payable_to" class="space-y-2">
+                                <div v-if="disbursement.payment_for" class="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                                    <p class="text-xs font-semibold text-gray-600 mb-1 uppercase">Payment For</p>
+                                    <p class="text-sm text-gray-900 font-medium">{{ disbursement.payment_for }}</p>
+                                </div>
+
+                                <div v-if="disbursement.payable_to" class="p-3 bg-pink-50 rounded-lg border border-pink-200">
+                                    <p class="text-xs font-semibold text-gray-600 mb-1 uppercase">Payable TO</p>
+                                    <p class="text-sm text-gray-900 font-medium">{{ disbursement.payable_to }}</p>
+                                </div>
                             </div>
 
                             <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">

@@ -86,15 +86,20 @@ const filteredDisbursements = computed(() => {
 
 const hasDisbursements = computed(() => filteredDisbursements.value && filteredDisbursements.value.length > 0);
 
+const hasPendingDisbursements = computed(() => {
+    return props.disbursements.some(d => d.status === 'pending');
+});
+
 const formatDateWithTime = (dateString) => {
     const date = new Date(dateString);
     const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
     return new Intl.DateTimeFormat('en-US', options).format(date);
 };
 
-const hasPendingDisbursements = computed(() => {
-    return props.disbursements.some(d => d.status === 'pending');
-});
+const handleRefresh = () => {
+    window.location.reload();
+};
+
 
 const handleProcessDisbursement = async () => {
     const pendingDisbursements = props.disbursements.filter(d => d.status === 'pending');
@@ -128,18 +133,10 @@ const handleProcessDisbursement = async () => {
     if (result.isConfirmed) {
         try {
             const disbursementIds = pendingDisbursements.map(d => d.id);
-            const response = await fetch('/accounting/operating-account-disbursement/process', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({ ids: disbursementIds })
-            });
+            const response = await window.axios.post('/accounting/operating-account-disbursement/process', { ids: disbursementIds });
+            const data = response.data;
             
-            const data = await response.json();
-            
-            if (response.ok) {
+            if (response.status === 200) {
                 Swal.fire({
                     title: 'Success!',
                     text: `${pendingDisbursements.length} disbursement(s) marked as processed.`,
@@ -302,7 +299,7 @@ const handleProcessDisbursement = async () => {
         </div>
     </AccountingLayout>
 
-    <AddDisbursement :isOpen="showModal" :operatingAccounts="operatingAccounts" @close="showModal = false" @refresh="$emit('refresh')" />
+    <AddDisbursement :isOpen="showModal" :operatingAccounts="operatingAccounts" @close="showModal = false" @refresh="handleRefresh" />
     
-    <ShowDisbursement :isOpen="showDetailsModal" :group="selectedGroup" @close="closeDetailsModal" @refresh="$emit('refresh')" />
+    <ShowDisbursement :isOpen="showDetailsModal" :group="selectedGroup" @close="closeDetailsModal" @refresh="handleRefresh" />
 </template>

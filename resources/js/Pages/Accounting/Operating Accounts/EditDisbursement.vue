@@ -1,6 +1,6 @@
 <script setup>
 import { X } from 'lucide-vue-next';
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 
@@ -21,11 +21,12 @@ const form = ref({
     check_number: '',
     date: '',
     amount: '',
-    payment_for: '',
-    payable_to: ''
+    payment_type: 'CHECK',
+    payments: []
 });
 
 const amountDisplay = ref('');
+const paymentAmountDisplays = ref([]);
 const isSubmitting = ref(false);
 
 watch(() => props.disbursement, (newVal) => {
@@ -33,11 +34,70 @@ watch(() => props.disbursement, (newVal) => {
         form.value.check_number = newVal.check_number;
         form.value.date = newVal.date;
         form.value.amount = newVal.amount;
-        form.value.payment_for = newVal.payment_for || '';
-        form.value.payable_to = newVal.payable_to || '';
+        form.value.payment_type = newVal.payment_type || 'CHECK';
+        form.value.payments = newVal.payments && newVal.payments.length > 0 
+            ? JSON.parse(JSON.stringify(newVal.payments))
+            : [{ payment_for: '', payable_to: '', amount: '' }];
+        
+        // Initialize payment amount displays
+        paymentAmountDisplays.value = form.value.payments.map(p => 
+            (parseFloat(p.amount) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        );
+        
         amountDisplay.value = parseFloat(newVal.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 }, { deep: true });
+
+const calculateTotalPaymentAmount = () => {
+    return form.value.payments.reduce((total, payment) => {
+        return total + (parseFloat(payment.amount) || 0);
+    }, 0);
+};
+
+const updateTotalAmount = () => {
+    const total = calculateTotalPaymentAmount();
+    form.value.amount = total.toString();
+    amountDisplay.value = total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+const handlePaymentAmountInput = (event, paymentIndex) => {
+    let value = event.target.value;
+    
+    value = value.replace(/[^\d.]/g, '');
+    
+    if (value.split('.').length > 2) {
+        const decimalIndex = value.indexOf('.');
+        value = value.substring(0, decimalIndex + 1) + value.substring(decimalIndex + 1).replace(/\./g, '');
+    }
+    
+    if (value === '') {
+        form.value.payments[paymentIndex].amount = '';
+        paymentAmountDisplays.value[paymentIndex] = '';
+        updateTotalAmount();
+        return;
+    }
+    
+    const parts = value.split('.');
+    let integerPart = parts[0] || '';
+    let decimalPart = parts[1];
+    
+    if (integerPart) {
+        integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+    
+    let formattedValue;
+    if (value.includes('.')) {
+        formattedValue = `${integerPart}.${decimalPart !== undefined ? decimalPart : ''}`;
+    } else {
+        formattedValue = integerPart;
+    }
+    
+    paymentAmountDisplays.value[paymentIndex] = formattedValue;
+    form.value.payments[paymentIndex].amount = value.replace(/,/g, '');
+    
+    // Auto-update total amount
+    updateTotalAmount();
+};
 
 const handleAmountKeyDown = (event) => {
     const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', '.', ','];
@@ -49,33 +109,6 @@ const handleAmountKeyDown = (event) => {
     if (!/^\d|\./.test(event.key) && !allowedKeys.includes(event.key)) {
         event.preventDefault();
     }
-};
-
-const handleAmountInput = (event) => {
-    let value = event.target.value.replace(/[^\d.]/g, '');
-    
-    const parts = value.split('.');
-    if (parts.length > 2) {
-        value = parts[0] + '.' + parts.slice(1).join('');
-    }
-    
-    if (value === '' || value === '.') {
-        form.value.amount = '';
-        amountDisplay.value = '';
-        return;
-    }
-    
-    const decimalParts = value.split('.');
-    if (decimalParts.length > 1 && decimalParts[1].length > 2) {
-        value = decimalParts[0] + '.' + decimalParts[1].substring(0, 2);
-    }
-    
-    const [integerStr, decimalStr] = value.split('.');
-    const formattedInteger = integerStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    amountDisplay.value = decimalStr !== undefined 
-        ? formattedInteger + '.' + decimalStr 
-        : formattedInteger;
-    form.value.amount = value.replace(/,/g, '');
 };
 
 const handleCheckNumberInput = (event) => {
@@ -126,20 +159,53 @@ const handleSubmit = async () => {
         return;
     }
 
-    if (!form.value.payment_for.trim()) {
+    if (!form.value.payments || form.value.payments.length === 0) {
         Swal.fire({
             title: 'Validation Error',
-            text: 'Payment For is required.',
+            text: 'At least one payment entry is required.',
             icon: 'warning',
             confirmButtonColor: '#D4A017'
         });
         return;
     }
 
-    if (!form.value.payable_to.trim()) {
+    const totalPaymentAmount = calculateTotalPaymentAmount();
+    
+    for (let i = 0; i < form.value.payments.length; i++) {
+        const payment = form.value.payments[i];
+        if (!payment.payment_for.trim()) {
+            Swal.fire({
+                title: 'Validation Error',
+                text: `Payment ${i + 1}: "Payment For" is required.`,
+                icon: 'warning',
+                confirmButtonColor: '#D4A017'
+            });
+            return;
+        }
+        if (!payment.payable_to.trim()) {
+            Swal.fire({
+                title: 'Validation Error',
+                text: `Payment ${i + 1}: "Payable TO" is required.`,
+                icon: 'warning',
+                confirmButtonColor: '#D4A017'
+            });
+            return;
+        }
+        if (!payment.amount || parseFloat(payment.amount) <= 0) {
+            Swal.fire({
+                title: 'Validation Error',
+                text: `Payment ${i + 1}: Amount must be greater than 0.`,
+                icon: 'warning',
+                confirmButtonColor: '#D4A017'
+            });
+            return;
+        }
+    }
+    
+    if (totalPaymentAmount <= 0) {
         Swal.fire({
             title: 'Validation Error',
-            text: 'Payable TO is required.',
+            text: 'Total payment amount must be greater than 0.',
             icon: 'warning',
             confirmButtonColor: '#D4A017'
         });
@@ -153,8 +219,7 @@ const handleSubmit = async () => {
             check_number: form.value.check_number,
             date: form.value.date,
             amount: cleanAmount,
-            payment_for: form.value.payment_for,
-            payable_to: form.value.payable_to
+            payments: form.value.payments
         });
 
         if (response.data.message) {
@@ -199,8 +264,25 @@ const handleSubmit = async () => {
     }
 };
 
+const addPaymentEntry = () => {
+    form.value.payments.push({
+        payment_for: '',
+        payable_to: '',
+        amount: ''
+    });
+    paymentAmountDisplays.value.push('');
+};
+
+const removePaymentEntry = (index) => {
+    if (form.value.payments.length > 1) {
+        form.value.payments.splice(index, 1);
+        paymentAmountDisplays.value.splice(index, 1);
+        updateTotalAmount();
+    }
+};
+
 const handleClose = () => {
-    form.value = { check_number: '', date: '', amount: '', payment_for: '', payable_to: '' };
+    form.value = { check_number: '', date: '', amount: '', payments: [] };
     amountDisplay.value = '';
     emit('close');
 };
@@ -244,13 +326,12 @@ const handleClose = () => {
                                 <span class="text-sm text-yellow-700">Amount:</span>
                                 <span class="text-lg font-bold text-yellow-900">₱{{ parseFloat(disbursement.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
                             </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-yellow-700">Payment For:</span>
-                                <span class="text-lg font-bold text-yellow-900">{{ disbursement.payment_for || '-' }}</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-yellow-700">Payable TO:</span>
-                                <span class="text-lg font-bold text-yellow-900">{{ disbursement.payable_to || '-' }}</span>
+                            <div v-if="disbursement.payments && disbursement.payments.length > 0">
+                                <span class="text-sm text-yellow-700">Payments:</span>
+                                <div v-for="(payment, idx) in disbursement.payments" :key="idx" class="mt-1">
+                                    <span class="text-xs font-semibold text-yellow-600">Payment {{ idx + 1 }}:</span>
+                                    <span class="text-sm text-yellow-900">{{ payment.payment_for }} → {{ payment.payable_to }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -279,40 +360,74 @@ const handleClose = () => {
                     </div>
 
                     <div>
-                        <label class="block text-sm font-bold text-gray-800 mb-3">Amount</label>
-                        <div class="relative group">
-                            <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-600 font-bold text-lg">₱</span>
-                            <input
-                                :value="amountDisplay"
-                                @keydown="handleAmountKeyDown"
-                                @input="handleAmountInput"
-                                type="text"
-                                inputmode="decimal"
-                                placeholder="0.00"
-                                class="w-full pl-10 pr-4 py-3.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200 font-mono text-lg group-hover:border-yellow-400"
-                            />
+                        <label class="block text-sm font-bold text-gray-800 mb-3">Amount (Read-Only - Auto-calculated from Payments)</label>
+                        <div class="w-full px-4 py-3.5 border-2 border-gray-300 rounded-lg bg-gray-100 text-gray-600 font-mono text-lg font-bold">
+                            ₱{{ amountDisplay }}
                         </div>
-                        <p class="text-xs text-gray-600 mt-2">✓ Numbers only • Automatic comma formatting • Max 2 decimals</p>
+                        <p class="text-xs text-gray-600 mt-2">ℹ This amount is automatically calculated from the sum of all payment entries</p>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-bold text-gray-800 mb-3">Payment For <span class="text-red-600">*</span></label>
-                        <input
-                            v-model="form.payment_for"
-                            type="text"
-                            placeholder="Enter payment description"
-                            class="w-full px-4 py-3.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
-                        />
-                    </div>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-sm font-bold text-gray-800 mb-0">Payment Entries <span class="text-red-600">*</span></label>
+                            <span class="text-xs font-semibold text-gray-600">{{ form.payments.length }} entry/entries</span>
+                        </div>
+                        
+                        <div v-for="(payment, paymentIndex) in form.payments" :key="paymentIndex" class="p-4 bg-gray-50 rounded-lg border-2 border-gray-200 space-y-3">
+                            <div class="flex items-center justify-between pb-2 border-b border-gray-200">
+                                <span class="text-xs font-bold text-gray-700 uppercase">Payment {{ paymentIndex + 1 }}</span>
+                                <button
+                                    v-if="form.payments.length > 1"
+                                    @click="removePaymentEntry(paymentIndex)"
+                                    type="button"
+                                    class="px-2 py-1 text-xs bg-red-100 text-red-700 hover:bg-red-200 rounded transition-colors font-semibold"
+                                >
+                                    Remove
+                                </button>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-2">Payment For <span class="text-red-600">*</span></label>
+                                <input
+                                    v-model="payment.payment_for"
+                                    type="text"
+                                    placeholder="e.g., Salary, Office Supplies"
+                                    class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
+                                />
+                            </div>
 
-                    <div>
-                        <label class="block text-sm font-bold text-gray-800 mb-3">Payable TO <span class="text-red-600">*</span></label>
-                        <input
-                            v-model="form.payable_to"
-                            type="text"
-                            placeholder="Enter payee name"
-                            class="w-full px-4 py-3.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
-                        />
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-2">Payable TO <span class="text-red-600">*</span></label>
+                                <input
+                                    v-model="payment.payable_to"
+                                    type="text"
+                                    placeholder="e.g., John Doe, ABC Company"
+                                    class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-2">Amount <span class="text-red-600">*</span></label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 font-bold">₱</span>
+                                    <input
+                                        :value="paymentAmountDisplays[paymentIndex] || ''"
+                                        @input="handlePaymentAmountInput($event, paymentIndex)"
+                                        type="text"
+                                        placeholder="0.00"
+                                        class="w-full pl-8 pr-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200 font-semibold"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <button
+                            @click="addPaymentEntry"
+                            type="button"
+                            class="w-full px-4 py-2.5 rounded-lg border-2 border-dashed border-yellow-300 text-yellow-700 hover:bg-yellow-50 transition-colors font-semibold text-sm"
+                        >
+                            + Add Payment Entry
+                        </button>
                     </div>
                 </div>
             </div>

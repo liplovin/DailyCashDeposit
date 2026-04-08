@@ -227,15 +227,13 @@ const saveEdit = async () => {
     }
     
     try {
-        const response = await fetch(`/treasury3/collection/${props.collection.id}`, {
-            method: 'POST',
+        const response = await window.axios.post(`/treasury3/collection/${props.collection.id}`, formData, {
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                'Content-Type': 'multipart/form-data',
             },
-            body: formData,
         });
 
-        const data = await response.json();
+        const data = response.data;
 
         if (data.success) {
             Swal.fire({

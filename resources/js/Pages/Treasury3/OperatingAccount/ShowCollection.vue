@@ -52,15 +52,8 @@ const handleDeleteCollection = async (collectionId, collectionIndex) => {
     if (result.isConfirmed) {
         isDeleting.value = true;
         try {
-            const response = await fetch(`/treasury3/collection/${collectionId}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            const data = await response.json();
+            const response = await window.axios.delete(`/treasury3/collection/${collectionId}`);
+            const data = response.data;
 
             if (data.success) {
                 Swal.fire({

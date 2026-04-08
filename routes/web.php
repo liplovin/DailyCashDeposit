@@ -377,7 +377,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/operating-accounts/view-disbursement', function () {
             $operatingAccounts = \App\Models\OperatingAccount::all();
-            $disbursements = \App\Models\OperatingAccountDisbursement::with('operatingAccount')
+            $disbursements = \App\Models\OperatingAccountDisbursement::with(['operatingAccount', 'payments'])
                 ->where('status', 'processed')
                 ->get();
             return Inertia::render('Admin/Operating Accounts/ViewDisbursementOperatingAccounts', [
@@ -444,7 +444,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('accounting')->name('accounting.')->middleware('role:accounting')->group(function () {
         Route::get('/operating-accounts', function () {
             $operatingAccounts = \App\Models\OperatingAccount::all();
-            $disbursements = \App\Models\OperatingAccountDisbursement::with('operatingAccount')->where('status', 'pending')->get();
+            $disbursements = \App\Models\OperatingAccountDisbursement::with(['operatingAccount', 'payments'])->where('status', 'pending')->get();
             return Inertia::render('Accounting/Operating Accounts/Index', [
                 'operatingAccounts' => $operatingAccounts,
                 'disbursements' => $disbursements,
@@ -452,7 +452,7 @@ Route::middleware('auth')->group(function () {
         })->name('operating-accounts');
         Route::get('/operating-accounts/processed', function () {
             $operatingAccounts = \App\Models\OperatingAccount::all();
-            $disbursements = \App\Models\OperatingAccountDisbursement::with('operatingAccount')->where('status', 'processed')->get();
+            $disbursements = \App\Models\OperatingAccountDisbursement::with(['operatingAccount', 'payments'])->where('status', 'processed')->get();
             return Inertia::render('Accounting/Operating Accounts/ProcessedIndex', [
                 'operatingAccounts' => $operatingAccounts,
                 'disbursements' => $disbursements,
@@ -466,7 +466,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/processed-disbursement', function () {
             $operatingAccounts = \App\Models\OperatingAccount::all();
-            $disbursements = \App\Models\OperatingAccountDisbursement::with('operatingAccount')->where('status', 'processed')->get();
+            $disbursements = \App\Models\OperatingAccountDisbursement::with(['operatingAccount', 'payments'])->where('status', 'processed')->get();
             return Inertia::render('Accounting/Operating Accounts/ProcessedIndex', [
                 'operatingAccounts' => $operatingAccounts,
                 'disbursements' => $disbursements,

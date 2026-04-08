@@ -66,18 +66,10 @@ const handleProcessCollection = async () => {
     if (result.isConfirmed) {
         try {
             const collectionIds = pendingCollections.map(c => c.id);
-            const response = await fetch('/treasury3/collections/process', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({ collection_ids: collectionIds })
-            });
+            const response = await window.axios.post('/treasury3/collections/process', { collection_ids: collectionIds });
+            const data = response.data;
             
-            const data = await response.json();
-            
-            if (response.ok) {
+            if (response.status === 200) {
                 Swal.fire({
                     title: 'Success!',
                     text: `${pendingCollections.length} collection(s) marked as processed.`,
