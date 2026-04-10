@@ -1,32 +1,21 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * This migration has been moved to 2024_04_10_000000_create_disbursement_payments_table.php
+     * The amount column is now included in the disbursement_payments table creation.
      */
     public function up(): void
     {
-        Schema::table('disbursement_payments', function (Blueprint $table) {
-            if (!Schema::hasColumn('disbursement_payments', 'amount')) {
-                $table->decimal('amount', 15, 2)->default(0)->after('payable_to');
-            }
-        });
+        // This migration is deprecated - amount column is already in the main creation migration
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::table('disbursement_payments', function (Blueprint $table) {
-            if (Schema::hasColumn('disbursement_payments', 'amount')) {
-                $table->dropColumn('amount');
-            }
-        });
+        // This migration is deprecated
     }
 };
+

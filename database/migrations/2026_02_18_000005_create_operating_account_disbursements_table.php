@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('operating_account_id')->constrained('operating_accounts')->onDelete('cascade');
             $table->string('check_number');
+            $table->string('payment_type')->default('CHECK');
             $table->date('date');
             $table->decimal('amount', 12, 2);
             $table->enum('status', ['pending', 'processed'])->default('pending');

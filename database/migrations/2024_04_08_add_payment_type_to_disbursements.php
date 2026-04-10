@@ -1,33 +1,20 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * This migration has been moved to 2026_02_18_000005_create_operating_account_disbursements_table.php
+     * The payment_type column is now included in the main table creation.
      */
     public function up(): void
     {
-        Schema::table('operating_account_disbursements', function (Blueprint $table) {
-            // Add payment_type column if it doesn't exist
-            if (!Schema::hasColumn('operating_account_disbursements', 'payment_type')) {
-                $table->string('payment_type')->default('CHECK')->after('check_number');
-            }
-        });
+        // This migration is deprecated - payment_type column is already in the main creation migration
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::table('operating_account_disbursements', function (Blueprint $table) {
-            if (Schema::hasColumn('operating_account_disbursements', 'payment_type')) {
-                $table->dropColumn('payment_type');
-            }
-        });
+        // This migration is deprecated
     }
 };
