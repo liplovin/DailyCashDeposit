@@ -249,6 +249,10 @@ class OperatingAccountController extends Controller
                     $checkPath = $file->store('checks/' . $operatingAccount->id, 'public');
                 }
 
+                // Ensure invalid values are stored as NULL
+                $filePath = (empty($filePath) || $filePath === '0') ? null : $filePath;
+                $checkPath = (empty($checkPath) || $checkPath === '0') ? null : $checkPath;
+
                 // Create collection record with status = pending
                 $collection = Collection::create([
                     'operating_account_id' => $operatingAccount->id,
@@ -456,6 +460,10 @@ class OperatingAccountController extends Controller
                 $collection->check = $filePath;
             }
 
+            // Ensure invalid values are stored as NULL
+            $collection->deposit_slip = (empty($collection->deposit_slip) || $collection->deposit_slip === '0') ? null : $collection->deposit_slip;
+            $collection->check = (empty($collection->check) || $collection->check === '0') ? null : $collection->check;
+
             $collection->save();
 
             return response()->json([
@@ -524,6 +532,10 @@ class OperatingAccountController extends Controller
                         $collection->check = $filePath;
                     }
                 }
+
+                // Ensure invalid values are stored as NULL
+                $collection->deposit_slip = (empty($collection->deposit_slip) || $collection->deposit_slip === '0') ? null : $collection->deposit_slip;
+                $collection->check = (empty($collection->check) || $collection->check === '0') ? null : $collection->check;
 
                 $collection->save();
                 $collections[] = $collection;
