@@ -23,15 +23,31 @@ class CashInfusionController extends Controller
     {
         $validated = $request->validate([
             'cash_infusion_name' => 'required|string|max:255',
-            'account_number' => 'required|string|unique:cash_infusions,account_number',
+            'account_number' => 'required|string',
             'beginning_balance' => 'required|numeric|min:0',
-            'maturity_date' => 'required|date_format:m/d/Y',
-            'acquisition_date' => 'required|date_format:m/d/Y',
+            'maturity_date' => 'nullable|date_format:m/d/Y',
+            'acquisition_date' => 'nullable|date_format:m/d/Y',
             'explanation' => 'required|string|max:1000',
         ]);
 
-        $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
-        $validated['acquisition_date'] = $this->convertDateFormat($validated['acquisition_date']);
+        // Check if account number exists and is NOT withdrawn
+        $existingRecord = CashInfusion::where('account_number', $validated['account_number'])->first();
+        if ($existingRecord) {
+            // Check if this record has been withdrawn
+            $hasWithdrawals = $existingRecord->withdrawals()->exists();
+            if (!$hasWithdrawals) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'account_number' => 'The account number has already been taken.'
+                ]);
+            }
+        }
+
+        if (!empty($validated['maturity_date'])) {
+            $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
+        }
+        if (!empty($validated['acquisition_date'])) {
+            $validated['acquisition_date'] = $this->convertDateFormat($validated['acquisition_date']);
+        }
         CashInfusion::create($validated);
 
         return redirect('/treasury/cash-infusion')->with('success', 'Cash Infusion created successfully.');
@@ -43,12 +59,26 @@ class CashInfusionController extends Controller
 
         $validated = $request->validate([
             'cash_infusion_name' => 'required|string|max:255',
-            'account_number' => 'required|string|unique:cash_infusions,account_number,' . $id,
+            'account_number' => 'required|string',
             'beginning_balance' => 'required|numeric|min:0',
             'maturity_date' => 'required|date_format:m/d/Y',
             'acquisition_date' => 'required|date_format:m/d/Y',
             'explanation' => 'required|string|max:1000',
         ]);
+
+        // Check if account number exists on a different record and is NOT withdrawn
+        if ($validated['account_number'] !== $cashInfusion->account_number) {
+            $existingRecord = CashInfusion::where('account_number', $validated['account_number'])->first();
+            if ($existingRecord) {
+                // Check if this record has been withdrawn
+                $hasWithdrawals = $existingRecord->withdrawals()->exists();
+                if (!$hasWithdrawals) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'account_number' => 'The account number has already been taken.'
+                    ]);
+                }
+            }
+        }
 
         $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
         $validated['acquisition_date'] = $this->convertDateFormat($validated['acquisition_date']);

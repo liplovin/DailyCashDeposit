@@ -70,10 +70,20 @@ const filteredCashInfusions = computed(() => {
     let filtered = cashInfusionsData.value;
     
     // Filter by withdrawn status
+    // Active: Has remaining balance (> 0)
+    // Withdrawn: Balance is completely zero (fully withdrawn)
     if (showWithdrawn.value) {
-        filtered = filtered.filter(infusion => infusion.maturity_date === null);
+        filtered = filtered.filter(infusion => {
+            // Show as withdrawn only if balance is zero (completely withdrawn)
+            const isFullyWithdrawn = parseFloat(infusion.beginning_balance || 0) === 0;
+            return isFullyWithdrawn;
+        });
     } else {
-        filtered = filtered.filter(infusion => infusion.maturity_date !== null);
+        filtered = filtered.filter(infusion => {
+            // Show as active if balance > 0 (has remaining amount)
+            const isFullyWithdrawn = parseFloat(infusion.beginning_balance || 0) === 0;
+            return !isFullyWithdrawn;
+        });
     }
     
     // Filter by search query

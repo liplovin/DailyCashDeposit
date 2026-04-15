@@ -86,11 +86,21 @@ const formatMaturityDate = (dateString) => {
 const filteredItems = computed(() => {
     let items = cashInfusionsData.value;
     
-    // Filter by withdrawn status - show ONLY withdrawn when toggled
+    // Filter by withdrawn status
+    // Active: Has remaining balance (> 0)
+    // Withdrawn: Balance is completely zero (fully withdrawn)
     if (showWithdrawn.value) {
-        items = items.filter(item => item.maturity_date === null);
+        items = items.filter(item => {
+            // Show as withdrawn only if balance is zero (completely withdrawn)
+            const isFullyWithdrawn = parseFloat(item.beginning_balance || 0) === 0;
+            return isFullyWithdrawn;
+        });
     } else {
-        items = items.filter(item => item.maturity_date !== null);
+        items = items.filter(item => {
+            // Show as active if balance > 0 (has remaining amount)
+            const isFullyWithdrawn = parseFloat(item.beginning_balance || 0) === 0;
+            return !isFullyWithdrawn;
+        });
     }
     
     // Filter by search query only
@@ -243,8 +253,6 @@ const viewCashInfusion = (infusion) => {
                             <tr class="border-b-2 border-gray-300">
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Infusion Name</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Account Number</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Acquisition Date</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Collection</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Disbursement</th>
@@ -254,7 +262,7 @@ const viewCashInfusion = (infusion) => {
                         </thead>
                         <tbody>
                             <tr v-if="filteredItems.length === 0" class="border-b border-gray-200">
-                                <td colspan="9" class="px-6 py-8 text-center text-gray-500">
+                                <td colspan="7" class="px-6 py-8 text-center text-gray-500">
                                     No cash infusion records found.
                                 </td>
                             </tr>
@@ -273,8 +281,6 @@ const viewCashInfusion = (infusion) => {
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ item.account_number }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-200">{{ formatDate(item.acquisition_date) }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-200">{{ formatMaturityDate(item.maturity_date) }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(item, filterDate)) }}</td>
                                 <td class="px-6 py-4 text-sm text-green-600 font-semibold border-r border-gray-200">{{ formatCurrency(getCollectionAmount(item)) }}</td>
                                 <td class="px-6 py-4 text-sm text-red-600 font-semibold border-r border-gray-200">{{ formatCurrency(getDisbursementAmount(item)) }}</td>
@@ -292,8 +298,6 @@ const viewCashInfusion = (infusion) => {
                         <tfoot v-if="filteredItems.length > 0">
                             <tr class="bg-yellow-50 font-bold border-b-2 border-gray-300">
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">TOTAL</td>
-                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
-                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">{{ formatCurrency(totalBeginningBalance) }}</td>
                                 <td class="px-6 py-4 text-sm text-green-600 border-r border-gray-300">{{ formatCurrency(totalCollection) }}</td>

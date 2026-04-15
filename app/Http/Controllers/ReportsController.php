@@ -57,7 +57,9 @@ class ReportsController extends Controller
                 ],
                 [
                     'name' => 'Cash Infusion',
-                    'data' => \App\Models\CashInfusion::with(['renewals', 'withdrawals', 'balances'])->where('maturity_date', '!=', null)->get()->toArray(),
+                    'data' => \App\Models\CashInfusion::get()->filter(function($item) {
+                        return floatval($item->beginning_balance) > 0;
+                    })->toArray(),
                     'key' => 'cash_infusion_name',
                     'accField' => 'account_number'
                 ],
@@ -83,19 +85,30 @@ class ReportsController extends Controller
             // Add data for each module
             foreach ($modules as $module) {
                 $csv .= $module['name'] . " Details\n";
-                $csv .= $module['name'] . " Name," . ucfirst(str_replace('_', ' ', $module['accField'])) . ",Acquisition Date,Maturity Date,Beginning Balance,Collection,Disbursement,Ending Balance\n";
+                
+                // Conditional header based on module
+                if ($module['name'] === 'Cash Infusion' || $module['name'] === 'Operating Accounts') {
+                    $csv .= $module['name'] . " Name," . ucfirst(str_replace('_', ' ', $module['accField'])) . ",Beginning Balance,Collection,Disbursement,Ending Balance\n";
+                } else {
+                    $csv .= $module['name'] . " Name," . ucfirst(str_replace('_', ' ', $module['accField'])) . ",Acquisition Date,Maturity Date,Beginning Balance,Collection,Disbursement,Ending Balance\n";
+                }
                 
                 foreach ($module['data'] as $item) {
                     $name = $item[$module['key']] ?? '';
                     $accNumber = $item[$module['accField']] ?? '';
-                    $acqDate = isset($item['acquisition_date']) ? date('M d, Y', strtotime($item['acquisition_date'])) : 'N/A';
-                    $matDate = isset($item['maturity_date']) ? date('M d, Y', strtotime($item['maturity_date'])) : 'N/A';
                     $beginBal = isset($item['beginning_balance']) ? $item['beginning_balance'] : 0;
                     $collection = isset($item['collection']) ? $item['collection'] : 0;
                     $disbursement = isset($item['disbursement']) ? $item['disbursement'] : 0;
                     $endBal = isset($item['ending_balance']) ? $item['ending_balance'] : 0;
                     
-                    $csv .= "\"" . $name . "\",\"" . $accNumber . "\",\"" . $acqDate . "\",\"" . $matDate . "\"," . $beginBal . "," . $collection . "," . $disbursement . "," . $endBal . "\n";
+                    // Conditional data based on module
+                    if ($module['name'] === 'Cash Infusion' || $module['name'] === 'Operating Accounts') {
+                        $csv .= "\"" . $name . "\",\"" . $accNumber . "\"," . $beginBal . "," . $collection . "," . $disbursement . "," . $endBal . "\n";
+                    } else {
+                        $acqDate = isset($item['acquisition_date']) ? date('M d, Y', strtotime($item['acquisition_date'])) : 'N/A';
+                        $matDate = isset($item['maturity_date']) ? date('M d, Y', strtotime($item['maturity_date'])) : 'N/A';
+                        $csv .= "\"" . $name . "\",\"" . $accNumber . "\",\"" . $acqDate . "\",\"" . $matDate . "\"," . $beginBal . "," . $collection . "," . $disbursement . "," . $endBal . "\n";
+                    }
                 }
                 $csv .= "\n";
             }
@@ -271,8 +284,10 @@ class ReportsController extends Controller
                 'accField' => 'account_number'
             ];
             
-            // Cash Infusion
-            $cashInfusions = \App\Models\CashInfusion::where('maturity_date', '!=', null)->get()->toArray();
+            // Cash Infusion - filter by beginning_balance > 0 (not fully withdrawn)
+            $cashInfusions = \App\Models\CashInfusion::get()->filter(function($item) {
+                return floatval($item->beginning_balance) > 0;
+            })->toArray();
             $modules[] = [
                 'name' => 'Cash Infusion',
                 'data' => $filterTransactionsByDate($cashInfusions, $date),

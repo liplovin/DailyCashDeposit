@@ -137,8 +137,10 @@
                         <tr>
                             <th>{{ $module['name'] }}</th>
                             <th>{{ ucfirst(str_replace('_', ' ', $module['accField'])) }}</th>
-                            <th>Acq Date</th>
-                            <th>Maturity Date</th>
+                            @if($module['name'] !== 'Cash Infusion' && $module['name'] !== 'Operating Accounts')
+                                <th>Acq Date</th>
+                                <th>Maturity Date</th>
+                            @endif
                             <th class="text-right">Beginning Balance</th>
                             <th class="text-right">Collection</th>
                             <th class="text-right">Disbursement</th>
@@ -150,20 +152,22 @@
                             <tr>
                                 <td>{{ $item[$module['key']] ?? '' }}</td>
                                 <td>{{ $item[$module['accField']] ?? '' }}</td>
-                                <td>
-                                    @if(isset($item['acquisition_date']))
-                                        {{ date('M d, Y', strtotime($item['acquisition_date'])) }}
-                                    @else
-                                        N/A
-                                    @endif
-                                </td>
-                                <td>
-                                    @if(isset($item['maturity_date']))
-                                        {{ date('M d, Y', strtotime($item['maturity_date'])) }}
-                                    @else
-                                        N/A
-                                    @endif
-                                </td>
+                                @if($module['name'] !== 'Cash Infusion' && $module['name'] !== 'Operating Accounts')
+                                    <td>
+                                        @if(isset($item['acquisition_date']))
+                                            {{ date('M d, Y', strtotime($item['acquisition_date'])) }}
+                                        @else
+                                            N/A
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if(isset($item['maturity_date']))
+                                            {{ date('M d, Y', strtotime($item['maturity_date'])) }}
+                                        @else
+                                            N/A
+                                        @endif
+                                    </td>
+                                @endif
                                 <td class="text-right">PHP {{ number_format($item['beginning_balance'] ?? 0, 2) }}</td>
                                 <td class="text-right">PHP {{ number_format($item['collection'] ?? 0, 2) }}</td>
                                 <td class="text-right">PHP {{ number_format($item['disbursement'] ?? 0, 2) }}</td>

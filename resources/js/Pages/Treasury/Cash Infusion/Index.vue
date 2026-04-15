@@ -54,11 +54,21 @@ const formatCurrency = (value) => {
 const filteredCashInfusions = computed(() => {
     let cashInfusions = props.cashInfusions;
     
-    // Filter by withdrawn status - show ONLY withdrawn when toggled
+    // Filter by withdrawn status
+    // Active: Has remaining balance (> 0)
+    // Withdrawn: Balance is completely zero (fully withdrawn)
     if (showWithdrawn.value) {
-        cashInfusions = cashInfusions.filter(cashInfusion => cashInfusion.maturity_date === null);
+        cashInfusions = cashInfusions.filter(cashInfusion => {
+            // Show as withdrawn only if balance is zero (completely withdrawn)
+            const isFullyWithdrawn = parseFloat(cashInfusion.beginning_balance || 0) === 0;
+            return isFullyWithdrawn;
+        });
     } else {
-        cashInfusions = cashInfusions.filter(cashInfusion => cashInfusion.maturity_date !== null);
+        cashInfusions = cashInfusions.filter(cashInfusion => {
+            // Show as active if balance > 0 (has remaining amount)
+            const isFullyWithdrawn = parseFloat(cashInfusion.beginning_balance || 0) === 0;
+            return !isFullyWithdrawn;
+        });
     }
     
     if (!searchQuery.value.trim()) {
@@ -423,8 +433,6 @@ const withdrawCashInfusion = async (infusion) => {
                             <tr class="border-b-2 border-gray-300">
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Cash Infusion Name</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Account Number</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Acquisition Date</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Date</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Beginning Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Ending Balance</th>
                                 <th class="px-6 py-4 text-left text-sm font-bold text-white border-r border-gray-300">Maturity Action</th>
@@ -433,7 +441,7 @@ const withdrawCashInfusion = async (infusion) => {
                         </thead>
                         <tbody>
                             <tr v-if="filteredCashInfusions.length === 0" class="border-b border-gray-200">
-                                <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                                <td colspan="6" class="px-6 py-8 text-center text-gray-500">
                                     No cash infusion records found.
                                 </td>
                             </tr>
@@ -452,12 +460,6 @@ const withdrawCashInfusion = async (infusion) => {
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ infusion.account_number }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-700 font-mono border-r border-gray-200">
-                                    {{ infusion.acquisition_date ? new Date(infusion.acquisition_date).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }) : '—' }}
-                                </td>
-                                <td class="px-6 py-4 text-sm font-mono border-r border-gray-200" :class="infusion.maturity_date ? 'text-gray-700' : 'text-green-600 font-bold'">
-                                    {{ formatMaturityDate(infusion.maturity_date) }}
-                                </td>
                                 <td class="px-6 py-4 text-sm text-gray-900 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(infusion, filterDate)) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 font-semibold border-r border-gray-200">{{ formatCurrency(getRollingBeginningBalance(infusion, filterDate) + parseFloat(getCollectionAmount(infusion)) - parseFloat(getDisbursementAmount(infusion))) }}</td>
                                 <td class="px-6 py-4 text-sm border-r border-gray-200">
@@ -536,7 +538,6 @@ const withdrawCashInfusion = async (infusion) => {
                         <tfoot v-if="filteredCashInfusions.length > 0">
                             <tr class="bg-yellow-50 font-bold border-t-2 border-gray-300">
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">TOTAL</td>
-                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">{{ formatCurrency(totalBeginningBalance) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 border-r border-gray-300">{{ formatCurrency(totalEndingBalance) }}</td>

@@ -69,7 +69,14 @@ const modules = [
 const activeModules = computed(() => {
     return modules.map(module => ({
         ...module,
-        data: module.data.filter(item => item.maturity_date !== null)
+        data: module.data.filter(item => {
+            // For Cash Infusion: show if balance > 0 (not fully withdrawn)
+            // For others: show if maturity_date exists
+            if (module.name === 'Cash Infusion') {
+                return parseFloat(item.beginning_balance || 0) > 0;
+            }
+            return item.maturity_date !== null;
+        })
     }));
 });
 
@@ -399,8 +406,8 @@ const generatePDF = async () => {
                                 <tr class="border-b-2 border-gray-300">
                                     <th class="px-6 py-3 text-left text-sm font-bold text-gray-900">{{ module.name }} Name</th>
                                     <th class="px-6 py-3 text-left text-sm font-bold text-gray-900">{{ module.accField === 'reference_number' ? 'Reference Number' : 'Account Number' }}</th>
-                                    <th class="px-6 py-3 text-left text-sm font-bold text-gray-900">Acquisition Date</th>
-                                    <th class="px-6 py-3 text-left text-sm font-bold text-gray-900">Maturity Date</th>
+                                    <th v-if="module.name !== 'Cash Infusion' && module.name !== 'Operating Accounts'" class="px-6 py-3 text-left text-sm font-bold text-gray-900">Acquisition Date</th>
+                                    <th v-if="module.name !== 'Cash Infusion' && module.name !== 'Operating Accounts'" class="px-6 py-3 text-left text-sm font-bold text-gray-900">Maturity Date</th>
                                     <th class="px-6 py-3 text-right text-sm font-bold text-gray-900">Beginning Balance</th>
                                     <th class="px-6 py-3 text-right text-sm font-bold text-gray-900">Collection</th>
                                     <th class="px-6 py-3 text-right text-sm font-bold text-gray-900">Disbursement</th>
@@ -409,22 +416,22 @@ const generatePDF = async () => {
                             </thead>
                             <tbody>
                                 <tr v-if="module.data.length === 0" class="border-b border-gray-200">
-                                    <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                                    <td :colspan="module.name !== 'Cash Infusion' && module.name !== 'Operating Accounts' ? 8 : 6" class="px-6 py-8 text-center text-gray-500">
                                         No records found
                                     </td>
                                 </tr>
                                 <tr v-for="(item, index) in module.data" :key="item.id" class="border-b border-gray-200 hover:bg-yellow-50" :class="{ 'bg-gray-50': index % 2 === 0 }">
                                     <td class="px-6 py-3 text-sm font-semibold text-gray-900">{{ item[module.key] }}</td>
                                     <td class="px-6 py-3 text-sm text-gray-700">{{ item[module.accField] }}</td>
-                                    <td class="px-6 py-3 text-sm text-gray-700">{{ formatDate(item.acquisition_date) }}</td>
-                                    <td class="px-6 py-3 text-sm text-gray-700">{{ formatMaturityDate(item.maturity_date) }}</td>
+                                    <td v-if="module.name !== 'Cash Infusion' && module.name !== 'Operating Accounts'" class="px-6 py-3 text-sm text-gray-700">{{ formatDate(item.acquisition_date) }}</td>
+                                    <td v-if="module.name !== 'Cash Infusion' && module.name !== 'Operating Accounts'" class="px-6 py-3 text-sm text-gray-700">{{ formatMaturityDate(item.maturity_date) }}</td>
                                     <td class="px-6 py-3 text-sm font-semibold text-gray-900 text-right">{{ formatCurrency(getRollingBeginningBalance(item)) }}</td>
                                     <td class="px-6 py-3 text-sm text-green-600 font-semibold text-right">{{ formatCurrency(getCollectionAmount(item)) }}</td>
                                     <td class="px-6 py-3 text-sm text-red-600 font-semibold text-right">{{ formatCurrency(getDisbursementAmount(item)) }}</td>
                                     <td class="px-6 py-3 text-sm text-blue-600 font-semibold text-right">{{ formatCurrency(getEndingBalance(item)) }}</td>
                                 </tr>
                                 <tr v-if="module.data.length > 0" class="bg-gradient-to-r from-yellow-100 to-yellow-50 border-t-2 border-yellow-500 font-bold">
-                                    <td colspan="4" class="px-6 py-4 text-right text-gray-900">TOTAL:</td>
+                                    <td :colspan="module.name !== 'Cash Infusion' && module.name !== 'Operating Accounts' ? 4 : 2" class="px-6 py-4 text-right text-gray-900">TOTAL:</td>
                                     <td class="px-6 py-4 text-right text-gray-900">{{ formatCurrency(getModuleTotals(module).beginningBalance) }}</td>
                                     <td class="px-6 py-4 text-right text-green-700">{{ formatCurrency(getModuleTotals(module).collection) }}</td>
                                     <td class="px-6 py-4 text-right text-red-700">{{ formatCurrency(getModuleTotals(module).disbursement) }}</td>
