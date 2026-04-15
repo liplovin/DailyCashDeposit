@@ -190,9 +190,9 @@ const closeEditModal = () => {
                             <!-- Deposit Slip -->
                             <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
                                 <p class="text-xs font-semibold text-gray-600 mb-2 uppercase">Deposit Slip</p>
-                                <a v-if="collection.deposit_slip && collection.deposit_slip !== '0'" :href="collection.deposit_slip ? `/storage/${collection.deposit_slip}` : '#'" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-lg transition-all duration-200 shadow-md hover:shadow-lg">
+                                <a v-if="collection.deposit_slip && collection.deposit_slip !== '0'" :href="`/treasury3/collection/${collection.id}/download/deposit-slip`" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-lg transition-all duration-200 shadow-md hover:shadow-lg">
                                     <Download class="h-4 w-4" />
-                                    <span>View</span>
+                                    <span>Download</span>
                                 </a>
                                 <span v-else class="text-gray-400 text-sm">No file attached</span>
                             </div>
@@ -200,9 +200,9 @@ const closeEditModal = () => {
                             <!-- Check (Optional) -->
                             <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
                                 <p class="text-xs font-semibold text-gray-600 mb-2 uppercase">Check <span class="text-gray-400 text-xs">(Optional)</span></p>
-                                <a v-if="collection.check && collection.check !== '0'" :href="collection.check ? `/storage/${collection.check}` : '#'" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-sm rounded-lg transition-all duration-200 shadow-md hover:shadow-lg">
+                                <a v-if="collection.check && collection.check !== '0'" :href="`/treasury3/collection/${collection.id}/download/check`" class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-sm rounded-lg transition-all duration-200 shadow-md hover:shadow-lg">
                                     <Download class="h-4 w-4" />
-                                    <span>View</span>
+                                    <span>Download</span>
                                 </a>
                                 <span v-else class="text-gray-400 text-sm">No file attached</span>
                             </div>

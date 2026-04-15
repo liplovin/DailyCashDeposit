@@ -161,6 +161,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/collections/process', [OperatingAccountController::class, 'processCollections'])->name('collections.process');
         Route::delete('/collections/{id}', [OperatingAccountController::class, 'deleteCollection'])->name('collections.delete');
         Route::post('/collections/{id}', [OperatingAccountController::class, 'updateCollection'])->name('collections.update');
+        Route::get('/collections/{collectionId}/download/{fileType}', [OperatingAccountController::class, 'downloadCollectionFile'])->name('collections.download');
 
         // Investment Routes
         Route::get('/other-investment', [OtherInvestmentController::class, 'index'])->name('other-investment');
@@ -314,6 +315,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/collection/{id}', [OperatingAccountController::class, 'updateCollection'])->name('collection.update');
         
         Route::delete('/collection/{id}', [OperatingAccountController::class, 'deleteCollection'])->name('collection.delete');
+
+        Route::get('/collection/{collectionId}/download/{fileType}', [OperatingAccountController::class, 'downloadCollectionFile'])->name('collection.download');
         
         Route::post('/collections/process', [OperatingAccountController::class, 'processCollections'])->name('collections.process');
 

@@ -513,29 +513,69 @@ class OperatingAccountController extends Controller
                     'policy_number' => $collectionData['policy_number'],
                     'broker_agent' => $collectionData['broker_agent'],
                     'status' => 'pending',
+                    'deposit_slip' => null,
+                    'check' => null,
                 ]);
 
                 // Store deposit slip if provided
                 if ($request->hasFile("collections.$index.deposit_slip")) {
                     $file = $request->file("collections.$index.deposit_slip");
-                    if ($file->isValid()) {
+                    
+                    // Validate file before storing
+                    if (!$file->isValid()) {
+                        \Log::error("Invalid deposit slip file for collection {$index}", [
+                            'error' => $file->getErrorMessage(),
+                            'collection_index' => $index,
+                        ]);
+                        throw new \Exception("Upload failed for deposit slip in collection " . ($index + 1) . ": " . $file->getErrorMessage());
+                    }
+                    
+                    try {
                         $filePath = $file->store('deposit-slips/' . $id, 'public');
                         $collection->deposit_slip = $filePath;
+                        \Log::info("Deposit slip stored successfully", [
+                            'collection_index' => $index,
+                            'file_path' => $filePath,
+                            'file_name' => $file->getClientOriginalName(),
+                        ]);
+                    } catch (\Exception $e) {
+                        \Log::error("Failed to store deposit slip", [
+                            'collection_index' => $index,
+                            'error' => $e->getMessage(),
+                        ]);
+                        throw new \Exception("Failed to store deposit slip for collection " . ($index + 1) . ": " . $e->getMessage());
                     }
                 }
 
                 // Store check if provided
                 if ($request->hasFile("collections.$index.check")) {
                     $file = $request->file("collections.$index.check");
-                    if ($file->isValid()) {
+                    
+                    // Validate file before storing
+                    if (!$file->isValid()) {
+                        \Log::error("Invalid check file for collection {$index}", [
+                            'error' => $file->getErrorMessage(),
+                            'collection_index' => $index,
+                        ]);
+                        throw new \Exception("Upload failed for check in collection " . ($index + 1) . ": " . $file->getErrorMessage());
+                    }
+                    
+                    try {
                         $filePath = $file->store('checks/' . $id, 'public');
                         $collection->check = $filePath;
+                        \Log::info("Check file stored successfully", [
+                            'collection_index' => $index,
+                            'file_path' => $filePath,
+                            'file_name' => $file->getClientOriginalName(),
+                        ]);
+                    } catch (\Exception $e) {
+                        \Log::error("Failed to store check file", [
+                            'collection_index' => $index,
+                            'error' => $e->getMessage(),
+                        ]);
+                        throw new \Exception("Failed to store check file for collection " . ($index + 1) . ": " . $e->getMessage());
                     }
                 }
-
-                // Ensure invalid values are stored as NULL
-                $collection->deposit_slip = (empty($collection->deposit_slip) || $collection->deposit_slip === '0') ? null : $collection->deposit_slip;
-                $collection->check = (empty($collection->check) || $collection->check === '0') ? null : $collection->check;
 
                 $collection->save();
                 $collections[] = $collection;
@@ -549,10 +589,58 @@ class OperatingAccountController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
+            \Log::error("Error adding collections", [
+                'error' => $e->getMessage(),
+                'operating_account_id' => $id,
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error adding collections: ' . $e->getMessage(),
             ], 500);
         }
     }
-}
+    /**
+     * Download a collection attachment file
+     */
+    public function downloadCollectionFile($collectionId, $fileType)
+    {
+        try {
+            $collection = Collection::findOrFail($collectionId);
+
+            // Determine which file to download
+            $filePath = null;
+            if ($fileType === 'deposit-slip' && $collection->deposit_slip) {
+                $filePath = $collection->deposit_slip;
+            } elseif ($fileType === 'check' && $collection->check) {
+                $filePath = $collection->check;
+            }
+
+            // Validate file path exists
+            if (!$filePath || $filePath === '0' || $filePath === '') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File not found.',
+                ], 404);
+            }
+
+            // Construct full file path
+            $fullPath = storage_path('app/public/' . $filePath);
+
+            // Security check: ensure file exists and is within storage directory
+            if (!file_exists($fullPath) || !str_starts_with(realpath($fullPath), realpath(storage_path('app/public')))) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File not found or access denied.',
+                ], 404);
+            }
+
+            // Download the file
+            return response()->download($fullPath);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error downloading file: ' . $e->getMessage(),
+            ], 500);
+        }
+    }}

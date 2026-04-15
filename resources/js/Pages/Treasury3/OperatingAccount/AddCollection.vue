@@ -283,7 +283,11 @@ const handleSubmit = () => {
     });
     
     // Use window.axios - CSRF token will be added by bootstrap interceptor
-    window.axios.post(`/treasury3/operating-account/${selectedAccount.value.id}/collection`, formData)
+    window.axios.post(`/treasury3/operating-account/${selectedAccount.value.id}/collection`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        }
+    })
     .then(response => {
         if (response.data.success) {
             Swal.fire({
@@ -309,11 +313,26 @@ const handleSubmit = () => {
     })
     .catch(error => {
         console.error('Collection submission error:', error);
+        console.error('Error response:', error.response?.data);
         
         let errorMessage = 'Failed to save collections. Please try again.';
+        let errorTitle = 'Upload Error!';
         
         if (error.response?.status === 419) {
             errorMessage = 'Session expired. Please refresh the page and try again.';
+        } else if (error.response?.status === 422) {
+            errorTitle = 'Validation Error!';
+            if (error.response?.data?.errors) {
+                // Handle validation errors
+                const errors = error.response.data.errors;
+                const errorList = Object.values(errors).flat();
+                errorMessage = errorList.join('\n');
+            } else if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            }
+        } else if (error.response?.status === 413) {
+            errorTitle = 'File Too Large!';
+            errorMessage = 'One or more files exceed the 5MB upload limit. Please reduce file size and try again.';
         } else if (error.response?.data?.message) {
             errorMessage = error.response.data.message;
         } else if (error.message) {
@@ -321,8 +340,8 @@ const handleSubmit = () => {
         }
         
         Swal.fire({
-            title: 'Error!',
-            text: errorMessage,
+            title: errorTitle,
+            html: `<div style="text-align: left; white-space: pre-wrap; font-size: 13px;">${errorMessage}</div>`,
             icon: 'error',
             confirmButtonColor: '#F59E0B'
         });
