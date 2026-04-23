@@ -518,6 +518,7 @@ const deleteOtherInvestment = async (investment) => {
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">TOTAL</td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
+                                <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300">{{ formatCurrency(totalBeginningBalance) }}</td>
                                 <td class="px-6 py-4 text-sm text-blue-600 border-r border-gray-300">{{ formatCurrency(totalEndingBalance) }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-gray-300"></td>

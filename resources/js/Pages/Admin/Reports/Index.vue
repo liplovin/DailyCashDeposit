@@ -70,9 +70,9 @@ const activeModules = computed(() => {
     return modules.map(module => ({
         ...module,
         data: module.data.filter(item => {
-            // For Cash Infusion: show if balance > 0 (not fully withdrawn)
+            // For Cash Infusion and Other Investment: show if balance > 0 (not fully withdrawn)
             // For others: show if maturity_date exists
-            if (module.name === 'Cash Infusion') {
+            if (module.name === 'Cash Infusion' || module.name === 'Other Investment') {
                 return parseFloat(item.beginning_balance || 0) > 0;
             }
             return item.maturity_date !== null;

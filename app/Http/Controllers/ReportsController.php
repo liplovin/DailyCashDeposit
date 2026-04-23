@@ -33,7 +33,9 @@ class ReportsController extends Controller
                 ],
                 [
                     'name' => 'Other Investment',
-                    'data' => \App\Models\OtherInvestment::with(['renewals', 'withdrawals', 'balances'])->where('maturity_date', '!=', null)->get()->toArray(),
+                    'data' => \App\Models\OtherInvestment::get()->filter(function($item) {
+                        return floatval($item->beginning_balance) > 0;
+                    })->toArray(),
                     'key' => 'other_investment_name',
                     'accField' => 'account_number'
                 ],
@@ -249,7 +251,9 @@ class ReportsController extends Controller
             ];
             
             // Other Investment
-            $otherInvestments = \App\Models\OtherInvestment::where('maturity_date', '!=', null)->get()->toArray();
+            $otherInvestments = \App\Models\OtherInvestment::get()->filter(function($item) {
+                return floatval($item->beginning_balance) > 0;
+            })->toArray();
             $modules[] = [
                 'name' => 'Other Investment',
                 'data' => $filterTransactionsByDate($otherInvestments, $date),
