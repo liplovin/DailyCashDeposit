@@ -64,12 +64,6 @@ const handleSubmit = () => {
     if (isNaN(balanceValue) || balanceValue < 0) {
         errors.value.beginning_balance = 'Beginning balance must be a valid positive number';
     }
-    if (!form.value.maturity_date.trim()) {
-        errors.value.maturity_date = 'Maturity date is required';
-    }
-    if (!form.value.acquisition_date.trim()) {
-        errors.value.acquisition_date = 'Acquisition date is required';
-    }
     if (!form.value.explanation.trim()) {
         errors.value.explanation = 'Explanation is required';
     }
@@ -320,7 +314,7 @@ const handleDateInput = (event) => {
                     <!-- Maturity Date Field -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-900 mb-2">
-                            Maturity Date <span class="text-red-500">*</span>
+                            Maturity Date
                         </label>
                         <div class="flex space-x-2">
                             <input
@@ -346,7 +340,7 @@ const handleDateInput = (event) => {
                     <!-- Acquisition Date Field -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-900 mb-2">
-                            Acquisition Date <span class="text-red-500">*</span>
+                            Acquisition Date
                         </label>
                         <div class="flex space-x-2">
                             <!-- Date Picker -->

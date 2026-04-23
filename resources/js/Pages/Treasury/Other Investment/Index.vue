@@ -91,10 +91,11 @@ const filteredOtherInvestments = computed(() => {
     let investments = props.otherInvestments;
     
     // Filter by withdrawn status - show ONLY withdrawn when toggled
+    // Withdrawn = balance equals 0 (full withdrawal)
     if (showWithdrawn.value) {
-        investments = investments.filter(investment => investment.maturity_date === null);
+        investments = investments.filter(investment => parseFloat(investment.beginning_balance || 0) === 0);
     } else {
-        investments = investments.filter(investment => investment.maturity_date !== null);
+        investments = investments.filter(investment => parseFloat(investment.beginning_balance || 0) > 0);
     }
     
     if (!searchQuery.value.trim()) {
@@ -221,7 +222,7 @@ const isOverdueOrDueToday = (dateString) => {
 };
 
 const formatMaturityDate = (dateString) => {
-    if (!dateString) return '✓ Withdrawn';
+    if (!dateString) return '—';
     const date = new Date(dateString);
     const today = new Date();
     today.setHours(0, 0, 0, 0);

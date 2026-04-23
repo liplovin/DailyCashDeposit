@@ -91,14 +91,18 @@ class OtherInvestmentController extends Controller
             'other_investment_name' => 'required|string|max:255',
             'account_number' => 'required|string|unique:other_investments,account_number',
             'beginning_balance' => 'required|numeric|min:0',
-            'maturity_date' => 'required|date_format:m/d/Y',
-            'acquisition_date' => 'required|date_format:m/d/Y',
+            'maturity_date' => 'nullable|date_format:m/d/Y',
+            'acquisition_date' => 'nullable|date_format:m/d/Y',
             'explanation' => 'required|string|max:1000',
         ]);
 
         // Convert mm/dd/yy to Y-m-d format for storage
-        $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
-        $validated['acquisition_date'] = $this->convertDateFormat($validated['acquisition_date']);
+        if ($validated['maturity_date']) {
+            $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
+        }
+        if ($validated['acquisition_date']) {
+            $validated['acquisition_date'] = $this->convertDateFormat($validated['acquisition_date']);
+        }
 
         OtherInvestment::create($validated);
 
@@ -116,14 +120,18 @@ class OtherInvestmentController extends Controller
             'other_investment_name' => 'required|string|max:255',
             'account_number' => 'required|string|unique:other_investments,account_number,' . $id,
             'beginning_balance' => 'required|numeric|min:0',
-            'maturity_date' => 'required|date_format:m/d/Y',
-            'acquisition_date' => 'required|date_format:m/d/Y',
+            'maturity_date' => 'nullable|date_format:m/d/Y',
+            'acquisition_date' => 'nullable|date_format:m/d/Y',
             'explanation' => 'required|string|max:1000',
         ]);
 
         // Convert mm/dd/yy to Y-m-d format for storage
-        $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
-        $validated['acquisition_date'] = $this->convertDateFormat($validated['acquisition_date']);
+        if ($validated['maturity_date']) {
+            $validated['maturity_date'] = $this->convertDateFormat($validated['maturity_date']);
+        }
+        if ($validated['acquisition_date']) {
+            $validated['acquisition_date'] = $this->convertDateFormat($validated['acquisition_date']);
+        }
 
         $otherInvestment->update($validated);
 
