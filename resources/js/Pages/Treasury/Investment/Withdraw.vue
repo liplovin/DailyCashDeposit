@@ -160,12 +160,12 @@ const handleSubmit = () => {
                             </button>
                         </div>
                         <input
-                            :value="displayAmount"
+                            v-model="form.amount"
                             type="text"
                             placeholder="Enter withdrawal amount"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
                             :class="{ 'border-red-500 focus:ring-red-500': errors.amount }"
-                            @input="handleAmountInput"
+                            @input="handleAmountInput(form.amount)"
                             @keypress="handleAmountKeyPress"
                         />
                         <p v-if="errors.amount" class="text-red-500 text-sm mt-1">{{ errors.amount }}</p>

@@ -32,20 +32,22 @@ const displayAmount = computed(() => {
     return numValue ? parseFloat(numValue).toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : '';
 });
 
-const handleAmountInput = (event) => {
-    let value = event.target.value;
+const handleAmountInput = (value) => {
+    // Only allow numbers and single decimal point
+    let cleaned = value.replace(/[^\d.]/g, '');
     
-    // Remove all non-numeric characters except decimal point
-    const cleanedValue = value.replace(/[^\d.]/g, '');
-    
-    // Prevent multiple decimal points
-    const parts = cleanedValue.split('.');
-    let finalValue = parts[0];
-    if (parts.length > 1) {
-        finalValue += '.' + parts[1].substring(0, 2);
+    // Ensure only one decimal point
+    const parts = cleaned.split('.');
+    if (parts.length > 2) {
+        cleaned = parts[0] + '.' + parts[1];
     }
     
-    form.value.amount = finalValue;
+    // Limit decimals to 2 places
+    if (parts.length === 2 && parts[1].length > 2) {
+        cleaned = parts[0] + '.' + parts[1].substring(0, 2);
+    }
+    
+    form.value.amount = cleaned;
 };
 
 const handleAmountKeyPress = (event) => {
@@ -190,10 +192,10 @@ const handleSubmit = () => {
                         <div class="relative">
                             <span class="absolute left-4 top-2.5 text-gray-500 font-semibold">₱</span>
                             <input
+                                v-model="form.amount"
                                 type="text"
-                                @input="handleAmountInput"
+                                @input="handleAmountInput(form.amount)"
                                 @keypress="handleAmountKeyPress"
-                                :value="displayAmount"
                                 placeholder="0.00"
                                 class="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 text-gray-900 text-right"
                                 :class="{ 'border-red-500 focus:ring-red-500': errors.amount }"
