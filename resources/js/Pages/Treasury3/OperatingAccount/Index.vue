@@ -184,7 +184,7 @@ const formatDateWithTime = (dateString) => {
             <div class="mb-8">
                 <div class="flex items-center justify-between mb-6">
                     <div>
-                        <h1 class="text-3xl font-black text-gray-900">Collection Deposits</h1>
+                        <h1 class="text-3xl font-black text-gray-900">Collection Deposit</h1>
                         <p class="text-gray-600 mt-1">Manage collection deposits for your operating accounts</p>
                     </div>
                     <div class="flex items-center gap-3">
