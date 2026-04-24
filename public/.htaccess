@@ -23,3 +23,9 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Set PHP upload limits to 10MB per file
+<IfModule mod_php.c>
+    php_value upload_max_filesize 10M
+    php_value post_max_size 15M
+</IfModule>

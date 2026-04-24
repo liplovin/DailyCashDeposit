@@ -106,10 +106,10 @@ const handleFileUpload = (event, index) => {
             return;
         }
         
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
+        // Validate file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
             if (!errors.value[index]) errors.value[index] = {};
-            errors.value[index].deposit_slip = 'File size must be less than 5MB';
+            errors.value[index].deposit_slip = 'File size must be less than 10MB';
             form.value.collections[index].deposit_slip = null;
             depositSlipFileNames.value[index] = '';
             return;
@@ -142,10 +142,10 @@ const handleCheckUpload = (event, index) => {
             return;
         }
         
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
+        // Validate file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
             if (!errors.value[index]) errors.value[index] = {};
-            errors.value[index].check = 'File size must be less than 5MB';
+            errors.value[index].check = 'File size must be less than 10MB';
             form.value.collections[index].check = null;
             checkFileNames.value[index] = '';
             return;
