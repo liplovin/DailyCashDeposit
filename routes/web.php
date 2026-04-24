@@ -308,10 +308,9 @@ Route::middleware('auth')->group(function () {
                 'operatingAccounts' => $operatingAccounts,
             ]);
         })->name('operating-account');
+        Route::post('/operating-account/{id}/collection-single', [OperatingAccountController::class, 'addSingleCollection'])->name('operating-account.add-single-collection');
 
         Route::post('/operating-account/{id}/collection', [OperatingAccountController::class, 'addCollection'])->name('operating-account.add-collection');
-
-        Route::post('/operating-account/{id}/collection-single', [OperatingAccountController::class, 'addSingleCollection'])->name('operating-account.add-single-collection');
 
         Route::post('/collection/{id}', [OperatingAccountController::class, 'updateCollection'])->name('collection.update');
         
