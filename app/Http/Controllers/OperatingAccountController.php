@@ -555,4 +555,72 @@ class OperatingAccountController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Add a single collection (to avoid 413 Request Entity Too Large error)
+     */
+    public function addSingleCollection(Request $request, $id)
+    {
+        try {
+            $operatingAccount = OperatingAccount::findOrFail($id);
+            
+            $validated = $request->validate([
+                'collection_amount' => 'required|numeric|min:0.01',
+                'assured' => 'required|string|max:255',
+                'policy_number' => 'required|string|max:255',
+                'broker_agent' => 'required|string|max:255',
+                'deposit_slip' => 'nullable|file|mimes:jpeg,jpg,png,gif,pdf|max:5120',
+                'check' => 'nullable|file|mimes:jpeg,jpg,png,gif,pdf|max:5120',
+            ]);
+
+            $amount = (float) str_replace(',', '', $validated['collection_amount']);
+
+            $collection = new Collection([
+                'operating_account_id' => $id,
+                'collection_date' => now(),
+                'collection_amount' => $amount,
+                'assured' => $validated['assured'],
+                'policy_number' => $validated['policy_number'],
+                'broker_agent' => $validated['broker_agent'],
+                'status' => 'pending',
+            ]);
+
+            // Store deposit slip if provided
+            if ($request->hasFile('deposit_slip')) {
+                $file = $request->file('deposit_slip');
+                if ($file->isValid()) {
+                    $filePath = $file->store('deposit-slips/' . $id, 'public');
+                    $collection->deposit_slip = $filePath;
+                }
+            }
+
+            // Store check if provided
+            if ($request->hasFile('check')) {
+                $file = $request->file('check');
+                if ($file->isValid()) {
+                    $filePath = $file->store('checks/' . $id, 'public');
+                    $collection->check = $filePath;
+                }
+            }
+
+            // Ensure invalid values are stored as NULL
+            $collection->deposit_slip = (empty($collection->deposit_slip) || $collection->deposit_slip === '0') ? null : $collection->deposit_slip;
+            $collection->check = (empty($collection->check) || $collection->check === '0') ? null : $collection->check;
+
+            $collection->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Collection added successfully.',
+                'collection' => $collection,
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error adding collection: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }
+

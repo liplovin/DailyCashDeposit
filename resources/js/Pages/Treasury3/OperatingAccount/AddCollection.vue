@@ -194,7 +194,7 @@ const getTotalAmount = () => {
     return total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
     errors.value = {};
     let hasErrors = false;
     
@@ -263,32 +263,47 @@ const handleSubmit = () => {
     
     isSubmitting.value = true;
     
-    // Create FormData to handle multiple file uploads
-    const formData = new FormData();
-    formData.append('operating_account_id', selectedAccount.value.id);
-    
-    form.value.collections.forEach((collection, index) => {
-        const cleanAmount = collection.collection_amount.toString().replace(/,/g, '');
-        formData.append(`collections[${index}][collection_amount]`, cleanAmount);
-        formData.append(`collections[${index}][assured]`, collection.assured || '');
-        formData.append(`collections[${index}][policy_number]`, collection.policy_number || '');
-        formData.append(`collections[${index}][broker_agent]`, collection.broker_agent || '');
-        
-        if (collection.deposit_slip) {
-            formData.append(`collections[${index}][deposit_slip]`, collection.deposit_slip);
-        }
-        if (collection.check) {
-            formData.append(`collections[${index}][check]`, collection.check);
-        }
-    });
-    
-    // Use window.axios - CSRF token will be added by bootstrap interceptor
-    window.axios.post(`/treasury3/operating-account/${selectedAccount.value.id}/collection`, formData)
-    .then(response => {
-        if (response.data.success) {
+    // Submit each collection individually to avoid 413 Request Entity Too Large error
+    const submitCollectionsSequentially = async () => {
+        try {
+            let successCount = 0;
+            
+            for (let i = 0; i < form.value.collections.length; i++) {
+                const collection = form.value.collections[i];
+                const cleanAmount = collection.collection_amount.toString().replace(/,/g, '');
+                
+                // Create FormData for each collection
+                const formData = new FormData();
+                formData.append('operating_account_id', selectedAccount.value.id);
+                formData.append('collection_amount', cleanAmount);
+                formData.append('assured', collection.assured || '');
+                formData.append('policy_number', collection.policy_number || '');
+                formData.append('broker_agent', collection.broker_agent || '');
+                
+                if (collection.deposit_slip) {
+                    formData.append('deposit_slip', collection.deposit_slip);
+                }
+                if (collection.check) {
+                    formData.append('check', collection.check);
+                }
+                
+                // Submit this collection
+                const response = await window.axios.post(
+                    `/treasury3/operating-account/${selectedAccount.value.id}/collection-single`,
+                    formData
+                );
+                
+                if (response.data.success) {
+                    successCount++;
+                } else {
+                    throw new Error(response.data.message || `Failed to save collection ${i + 1}`);
+                }
+            }
+            
+            // All collections submitted successfully
             Swal.fire({
                 title: 'Success!',
-                text: 'Collections saved successfully.',
+                text: `All ${successCount} collection(s) saved successfully.`,
                 icon: 'success',
                 confirmButtonColor: '#F59E0B',
                 timer: 2000,
@@ -297,37 +312,32 @@ const handleSubmit = () => {
                 closeModal();
                 router.visit('/treasury3/operating-account');
             });
-        } else {
+            
+        } catch (error) {
+            console.error('Collection submission error:', error);
+            
+            let errorMessage = 'Failed to save collections. Please try again.';
+            
+            if (error.response?.status === 419) {
+                errorMessage = 'Session expired. Please refresh the page and try again.';
+            } else if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            
             Swal.fire({
                 title: 'Error!',
-                text: response.data.message || 'Failed to save collections.',
+                text: errorMessage,
                 icon: 'error',
                 confirmButtonColor: '#F59E0B'
             });
+        } finally {
+            isSubmitting.value = false;
         }
-        isSubmitting.value = false;
-    })
-    .catch(error => {
-        console.error('Collection submission error:', error);
-        
-        let errorMessage = 'Failed to save collections. Please try again.';
-        
-        if (error.response?.status === 419) {
-            errorMessage = 'Session expired. Please refresh the page and try again.';
-        } else if (error.response?.data?.message) {
-            errorMessage = error.response.data.message;
-        } else if (error.message) {
-            errorMessage = error.message;
-        }
-        
-        Swal.fire({
-            title: 'Error!',
-            text: errorMessage,
-            icon: 'error',
-            confirmButtonColor: '#F59E0B'
-        });
-        isSubmitting.value = false;
-    });
+    };
+    
+    await submitCollectionsSequentially();
 };
 
 const closeModal = () => {
