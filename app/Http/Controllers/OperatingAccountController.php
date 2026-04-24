@@ -18,7 +18,7 @@ class OperatingAccountController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $operatingAccounts = OperatingAccount::with(['collections', 'renewals', 'withdrawals', 'balances'])->get();
+        $operatingAccounts = OperatingAccount::with(['collections', 'disbursements', 'renewals', 'withdrawals', 'balances'])->get();
         
         // Render based on user role
         $component = match($user->role) {
