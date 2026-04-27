@@ -112,14 +112,26 @@ const filteredDeposits = computed(() => {
     }
     
     if (!searchQuery.value.trim()) {
-        return deposits;
+        // Sort by maturity date (earliest first - next to mature at top)
+        return deposits.sort((a, b) => {
+            if (!a.maturity_date) return 1;
+            if (!b.maturity_date) return -1;
+            return new Date(a.maturity_date) - new Date(b.maturity_date);
+        });
     }
     
     const query = searchQuery.value.toLowerCase();
-    return deposits.filter(deposit => 
+    let filtered = deposits.filter(deposit => 
         deposit.time_deposit_name.toLowerCase().includes(query) ||
         deposit.account_number.toLowerCase().includes(query)
     );
+    
+    // Sort by maturity date (earliest first - next to mature at top)
+    return filtered.sort((a, b) => {
+        if (!a.maturity_date) return 1;
+        if (!b.maturity_date) return -1;
+        return new Date(a.maturity_date) - new Date(b.maturity_date);
+    });
 });
 
 const totalBeginningBalance = computed(() => {

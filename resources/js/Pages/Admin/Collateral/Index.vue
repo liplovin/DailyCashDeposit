@@ -83,7 +83,12 @@ const filteredCollaterals = computed(() => {
         );
     }
     
-    return filtered;
+    // Sort by maturity date (earliest first - next to mature at top)
+    return filtered.sort((a, b) => {
+        if (!a.maturity_date) return 1;
+        if (!b.maturity_date) return -1;
+        return new Date(a.maturity_date) - new Date(b.maturity_date);
+    });
 });
 
 const getCollectionAmount = (collateral) => {

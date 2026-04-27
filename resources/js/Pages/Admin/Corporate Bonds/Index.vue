@@ -83,7 +83,12 @@ const filteredCorporateBonds = computed(() => {
         );
     }
     
-    return bonds;
+    // Sort by maturity date (earliest first - next to mature at top)
+    return bonds.sort((a, b) => {
+        if (!a.maturity_date) return 1;
+        if (!b.maturity_date) return -1;
+        return new Date(a.maturity_date) - new Date(b.maturity_date);
+    });
 });
 
 const getCollectionAmount = (bond) => {
