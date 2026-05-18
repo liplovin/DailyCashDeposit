@@ -25,6 +25,7 @@ const errors = ref({});
 const isSubmitting = ref(false);
 
 const roles = [
+    { value: 'superadmin', label: 'Super Admin' },
     { value: 'admin', label: 'Admin' },
     { value: 'treasury', label: 'Treasury' },
     { value: 'treasury2', label: 'Treasury 2' },
@@ -62,7 +63,7 @@ const handleSubmit = () => {
     if (Object.keys(errors.value).length === 0) {
         isSubmitting.value = true;
         
-        router.post('/users', {
+        router.post('/superadmin/users', {
             name: form.value.name,
             email: form.value.email,
             password: form.value.password,

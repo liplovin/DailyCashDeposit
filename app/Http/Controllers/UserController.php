@@ -24,7 +24,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:admin,treasury,treasury2,treasury3,accounting,accounting2'
+            'role' => 'required|in:admin,treasury,treasury2,treasury3,accounting,accounting2,superadmin'
         ]);
 
         User::create([
@@ -34,7 +34,7 @@ class UserController extends Controller
             'role' => $validated['role']
         ]);
 
-        return redirect('/admin/users')->with('success', 'User created successfully');
+        return redirect('/superadmin/users')->with('success', 'User created successfully');
     }
 
     public function update(Request $request, User $user)
@@ -43,7 +43,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:8|confirmed',
-            'role' => 'required|in:admin,treasury,treasury2,treasury3,accounting,accounting2'
+            'role' => 'required|in:admin,treasury,treasury2,treasury3,accounting,accounting2,superadmin'
         ]);
 
         $user->name = $validated['name'];
@@ -57,13 +57,13 @@ class UserController extends Controller
 
         $user->save();
 
-        return redirect('/admin/users')->with('success', 'User updated successfully');
+        return redirect('/superadmin/users')->with('success', 'User updated successfully');
     }
 
     public function destroy(User $user)
     {
         $user->delete();
 
-        return redirect('/admin/users')->with('success', 'User deleted successfully');
+        return redirect('/superadmin/users')->with('success', 'User deleted successfully');
     }
 }

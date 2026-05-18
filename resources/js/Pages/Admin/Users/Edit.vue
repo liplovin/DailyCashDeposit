@@ -29,6 +29,7 @@ const errors = ref({});
 const isSubmitting = ref(false);
 
 const roles = [
+    { value: 'superadmin', label: 'Super Admin' },
     { value: 'admin', label: 'Admin' },
     { value: 'treasury', label: 'Treasury' },
     { value: 'treasury2', label: 'Treasury 2' },
@@ -98,7 +99,7 @@ const handleSubmit = () => {
             submitData.password_confirmation = form.value.password_confirmation;
         }
         
-        router.put(`/users/${props.user.id}`, submitData, {
+        router.put(`/superadmin/users/${props.user.id}`, submitData, {
             onSuccess: () => {
                 Swal.fire({
                     title: 'Updated!',

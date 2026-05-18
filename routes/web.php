@@ -55,6 +55,10 @@ Route::get('/dashboard', function () {
         ]);
     }
     
+    if ($user->role === 'superadmin') {
+        return Inertia::render('SuperAdmin/Dashboard');
+    }
+
     if ($user->role === 'admin') {
         // Fetch all Treasury2 module data for Admin Dashboard
         $collaterals = Collateral::all();
@@ -328,7 +332,6 @@ Route::middleware('auth')->group(function () {
 
     // Admin Routes - For 'admin' role only
     Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
-        Route::get('/users', [UserController::class, 'index'])->name('users');
 
         Route::get('/settings', function () {
             return Inertia::render('Admin/Settings/Index');
@@ -441,6 +444,52 @@ Route::middleware('auth')->group(function () {
         })->name('investment');
     });
 
+    // SuperAdmin Routes - For 'superadmin' role only
+    Route::prefix('superadmin')->name('superadmin.')->middleware('role:superadmin')->group(function () {
+        Route::get('/users', [UserController::class, 'index'])->name('users');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
+        Route::get('/dashboard', function () {
+            return Inertia::render('SuperAdmin/Dashboard');
+        })->name('dashboard');
+
+        Route::get('/ops-collection', function () {
+            $operatingAccounts = \App\Models\OperatingAccount::with('collections')->get();
+            return Inertia::render('SuperAdmin/OpsCollection/Index', [
+                'operatingAccounts' => $operatingAccounts,
+            ]);
+        })->name('ops-collection');
+
+        Route::get('/ops-disbursement', function () {
+            $operatingAccounts = \App\Models\OperatingAccount::with(['disbursements.payments'])->get();
+            return Inertia::render('SuperAdmin/OpsDisbursement/Index', [
+                'operatingAccounts' => $operatingAccounts,
+            ]);
+        })->name('ops-disbursement');
+
+        Route::delete('/disbursements/{id}', function ($id) {
+            $disbursement = \App\Models\OperatingAccountDisbursement::findOrFail($id);
+            $disbursement->delete();
+            return back();
+        })->name('superadmin.disbursements.delete');
+
+        Route::delete('/collections/{id}', function ($id) {
+            $collection = \App\Models\Collection::findOrFail($id);
+            if ($collection->deposit_slip) {
+                $path = storage_path('app/public/' . $collection->deposit_slip);
+                if (file_exists($path)) unlink($path);
+            }
+            if ($collection->check) {
+                $path = storage_path('app/public/' . $collection->check);
+                if (file_exists($path)) unlink($path);
+            }
+            $collection->delete();
+            return back();
+        })->name('superadmin.collections.delete');
+    });
+
     // Accounting Routes - For 'accounting' role only
     Route::prefix('accounting')->name('accounting.')->middleware('role:accounting')->group(function () {
         Route::get('/operating-accounts', function () {
@@ -475,10 +524,6 @@ Route::middleware('auth')->group(function () {
         })->name('processed-disbursement');
     });
 
-    // User Management Routes
-    Route::post('/users', [UserController::class, 'store'])->name('users.store');
-    Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
-    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 });
 
 // Debug endpoint to check CSRF token

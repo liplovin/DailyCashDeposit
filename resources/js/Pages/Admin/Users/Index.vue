@@ -1,5 +1,5 @@
 <script setup>
-import AdminLayout from '@/Layouts/AdminLayout.vue';
+import AdminLayout from '@/Layouts/SuperadminLayout.vue';
 import CreateUserModal from './Create.vue';
 import EditUserModal from './Edit.vue';
 import { Head } from '@inertiajs/vue3';
@@ -61,6 +61,7 @@ const closeEditModal = () => {
 
 const getRoleBadgeClass = (role) => {
     const classes = {
+        'superadmin': 'bg-amber-100 text-amber-900',
         'admin': 'bg-red-100 text-red-800',
         'treasury': 'bg-blue-100 text-blue-800',
         'treasury2': 'bg-cyan-100 text-cyan-800',
@@ -73,6 +74,7 @@ const getRoleBadgeClass = (role) => {
 
 const getRoleColor = (role) => {
     const colors = {
+        'superadmin': '#B45309',
         'admin': '#DC2626',
         'treasury': '#2563EB',
         'treasury2': '#0891B2',
@@ -122,7 +124,7 @@ const deleteUser = async (user) => {
     });
 
     if (result.isConfirmed) {
-        router.delete(`/users/${user.id}`, {
+        router.delete(`/superadmin/users/${user.id}`, {
             onSuccess: () => {
                 Swal.fire({
                     title: 'Deleted!',

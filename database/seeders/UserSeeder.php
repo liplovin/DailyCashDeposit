@@ -15,46 +15,24 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create admin user
-        User::factory()->create([
-            'name' => 'Nelson Manabal',
-            'email' => 'nelson@intra.com',
-            'role' => 'admin',
-        ]);
+        $users = [
+            ['name' => 'Super Admin',      'email' => 'superadmin@intra.com',    'role' => 'superadmin'],
+            ['name' => 'Nelson Manabal',   'email' => 'nelson@intra.com',        'role' => 'admin'],
+            ['name' => 'Melanie Mendoza',  'email' => 'melanie@intra.com',       'role' => 'treasury'],
+            ['name' => 'Airah Ascado',     'email' => 'airah@intra.com',         'role' => 'treasury2'],
+            ['name' => 'Aira Santiago',    'email' => 'airasantiago@intra.com',  'role' => 'treasury3'],
+            ['name' => 'Edwin Domingo',    'email' => 'edwin@intra.com',         'role' => 'accounting'],
+            ['name' => 'Accounting 2 User','email' => 'accounting2@intra.com',   'role' => 'accounting2'],
+        ];
 
-        // Create treasury user
-        User::factory()->create([
-            'name' => 'Melanie Mendoza',
-            'email' => 'melanie@intra.com',
-            'role' => 'treasury',
-        ]);
-
-        // Create treasury2 user
-        User::factory()->create([
-            'name' => 'Airah Ascado',
-            'email' => 'airah@intra.com',
-            'role' => 'treasury2',
-        ]);
-
-        // Create treasury3 user
-        User::factory()->create([
-            'name' => 'Aira Santiago',
-            'email' => 'airasantiago@intra.com',
-            'role' => 'treasury3',
-        ]);
-
-        // Create accounting user
-        User::factory()->create([
-            'name' => 'Edwin Domingo',
-            'email' => 'edwin@intra.com',
-            'role' => 'accounting',
-        ]);
-
-        // Create accounting2 user
-        User::factory()->create([
-            'name' => 'Accounting 2 User',
-            'email' => 'accounting2@intra.com',
-            'role' => 'accounting2',
-        ]);
+        foreach ($users as $userData) {
+            User::firstOrCreate(
+                ['email' => $userData['email']],
+                array_merge($userData, [
+                    'password' => \Illuminate\Support\Facades\Hash::make('password'),
+                    'email_verified_at' => now(),
+                ])
+            );
+        }
     }
 }
